@@ -328,7 +328,8 @@ def delete_client(client_id: int, admin: AdminUser, confirm: str = ""):
 @app.get("/api/clients")
 def list_clients(user: CurrentUser, q: str = "", status: Literal["lead", "active", "issue", "inactive"] | None = None,
                  tag: str | None = None, mine: bool = False):
-    return search.find_clients(q, user_id=user["id"], status=status, tag=tag or None,
+    # La lista de la interfaz muestra hasta 500 clientes (el buscador y los filtros acotan el resto).
+    return search.find_clients(q, limit=500, user_id=user["id"], status=status, tag=tag or None,
                                assignee_id=user["id"] if mine else None)
 
 
