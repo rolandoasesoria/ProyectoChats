@@ -1,13 +1,19 @@
-"""Carga datos de demostración. Uso: python -m app.seed  (desde la carpeta backend)"""
+"""Carga datos de demostración (desde la carpeta backend):
+
+  python -m app.seed           carga los datos si la base de datos está vacía
+  python -m app.seed --reset   BORRA todo y vuelve a cargarlos
+"""
+import sys
+
 from . import search
 from .auth import hash_password
-from .db import DB_PATH, get_conn, init_db
+from .db import get_conn, init_db, reset_db
 
 DEMO_PASSWORD = "demo1234"
-# (id, usuario, nombre, email, rol)
-USERS = [(1, "ana", "Ana Ruiz", "ana@miempresa.com", "admin"),
-         (2, "carlos", "Carlos Pérez", "carlos@miempresa.com", "user"),
-         (3, "marta", "Marta López", "marta@miempresa.com", "user")]
+# (usuario, nombre, email, rol). En una base de datos vacía reciben los ids 1, 2 y 3 (las pruebas lo usan).
+USERS = [("ana", "Ana Ruiz", "ana@miempresa.com", "admin"),
+         ("carlos", "Carlos Pérez", "carlos@miempresa.com", "user"),
+         ("marta", "Marta López", "marta@miempresa.com", "user")]
 
 CONVERSATIONS = [
     # --- Laura Gómez: WhatsApp con Ana, email con Carlos, Telegram con Marta ---
@@ -57,14 +63,17 @@ CONVERSATIONS = [
 ]
 
 
-def seed() -> None:
-    init_db()
+def seed(reset: bool = False) -> None:
+    if reset:
+        reset_db()
+    else:
+        init_db()
     with get_conn() as conn:
         if conn.execute("SELECT count(*) FROM users").fetchone()[0]:
-            print(f"La base de datos ya tiene datos ({DB_PATH}). Bórrala para volver a sembrar.")
+            print("La base de datos ya tiene datos. Usa --reset para borrarla y volver a cargarlos.")
             return
         conn.executemany(
-            "INSERT INTO users (id, username, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+            "INSERT INTO users (username, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?)",
             [(*u, hash_password(DEMO_PASSWORD)) for u in USERS],
         )
 
@@ -84,9 +93,9 @@ def seed() -> None:
     with get_conn() as conn:
         conn.execute("UPDATE clients SET company = 'Floristería Gómez S.L.' WHERE name = 'Laura Gómez'")
         conn.execute("UPDATE clients SET company = 'Talleres Martín' WHERE name = 'Jorge Martín'")
-    print(f"Datos de demostración cargados en {DB_PATH}")
-    print(f"Usuarios: {', '.join(u[1] for u in USERS)} (contraseña: {DEMO_PASSWORD}). 'ana' es administradora.")
+    print("Datos de demostración cargados.")
+    print(f"Usuarios: {', '.join(u[0] for u in USERS)} (contraseña: {DEMO_PASSWORD}). 'ana' es administradora.")
 
 
 if __name__ == "__main__":
-    seed()
+    seed(reset="--reset" in sys.argv)
