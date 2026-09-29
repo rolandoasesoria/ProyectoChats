@@ -77,6 +77,12 @@ try:
     check("crear tarea (vencida en rojo)", b.js("!!document.querySelector('#client-tasks .due.overdue')"))
     b.wait("document.querySelector('#my-tasks-count').textContent === '1'")
     check("contador de mis tareas en rojo", b.js("document.querySelector('#my-tasks-count').classList.contains('alert')"))
+    b.click('.side-tabs [data-side="tasks"]')
+    b.wait("document.querySelector('#my-tasks .task-title')")
+    check("en la columna izquierda la tarea se ve (sin desbordarse)",
+          b.js("document.querySelector('#my-tasks .task-title').getBoundingClientRect().width > 80 && "
+               "document.querySelector('#side-tasks').scrollWidth <= document.querySelector('#side-tasks').clientWidth"))
+    b.click('.side-tabs [data-side="clients"]')
     b.shot("06-tareas")
 
     # Notas con mención (autocompletado)
