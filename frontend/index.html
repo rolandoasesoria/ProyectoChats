@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>ProyectoChats</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-dot"></span>ProyectoChats</div>
+    <label class="user-picker">
+      Usuario
+      <select id="user-select"></select>
+    </label>
+  </header>
+
+  <main class="layout">
+    <!-- Clientes -->
+    <aside class="panel clients">
+      <input id="client-search" type="search" placeholder="Buscar cliente, email, teléfono…">
+      <ul id="client-list" class="client-list"></ul>
+    </aside>
+
+    <!-- Chat con el agente -->
+    <section class="panel chat">
+      <div class="chat-head">
+        <div>
+          <h1>Asistente</h1>
+          <p id="chat-context" class="muted">Sin cliente seleccionado · pregunta por cualquier cliente</p>
+        </div>
+        <button id="new-chat" class="ghost">Nueva conversación</button>
+      </div>
+      <div id="chat-log" class="chat-log">
+        <div class="empty-chat">
+          <p>Pregúntame por cualquier dato de tus clientes.</p>
+          <div class="suggestions">
+            <button class="chip">¿Cuál es la dirección de envío de Laura Gómez?</button>
+            <button class="chip">¿Qué CIF nos dio Laura? Busca también en las del equipo</button>
+            <button class="chip">¿Qué fecha de entrega acordamos con Jorge?</button>
+          </div>
+        </div>
+      </div>
+      <form id="chat-form" class="chat-form">
+        <textarea id="chat-input" rows="1" placeholder="Escribe tu pregunta…" required></textarea>
+        <button type="submit" id="send-btn">Enviar</button>
+      </form>
+    </section>
+
+    <!-- Ficha y línea de tiempo del cliente -->
+    <aside class="panel detail" id="detail">
+      <div class="detail-empty muted">Selecciona un cliente para ver todas sus conversaciones unificadas.</div>
+      <div class="detail-body" hidden>
+        <h2 id="detail-name"></h2>
+        <p id="detail-company" class="muted"></p>
+        <div id="detail-identities" class="identities"></div>
+        <div class="timeline-controls">
+          <div class="segmented" role="group" aria-label="Alcance">
+            <button data-scope="mine" class="active">Mías</button>
+            <button data-scope="team">Equipo</button>
+          </div>
+          <select id="channel-filter"><option value="">Todos los canales</option></select>
+        </div>
+        <ol id="timeline" class="timeline"></ol>
+      </div>
+    </aside>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
