@@ -5,21 +5,86 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>ProyectoChats</title>
   <link rel="stylesheet" href="styles.css">
+  <script src="common.js"></script>
 </head>
-<body>
+<body class="booting">
   <header class="topbar">
     <div class="brand"><span class="brand-dot"></span>ProyectoChats</div>
-    <label class="user-picker">
-      Usuario
-      <select id="user-select"></select>
-    </label>
+    <div class="topbar-actions">
+      <button id="dashboard-btn" class="icon-btn" aria-label="Panel de actividad" title="Panel de actividad">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      </button>
+      <div class="bell-wrap">
+        <button id="bell" class="icon-btn" aria-label="Avisos" aria-haspopup="true" aria-expanded="false" title="Avisos">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          <span class="bell-count" id="bell-count" hidden></span>
+        </button>
+        <div class="menu bell-menu" id="bell-menu" hidden>
+          <div class="menu-head bell-head">
+            <strong>Avisos</strong>
+            <button class="link small" id="bell-read-all">Marcar todo como leído</button>
+          </div>
+          <ul id="bell-list" class="bell-list"></ul>
+        </div>
+      </div>
+      <button id="theme-toggle" class="icon-btn" aria-label="Cambiar tema" title="Cambiar a tema oscuro">
+        <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+        <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg>
+      </button>
+      <div class="user-menu">
+        <button id="user-menu-btn" class="user-btn" aria-haspopup="true" aria-expanded="false">
+          <span class="avatar" id="user-avatar"></span>
+          <span id="user-name"></span>
+          <svg viewBox="0 0 24 24" class="chevron" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="menu" id="user-menu" role="menu" hidden>
+          <div class="menu-head"><strong id="menu-name"></strong><span class="muted" id="menu-role"></span></div>
+          <button role="menuitem" id="menu-tour">Ver tutorial</button>
+          <button role="menuitem" id="menu-password">Cambiar contraseña</button>
+          <button role="menuitem" id="menu-admin" hidden>Administración</button>
+          <button role="menuitem" id="menu-logout" class="danger">Cerrar sesión</button>
+        </div>
+      </div>
+    </div>
   </header>
 
   <main class="layout">
     <!-- Clientes -->
     <aside class="panel clients">
-      <input id="client-search" type="search" placeholder="Buscar cliente, email, teléfono…">
-      <ul id="client-list" class="client-list"></ul>
+      <div class="tabs side-tabs" role="tablist">
+        <button role="tab" data-side="clients" class="active">Clientes</button>
+        <button role="tab" data-side="inbox" id="side-inbox-tab">Sin responder <span class="count" id="inbox-count" hidden></span></button>
+        <button role="tab" data-side="tasks" id="side-tasks-tab">Tareas <span class="count" id="my-tasks-count" hidden></span></button>
+      </div>
+      <div class="side-pane" id="side-clients">
+        <input id="client-search" type="search" placeholder="Buscar cliente, email, teléfono, etiqueta…">
+        <div class="client-filters" id="client-filters">
+          <select id="filter-status" title="Filtrar por estado">
+            <option value="">Todos los estados</option>
+            <option value="lead">Potencial</option>
+            <option value="active">Activo</option>
+            <option value="issue">Incidencia</option>
+            <option value="inactive">Inactivo</option>
+          </select>
+          <select id="filter-tag" title="Filtrar por etiqueta"><option value="">Etiquetas</option></select>
+        </div>
+        <div class="client-actions">
+          <label class="check" title="Solo los clientes de los que eres responsable"><input type="checkbox" id="filter-mine"> Solo míos</label>
+          <button id="new-client-btn" class="ghost small-btn" title="Crear un cliente a mano">＋ Nuevo</button>
+          <button id="import-btn" class="ghost small-btn" title="Importar chats exportados de WhatsApp, Telegram o email">⤓ Importar</button>
+        </div>
+        <ul id="client-list" class="client-list"></ul>
+      </div>
+      <div class="side-pane" id="side-inbox" hidden>
+        <div class="segmented" role="group" aria-label="Alcance de la bandeja" id="inbox-scope">
+          <button data-inbox-scope="mine" class="active">Mías</button>
+          <button data-inbox-scope="team">Equipo</button>
+        </div>
+        <ul id="inbox-list" class="inbox-list"></ul>
+      </div>
+      <div class="side-pane" id="side-tasks" hidden>
+        <ul id="my-tasks" class="task-list"></ul>
+      </div>
     </aside>
 
     <!-- Chat con el agente -->
@@ -31,18 +96,10 @@
         </div>
         <button id="new-chat" class="ghost">Nueva conversación</button>
       </div>
-      <div id="chat-log" class="chat-log">
-        <div class="empty-chat">
-          <p>Pregúntame por cualquier dato de tus clientes.</p>
-          <div class="suggestions">
-            <button class="chip">¿Cuál es la dirección de envío de Laura Gómez?</button>
-            <button class="chip">¿Qué CIF nos dio Laura? Busca también en las del equipo</button>
-            <button class="chip">¿Qué fecha de entrega acordamos con Jorge?</button>
-          </div>
-        </div>
-      </div>
+      <!-- Un hilo (.thread) por cliente; solo el activo es visible -->
+      <div id="chat-log" class="chat-log"></div>
       <form id="chat-form" class="chat-form">
-        <textarea id="chat-input" rows="1" placeholder="Escribe tu pregunta…" required></textarea>
+        <textarea id="chat-input" rows="1" maxlength="4000" placeholder="Escribe tu pregunta…" required></textarea>
         <button type="submit" id="send-btn">Enviar</button>
       </form>
     </section>
@@ -51,21 +108,433 @@
     <aside class="panel detail" id="detail">
       <div class="detail-empty muted">Selecciona un cliente para ver todas sus conversaciones unificadas.</div>
       <div class="detail-body" hidden>
-        <h2 id="detail-name"></h2>
-        <p id="detail-company" class="muted"></p>
-        <div id="detail-identities" class="identities"></div>
-        <div class="timeline-controls">
-          <div class="segmented" role="group" aria-label="Alcance">
-            <button data-scope="mine" class="active">Mías</button>
-            <button data-scope="team">Equipo</button>
-          </div>
-          <select id="channel-filter"><option value="">Todos los canales</option></select>
+        <div class="detail-title">
+          <h2 id="detail-name"></h2>
+          <span id="detail-status" class="status-badge"></span>
+          <button class="icon-link" id="edit-client-btn" title="Editar cliente: datos, estado, responsable, etiquetas, identificadores o unir con otro">✎</button>
         </div>
-        <ol id="timeline" class="timeline"></ol>
+        <p id="detail-company" class="muted"></p>
+        <div id="detail-tags" class="tag-chips"></div>
+        <div id="detail-identities" class="identities"></div>
+        <div id="duplicates" class="duplicates" hidden></div>
+        <div id="whats-new" class="whats-new" hidden>
+          <div class="whats-new-head">
+            <span id="whats-new-text"></span>
+            <button class="link" id="whats-new-btn">✨ Resumir novedades</button>
+          </div>
+          <div id="whats-new-summary" class="whats-new-summary" hidden></div>
+        </div>
+        <div class="tabs detail-tabs" role="tablist">
+          <button role="tab" data-tab="profile" class="active">Ficha</button>
+          <button role="tab" data-tab="tasks">Tareas <span class="count" id="client-tasks-count" hidden></span></button>
+          <button role="tab" data-tab="notes">Notas <span class="count" id="notes-count" hidden></span></button>
+          <button role="tab" data-tab="messages">Mensajes</button>
+        </div>
+
+        <!-- Ficha: resumen y datos clave -->
+        <section class="tab-pane" id="tab-profile">
+          <div class="summary-box">
+            <div class="summary-head">
+              <strong>Resumen</strong>
+              <button class="link" id="analyze-btn" title="Leer las conversaciones y actualizar resumen, datos y tareas">✨ Actualizar con IA</button>
+            </div>
+            <p id="summary-text"></p>
+            <p id="summary-meta" class="muted small"></p>
+          </div>
+          <h3 class="section-title">Datos clave</h3>
+          <ul id="facts" class="facts"></ul>
+          <form id="fact-form" class="inline-form">
+            <input id="fact-label" placeholder="Dato (p. ej. CIF)" maxlength="100" required>
+            <input id="fact-value" placeholder="Valor" maxlength="2000" required>
+            <button class="ghost small-btn" type="submit">Añadir</button>
+          </form>
+          <div class="section-title docs-title">
+            <h3 class="section-title">Documentos</h3>
+            <label class="link small upload-link" title="Subir un documento a la ficha (máximo 20 MB)">＋ Subir
+              <input type="file" id="doc-upload" hidden>
+            </label>
+          </div>
+          <ul id="documents" class="documents"></ul>
+        </section>
+
+        <!-- Tareas del cliente -->
+        <section class="tab-pane" id="tab-tasks" hidden>
+          <ul id="client-tasks" class="task-list"></ul>
+          <form id="task-form" class="task-form">
+            <input id="task-title" placeholder="Nueva tarea…" maxlength="300" required>
+            <div class="task-form-row">
+              <input id="task-due" type="date" title="Fecha límite">
+              <select id="task-assignee" title="Responsable"></select>
+              <button class="ghost small-btn" type="submit">Añadir</button>
+            </div>
+          </form>
+          <details class="done-tasks" id="done-tasks">
+            <summary>Hechas (<span id="done-count">0</span>)</summary>
+            <ul id="client-done-tasks" class="task-list"></ul>
+          </details>
+        </section>
+
+        <!-- Notas internas del equipo -->
+        <section class="tab-pane" id="tab-notes" hidden>
+          <form id="note-form" class="note-form">
+            <div class="mention-wrap">
+              <textarea id="note-body" rows="3" maxlength="5000" required
+                        placeholder="Nota interna (el cliente no la ve). Escribe @ para avisar a un compañero."></textarea>
+              <ul id="mention-list" class="mention-list" role="listbox" hidden></ul>
+            </div>
+            <button class="ghost small-btn" type="submit">Guardar nota</button>
+          </form>
+          <ul id="notes-list" class="notes-list"></ul>
+        </section>
+
+        <!-- Mensajes de todos los canales -->
+        <section class="tab-pane" id="tab-messages" hidden>
+          <form id="msg-search-form" class="msg-search">
+            <input id="msg-search" type="search" maxlength="500" placeholder="Buscar en los mensajes de este cliente…">
+            <button class="ghost small-btn" type="submit" title="Por palabras: rápido, busca el texto exacto (sin tildes)">Buscar</button>
+            <button class="ghost small-btn" type="button" id="msg-smart-btn"
+                    title="La IA entiende la pregunta aunque el mensaje use otras palabras (p. ej. «¿cuándo le viene bien que llevemos el pedido?»)">✨ Por significado</button>
+          </form>
+          <div id="msg-results" class="msg-results" hidden></div>
+          <button class="ghost small-btn draft-open" id="draft-open">✍️ Redactar respuesta</button>
+          <div class="draft-panel" id="draft-panel" hidden>
+            <label>Responder en
+              <select id="draft-conversation"></select>
+            </label>
+            <input id="draft-instructions" maxlength="1000"
+                   placeholder="Indicaciones (opcional): más formal, ofrece un 5 % de descuento…">
+            <div class="draft-actions">
+              <button class="primary small-btn" id="draft-generate">✨ Generar borrador</button>
+              <button class="link" id="draft-write" title="Escribir la respuesta sin IA">o escribirla yo</button>
+              <span class="spacer"></span>
+              <button class="link" id="draft-close">Cerrar</button>
+            </div>
+            <textarea id="draft-text" rows="8" hidden></textarea>
+            <div class="draft-actions" id="draft-result-actions" hidden>
+              <button class="primary small-btn" id="draft-send" hidden>📤 Enviar</button>
+              <button class="ghost small-btn" id="draft-copy">📋 Copiar</button>
+              <span class="muted small">Revísalo y edítalo antes de enviarlo.</span>
+            </div>
+          </div>
+          <div class="timeline-controls">
+            <div class="segmented" role="group" aria-label="Alcance">
+              <button data-scope="mine" class="active">Mías</button>
+              <button data-scope="team">Equipo</button>
+            </div>
+            <select id="channel-filter"><option value="">Todos los canales</option></select>
+          </div>
+          <ol id="timeline" class="timeline"></ol>
+        </section>
       </div>
     </aside>
   </main>
 
+  <!-- Mascota de ayuda -->
+  <div class="help" id="help">
+    <section class="help-panel" id="help-panel" hidden aria-label="Ayuda de Chispa">
+      <div class="help-head">
+        <strong>Chispa</strong><span class="muted">· ayuda sobre la app</span>
+        <button class="help-close" id="help-close" aria-label="Cerrar">×</button>
+      </div>
+      <div class="help-log" id="help-log">
+        <div class="msg bot">¡Hola! Soy Chispa 👋 Pregúntame cómo usar la app: buscar clientes, qué hace el asistente, qué significa «Mías» y «Equipo»…</div>
+      </div>
+      <form class="chat-form" id="help-form">
+        <textarea id="help-input" rows="1" maxlength="4000" placeholder="¿En qué te ayudo?" required></textarea>
+        <button type="submit" id="help-send">Enviar</button>
+      </form>
+    </section>
+    <button class="mascot" id="mascot" aria-label="Abrir ayuda" title="¿Dudas? Pregúntale a Chispa">
+      <svg viewBox="0 0 64 64" aria-hidden="true">
+        <path class="mascot-body" d="M32 6c14 0 25 9.5 25 22s-11 22-25 22c-3 0-6-.4-8.6-1.3L12 54l2.8-10.2C10 39.8 7 34.2 7 28 7 15.5 18 6 32 6z"/>
+        <ellipse class="mascot-eye" cx="24" cy="27" rx="3.2" ry="4.2"/>
+        <ellipse class="mascot-eye" cx="40" cy="27" rx="3.2" ry="4.2"/>
+        <circle class="mascot-shine" cx="25.2" cy="25.4" r="1.1"/>
+        <circle class="mascot-shine" cx="41.2" cy="25.4" r="1.1"/>
+        <path class="mascot-smile" d="M26 35.5c3.5 3.2 8.5 3.2 12 0"/>
+        <circle class="mascot-cheek" cx="18.5" cy="33" r="2.6"/>
+        <circle class="mascot-cheek" cx="45.5" cy="33" r="2.6"/>
+        <path class="mascot-spark" d="M52 4l1.6 4.4L58 10l-4.4 1.6L52 16l-1.6-4.4L46 10l4.4-1.6z"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Cambiar contraseña -->
+  <dialog id="password-dialog" class="dialog">
+    <form id="password-form" class="form" method="dialog">
+      <h2>Cambiar contraseña</h2>
+      <label>Contraseña actual
+        <input type="password" id="pw-current" autocomplete="current-password" required>
+      </label>
+      <label>Nueva contraseña (mínimo 8 caracteres)
+        <input type="password" id="pw-new" autocomplete="new-password" minlength="8" required>
+      </label>
+      <label>Repite la nueva contraseña
+        <input type="password" id="pw-repeat" autocomplete="new-password" minlength="8" required>
+      </label>
+      <p class="form-error" id="pw-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" data-close>Cancelar</button>
+        <button type="submit" class="primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Administrar usuarios (solo administradores) -->
+  <dialog id="admin-dialog" class="dialog wide">
+    <div class="dialog-head">
+      <h2>Administración</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <div class="tabs admin-tabs" role="tablist">
+      <button role="tab" data-admin-tab="users" class="active">Usuarios</button>
+      <button role="tab" data-admin-tab="integrations">Integraciones</button>
+      <button role="tab" data-admin-tab="audit">Registro de accesos</button>
+    </div>
+    <section id="admin-users" class="admin-pane">
+    <table class="users-table">
+      <thead><tr><th>Usuario</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+      <tbody id="users-tbody"></tbody>
+    </table>
+    <form id="user-form" class="form user-form">
+      <h3 id="user-form-title">Nueva cuenta</h3>
+      <div class="form-grid">
+        <label>Usuario <input id="uf-username" required autocomplete="off"></label>
+        <label>Nombre <input id="uf-name" required></label>
+        <label>Email <input id="uf-email" type="email"></label>
+        <label>Rol
+          <select id="uf-role"><option value="user">Usuario</option><option value="admin">Administrador</option></select>
+        </label>
+        <label>Contraseña <span class="muted" id="uf-password-hint">(mínimo 8)</span>
+          <input id="uf-password" type="password" autocomplete="new-password" minlength="8" required>
+        </label>
+      </div>
+      <p class="form-error" id="uf-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="uf-cancel" hidden>Cancelar edición</button>
+        <button type="submit" class="primary" id="uf-submit">Crear cuenta</button>
+      </div>
+    </form>
+    </section>
+    <section id="admin-integrations" class="admin-pane" hidden>
+      <p class="muted small">Conecta los canales para que los mensajes entren solos y se pueda responder desde la app.
+        Los mensajes de cada integración quedan como conversaciones de su responsable. Contraseñas y tokens se guardan cifrados.</p>
+      <ul id="integrations-list" class="integrations-list"></ul>
+      <form id="integration-form" class="form integration-form">
+        <h3 id="if-title">Nueva integración</h3>
+        <div class="form-grid">
+          <label>Tipo
+            <select id="if-kind">
+              <option value="email">Email (IMAP/SMTP)</option>
+              <option value="telegram">Telegram (bot)</option>
+              <option value="whatsapp">WhatsApp Business (Cloud API)</option>
+            </select>
+          </label>
+          <label>Nombre <input id="if-name" maxlength="100" required placeholder="Buzón de ventas"></label>
+          <label>Responsable de las conversaciones <select id="if-owner"></select></label>
+        </div>
+        <p class="muted small" id="if-help"></p>
+        <div class="form-grid" id="if-fields"></div>
+        <p class="form-error" id="if-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="ghost" id="if-cancel" hidden>Cancelar edición</button>
+          <button type="submit" class="primary" id="if-submit">Conectar</button>
+        </div>
+      </form>
+    </section>
+    <section id="admin-audit" class="admin-pane" hidden>
+      <p class="muted small">Quién ha consultado conversaciones de compañeros y quién ha hecho acciones delicadas
+        (exportar, borrar o unir clientes, cambios en cuentas). Las consultas repetidas en 10 minutos cuentan como una.</p>
+      <div class="inline-form">
+        <select id="audit-user"><option value="">Todas las personas</option></select>
+        <select id="audit-action"><option value="">Todas las acciones</option></select>
+      </div>
+      <table class="users-table audit-table">
+        <thead><tr><th>Fecha</th><th>Persona</th><th>Acción</th><th>Cliente</th><th>Detalle</th></tr></thead>
+        <tbody id="audit-tbody"></tbody>
+      </table>
+    </section>
+  </dialog>
+
+  <!-- Importar exportaciones de chats y correos -->
+  <dialog id="import-dialog" class="dialog wide">
+    <div class="dialog-head">
+      <h2>Importar conversaciones</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+
+    <!-- Paso 1: elegir archivo -->
+    <section id="import-step-file">
+      <label class="dropzone" id="dropzone">
+        <input type="file" id="import-file" accept=".txt,.zip,.json,.eml,.mbox" hidden>
+        <strong>Arrastra aquí el archivo o pulsa para elegirlo</strong>
+        <span class="muted">WhatsApp (.txt o .zip con archivos) · Telegram (.json) · Email (.eml o .mbox) · máximo 25 MB (50 MB el .zip)</span>
+      </label>
+      <p class="form-error" id="import-error" role="alert" hidden></p>
+      <details class="howto">
+        <summary>¿Cómo exporto un chat?</summary>
+        <ul>
+          <li><strong>WhatsApp:</strong> abre el chat → ⋮ (o el nombre del contacto en iPhone) → Más → <em>Exportar chat</em>. <em>Sin archivos</em> genera un .txt; <em>Incluir archivos</em> genera un .zip: súbelo tal cual y las fotos y documentos quedarán enlazados a sus mensajes.</li>
+          <li><strong>Telegram:</strong> en Telegram Desktop, abre el chat → ⋮ → <em>Exportar historial del chat</em> → formato <em>JSON</em>. Sube el archivo <code>result.json</code>.</li>
+          <li><strong>Email:</strong> arrastra un correo desde Outlook o Thunderbird para guardarlo como .eml, o descarga el buzón completo en .mbox (Gmail: Google Takeout → Correo). Los adjuntos de los correos también se guardan.</li>
+        </ul>
+      </details>
+    </section>
+
+    <!-- Paso 2: revisar y elegir el cliente -->
+    <form id="import-step-review" class="form" hidden>
+      <p id="import-summary" class="import-summary"></p>
+      <fieldset class="participants">
+        <legend>¿Quién es el cliente?</legend>
+        <div id="import-participants"></div>
+      </fieldset>
+      <div class="form-grid">
+        <label>Guardar en
+          <select id="import-client"></select>
+        </label>
+        <label id="import-name-label">Nombre del cliente nuevo
+          <input id="import-name" maxlength="200">
+        </label>
+        <label id="import-handle-label">Identificador <span class="muted">(opcional)</span>
+          <input id="import-handle" maxlength="200">
+        </label>
+      </div>
+      <p class="muted small">Las conversaciones se guardan como tuyas. Si importas el mismo chat otra vez, solo se añaden los mensajes nuevos.</p>
+      <p class="form-error" id="import-error2" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="import-back">Elegir otro archivo</button>
+        <button type="submit" class="primary" id="import-submit">Importar</button>
+      </div>
+    </form>
+
+    <!-- Paso 3: resultado -->
+    <section id="import-step-done" hidden>
+      <p id="import-result" class="import-result"></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="import-another">Importar otro</button>
+        <button type="button" class="primary" id="import-open">Ver cliente</button>
+      </div>
+    </section>
+  </dialog>
+
+  <!-- Crear / editar cliente -->
+  <dialog id="client-dialog" class="dialog">
+    <form id="client-form" class="form">
+      <div class="dialog-head">
+        <h2 id="client-dialog-title">Editar cliente</h2>
+        <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+      </div>
+      <div class="form-grid">
+        <label>Nombre <input id="cf-name" maxlength="200" required></label>
+        <label>Empresa <input id="cf-company" maxlength="200"></label>
+        <label class="edit-only">Estado
+          <select id="cf-status">
+            <option value="lead">Potencial</option>
+            <option value="active">Activo</option>
+            <option value="issue">Incidencia</option>
+            <option value="inactive">Inactivo</option>
+          </select>
+        </label>
+        <label class="edit-only">Responsable <select id="cf-assignee"></select></label>
+      </div>
+      <label class="edit-only">Etiquetas <span class="muted">(separadas por comas)</span>
+        <input id="cf-tags" list="tag-suggestions" maxlength="500" placeholder="mayorista, VIP, paga tarde">
+        <datalist id="tag-suggestions"></datalist>
+      </label>
+      <p class="form-error" id="cf-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" data-close>Cancelar</button>
+        <button type="submit" class="primary" id="cf-submit">Guardar</button>
+      </div>
+    </form>
+
+    <section class="edit-only client-section">
+      <h3>Identificadores</h3>
+      <p class="muted small">Cómo se identifica al cliente en cada canal. Sirven para asociar las importaciones al cliente correcto.</p>
+      <ul id="cf-identities" class="identity-list"></ul>
+      <form id="identity-form" class="inline-form">
+        <select id="id-channel">
+          <option value="email">Email</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="telegram">Telegram</option>
+          <option value="phone">Teléfono</option>
+          <option value="other">Otro</option>
+        </select>
+        <input id="id-handle" maxlength="200" required placeholder="dirección, teléfono o @usuario">
+        <button class="ghost small-btn" type="submit">Añadir</button>
+      </form>
+    </section>
+
+    <section class="edit-only admin-only client-section danger-zone">
+      <h3>Protección de datos</h3>
+      <p class="muted small">Solo administradores. Para atender solicitudes del cliente: descargar todo lo que guardamos
+        de él (derecho de acceso) o borrarlo por completo (derecho de supresión). Ambas acciones quedan registradas.</p>
+      <div class="draft-actions">
+        <button class="ghost small-btn" type="button" id="export-client-btn">⤓ Descargar todos sus datos</button>
+        <button class="ghost small-btn danger" type="button" id="delete-client-btn">Borrar cliente y todos sus datos</button>
+      </div>
+    </section>
+
+    <section class="edit-only client-section danger-zone">
+      <h3>Unir con otro cliente</h3>
+      <p class="muted small">Si es la misma persona que otro cliente, se pasa todo (conversaciones, datos, tareas, notas…) al cliente elegido y este desaparece. No se puede deshacer.</p>
+      <div class="inline-form">
+        <select id="merge-target"></select>
+        <button class="ghost small-btn danger" type="button" id="merge-btn">Unir</button>
+      </div>
+    </section>
+  </dialog>
+
+  <!-- Panel de actividad -->
+  <dialog id="dashboard-dialog" class="dialog wide dashboard">
+    <div class="dialog-head">
+      <h2>Panel de actividad</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <div class="segmented dash-range" role="group" aria-label="Periodo" id="dash-range">
+      <button data-days="7">7 días</button>
+      <button data-days="30" class="active">30 días</button>
+      <button data-days="90">90 días</button>
+      <button data-days="365">1 año</button>
+    </div>
+    <div class="stat-tiles" id="dash-tiles"></div>
+
+    <section class="viz-card">
+      <h3>Mensajes recibidos por semana</h3>
+      <div class="viz-legend" id="dash-legend"></div>
+      <div class="viz-chart" id="dash-weekly"></div>
+      <details class="viz-table">
+        <summary>Ver como tabla</summary>
+        <table class="users-table" id="dash-weekly-table"></table>
+      </details>
+    </section>
+
+    <div class="viz-row">
+      <section class="viz-card">
+        <h3>Clientes por estado</h3>
+        <div id="dash-status"></div>
+      </section>
+      <section class="viz-card" id="dash-people-card" hidden>
+        <h3>Por persona</h3>
+        <p class="muted small">Primera respuesta: mediana del tiempo entre el primer mensaje del cliente y la respuesta, en el periodo. Esperando: conversaciones sin responder ahora mismo.</p>
+        <table class="users-table people-table" id="dash-people"></table>
+      </section>
+    </div>
+  </dialog>
+  <div class="viz-tooltip" id="viz-tooltip" role="tooltip" hidden></div>
+
+  <script src="account.js"></script>
+  <script src="dashboard.js"></script>
+  <script src="clients.js"></script>
+  <script src="import.js"></script>
+  <script src="profile.js"></script>
+  <script src="inbox.js"></script>
+  <script src="drafts.js"></script>
+  <script src="notes.js"></script>
+  <script src="documents.js"></script>
+  <script src="search.js"></script>
+  <script src="integrations.js"></script>
+  <script src="tour.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

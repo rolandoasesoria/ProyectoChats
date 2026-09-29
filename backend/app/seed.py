@@ -1,10 +1,13 @@
 """Carga datos de demostración. Uso: python -m app.seed  (desde la carpeta backend)"""
 from . import search
+from .auth import hash_password
 from .db import DB_PATH, get_conn, init_db
 
-USERS = [(1, "Ana Ruiz", "ana@miempresa.com"),
-         (2, "Carlos Pérez", "carlos@miempresa.com"),
-         (3, "Marta López", "marta@miempresa.com")]
+DEMO_PASSWORD = "demo1234"
+# (id, usuario, nombre, email, rol)
+USERS = [(1, "ana", "Ana Ruiz", "ana@miempresa.com", "admin"),
+         (2, "carlos", "Carlos Pérez", "carlos@miempresa.com", "user"),
+         (3, "marta", "Marta López", "marta@miempresa.com", "user")]
 
 CONVERSATIONS = [
     # --- Laura Gómez: WhatsApp con Ana, email con Carlos, Telegram con Marta ---
@@ -60,7 +63,10 @@ def seed() -> None:
         if conn.execute("SELECT count(*) FROM users").fetchone()[0]:
             print(f"La base de datos ya tiene datos ({DB_PATH}). Bórrala para volver a sembrar.")
             return
-        conn.executemany("INSERT INTO users (id, name, email) VALUES (?, ?, ?)", USERS)
+        conn.executemany(
+            "INSERT INTO users (id, username, name, email, role, password_hash) VALUES (?, ?, ?, ?, ?, ?)",
+            [(*u, hash_password(DEMO_PASSWORD)) for u in USERS],
+        )
 
     for conv in CONVERSATIONS:
         client_id = conv.get("client_id")
@@ -79,6 +85,7 @@ def seed() -> None:
         conn.execute("UPDATE clients SET company = 'Floristería Gómez S.L.' WHERE name = 'Laura Gómez'")
         conn.execute("UPDATE clients SET company = 'Talleres Martín' WHERE name = 'Jorge Martín'")
     print(f"Datos de demostración cargados en {DB_PATH}")
+    print(f"Usuarios: {', '.join(u[1] for u in USERS)} (contraseña: {DEMO_PASSWORD}). 'ana' es administradora.")
 
 
 if __name__ == "__main__":

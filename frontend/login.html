@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Entrar · ProyectoChats</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="common.js"></script>
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <div class="brand"><span class="brand-dot"></span>ProyectoChats</div>
+    <p class="muted">Inicia sesión con tu usuario del equipo.</p>
+    <form id="login-form" class="form">
+      <label>Usuario
+        <input id="username" name="username" autocomplete="username" required autofocus>
+      </label>
+      <label>Contraseña
+        <input id="password" name="password" type="password" maxlength="128" autocomplete="current-password" required>
+      </label>
+      <p id="login-error" class="form-error" role="alert" hidden></p>
+      <button type="submit" class="primary" id="login-btn">Entrar</button>
+    </form>
+    <p class="muted small">¿No tienes cuenta u olvidaste la contraseña? Pídesela a un administrador.</p>
+  </main>
+
+  <script src="login.js"></script>
+</body>
+</html>

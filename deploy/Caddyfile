@@ -1,0 +1,13 @@
+# Proxy HTTPS para producción con Caddy (https://caddyserver.com).
+# Caddy obtiene y renueva solo el certificado de Let's Encrypt para tu dominio.
+#
+# 1. Apunta el DNS de tu dominio a este servidor y abre los puertos 80 y 443.
+# 2. Cambia "chats.tuempresa.com" por tu dominio.
+# 3. En backend/.env: HOST=127.0.0.1, FORCE_HTTPS=true, COOKIE_SECURE=true
+# 4. Arranca la app:   cd backend && python -m app.serve
+# 5. Arranca Caddy:    caddy run --config deploy/Caddyfile
+
+chats.tuempresa.com {
+	encode gzip
+	reverse_proxy 127.0.0.1:8000
+}

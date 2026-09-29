@@ -7,6 +7,7 @@ El control de alcance se aplica aquí (en el servidor), no en el modelo.
 """
 import re
 
+from . import attachments
 from .db import get_conn, rows
 
 SCOPES = ("mine", "team")
@@ -33,40 +34,134 @@ def list_users() -> list[dict]:
         return rows(conn.execute("SELECT id, name, email FROM users ORDER BY name"))
 
 
-def find_clients(query: str = "", limit: int = 50) -> list[dict]:
+def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, status: str | None = None,
+                 tag: str | None = None, assignee_id: int | None = None) -> list[dict]:
+    """Clientes que coinciden con la búsqueda y los filtros. Con `user_id`, `unread` = mensajes nuevos
+    desde su última visita a ese cliente (null si nunca lo ha abierto)."""
     like = f"%{query.strip()}%"
+    filters, args = "", []
+    if status:
+        filters += " AND cl.status = ?"
+        args.append(status)
+    if tag:
+        filters += " AND EXISTS (SELECT 1 FROM client_tags t WHERE t.client_id = cl.id AND t.tag = ?)"
+        args.append(tag)
+    if assignee_id:
+        filters += " AND cl.assignee_user_id = ?"
+        args.append(assignee_id)
     with get_conn() as conn:
-        return rows(conn.execute(
-            """
-            SELECT cl.id, cl.name, cl.company,
+        result = rows(conn.execute(
+            f"""
+            SELECT cl.id, cl.name, cl.company, cl.status, cl.assignee_user_id,
+                   (SELECT group_concat(t.tag, '|') FROM client_tags t WHERE t.client_id = cl.id) AS tags,
                    (SELECT group_concat(DISTINCT ci.channel) FROM client_identities ci
                      WHERE ci.client_id = cl.id) AS channels,
                    (SELECT max(m.sent_at) FROM messages m
                       JOIN conversations c ON c.id = m.conversation_id
-                     WHERE c.client_id = cl.id) AS last_message_at
+                     WHERE c.client_id = cl.id) AS last_message_at,
+                   CASE WHEN v.user_id IS NULL THEN NULL ELSE
+                       (SELECT count(*) FROM messages m JOIN conversations c ON c.id = m.conversation_id
+                         WHERE c.client_id = cl.id AND m.id > v.last_message_id) END AS unread
               FROM clients cl
-             WHERE ? = '%%'
-                OR cl.name LIKE ? OR cl.company LIKE ?
-                OR EXISTS (SELECT 1 FROM client_identities ci
-                            WHERE ci.client_id = cl.id AND ci.handle LIKE ?)
+              LEFT JOIN client_visits v ON v.client_id = cl.id AND v.user_id = ?
+             WHERE (? = '%%'
+                    OR cl.name LIKE ? OR cl.company LIKE ?
+                    OR EXISTS (SELECT 1 FROM client_identities ci
+                                WHERE ci.client_id = cl.id AND ci.handle LIKE ?)
+                    OR EXISTS (SELECT 1 FROM client_tags t WHERE t.client_id = cl.id AND t.tag LIKE ?)) {filters}
              ORDER BY last_message_at DESC NULLS LAST, cl.name
              LIMIT ?
             """,
-            (like, like, like, like, limit),
+            (user_id, like, like, like, like, like, *args, limit),
         ))
+    for c in result:
+        c["tags"] = sorted(c["tags"].split("|"), key=str.lower) if c["tags"] else []
+    return result
+
+
+def unanswered(user_id: int, scope: str = "mine") -> list[dict]:
+    """Conversaciones cuyo último mensaje es del cliente (esperan respuesta), la más antigua primero.
+
+    Se excluyen las marcadas como atendidas, salvo que el cliente haya escrito algo después.
+    """
+    scope_sql, scope_args = _scope_clause(scope, user_id)
+    with get_conn() as conn:
+        return rows(conn.execute(
+            f"""
+            WITH last AS (
+                SELECT m.*, row_number() OVER (PARTITION BY m.conversation_id
+                                               ORDER BY m.sent_at DESC, m.id DESC) AS rn
+                  FROM messages m
+            )
+            SELECT c.id AS conversation_id, c.channel, c.subject, cl.id AS client_id, cl.name AS client,
+                   u.name AS owner, c.owner_user_id = ? AS is_mine,
+                   last.id AS message_id, last.sender, last.body, last.sent_at
+              FROM conversations c
+              JOIN last ON last.conversation_id = c.id AND last.rn = 1
+              JOIN clients cl ON cl.id = c.client_id
+              JOIN users u ON u.id = c.owner_user_id
+             WHERE last.direction = 'in'
+               AND (c.dismissed_message_id IS NULL OR c.dismissed_message_id < last.id) {scope_sql}
+             ORDER BY last.sent_at ASC
+            """,
+            [user_id, *scope_args],
+        ))
+
+
+def dismiss_unanswered(conversation_id: int, message_id: int) -> bool:
+    with get_conn() as conn:
+        cur = conn.execute("UPDATE conversations SET dismissed_message_id = ? WHERE id = ?",
+                           (message_id, conversation_id))
+    return cur.rowcount > 0
+
+
+def record_visit(user_id: int, client_id: int) -> dict:
+    """Registra que el usuario abre el cliente. Devuelve lo que ha llegado desde la visita anterior."""
+    with get_conn() as conn:
+        prev = conn.execute(
+            "SELECT visited_at, last_message_id FROM client_visits WHERE user_id = ? AND client_id = ?",
+            (user_id, client_id)).fetchone()
+        stats = conn.execute(
+            """SELECT coalesce(max(m.id), 0) AS max_id, count(CASE WHEN m.id > ? THEN 1 END) AS new
+                 FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE c.client_id = ?""",
+            (prev["last_message_id"] if prev else 0, client_id)).fetchone()
+        conn.execute(
+            """INSERT INTO client_visits (user_id, client_id, visited_at, last_message_id)
+               VALUES (?, ?, datetime('now'), ?)
+               ON CONFLICT(user_id, client_id) DO UPDATE SET visited_at = excluded.visited_at,
+                   last_message_id = excluded.last_message_id""",
+            (user_id, client_id, stats["max_id"]))
+    return {
+        "previous_visit_at": prev["visited_at"] if prev else None,
+        "since_message_id": prev["last_message_id"] if prev else None,
+        "new_messages": stats["new"] if prev else 0,
+    }
+
+
+def messages_since(client_id: int, since_message_id: int, limit: int = 300) -> list[dict]:
+    with get_conn() as conn:
+        return rows(conn.execute(
+            """SELECT m.id, m.direction, m.sender, m.body, m.sent_at, c.channel, u.name AS owner
+                 FROM messages m JOIN conversations c ON c.id = m.conversation_id
+                 JOIN users u ON u.id = c.owner_user_id
+                WHERE c.client_id = ? AND m.id > ? ORDER BY m.sent_at, m.id LIMIT ?""",
+            (client_id, since_message_id, limit)))
 
 
 def client_overview(client_id: int, user_id: int) -> dict | None:
     with get_conn() as conn:
         client = conn.execute(
-            "SELECT id, name, company, notes FROM clients WHERE id = ?", (client_id,)
+            """SELECT cl.id, cl.name, cl.company, cl.notes, cl.status, cl.assignee_user_id, u.name AS assignee
+                 FROM clients cl LEFT JOIN users u ON u.id = cl.assignee_user_id WHERE cl.id = ?""", (client_id,)
         ).fetchone()
         if not client:
             return None
         identities = rows(conn.execute(
-            "SELECT channel, handle FROM client_identities WHERE client_id = ? ORDER BY channel",
+            "SELECT id, channel, handle FROM client_identities WHERE client_id = ? ORDER BY channel, handle",
             (client_id,),
         ))
+        tags = [r["tag"] for r in conn.execute(
+            "SELECT tag FROM client_tags WHERE client_id = ? ORDER BY tag COLLATE NOCASE", (client_id,))]
         conversations = rows(conn.execute(
             """
             SELECT c.id, c.channel, c.subject, u.id AS owner_id, u.name AS owner,
@@ -82,7 +177,7 @@ def client_overview(client_id: int, user_id: int) -> dict | None:
         ))
     for conv in conversations:
         conv["is_mine"] = conv["owner_id"] == user_id
-    return {**dict(client), "identities": identities, "conversations": conversations}
+    return {**dict(client), "tags": tags, "identities": identities, "conversations": conversations}
 
 
 def timeline(client_id: int, user_id: int, scope: str = "mine",
@@ -91,7 +186,7 @@ def timeline(client_id: int, user_id: int, scope: str = "mine",
     scope_sql, scope_args = _scope_clause(scope, user_id)
     channel_sql, channel_args = (" AND c.channel = ?", [channel]) if channel else ("", [])
     with get_conn() as conn:
-        return rows(conn.execute(
+        result = rows(conn.execute(
             f"""
             SELECT * FROM (
                 SELECT m.id, m.direction, m.sender, m.body, m.sent_at,
@@ -100,25 +195,30 @@ def timeline(client_id: int, user_id: int, scope: str = "mine",
                   JOIN conversations c ON c.id = m.conversation_id
                   JOIN users u ON u.id = c.owner_user_id
                  WHERE c.client_id = ? {scope_sql} {channel_sql}
-                 ORDER BY m.sent_at DESC
+                 ORDER BY m.sent_at DESC, m.id DESC
                  LIMIT ?
-            ) ORDER BY sent_at ASC
+            ) ORDER BY sent_at ASC, id ASC
             """,
             [client_id, *scope_args, *channel_args, limit],
         ))
+    files = attachments.by_message([m["id"] for m in result])
+    for m in result:
+        m["attachments"] = files.get(m["id"], [])
+    return result
 
 
 def search_messages(query: str, user_id: int, scope: str = "mine",
                     client_id: int | None = None, channels: list[str] | None = None,
                     date_from: str | None = None, date_to: str | None = None,
-                    limit: int = 20) -> list[dict]:
+                    limit: int = 20, markers: tuple[str, str] = ("[", "]")) -> list[dict]:
+    """Búsqueda de texto completo. `markers` rodean los términos encontrados en el fragmento."""
     fts = _fts_query(query)
     if not fts:
         return []
     scope_sql, args = _scope_clause(scope, user_id)
     sql = f"""
         SELECT m.id AS message_id, m.sent_at, m.direction, m.sender,
-               snippet(messages_fts, 0, '[', ']', '…', 24) AS snippet,
+               snippet(messages_fts, 0, ?, ?, '…', 24) AS snippet,
                c.id AS conversation_id, c.channel, cl.id AS client_id, cl.name AS client,
                u.name AS owner
           FROM messages_fts
@@ -128,7 +228,7 @@ def search_messages(query: str, user_id: int, scope: str = "mine",
           JOIN users u ON u.id = c.owner_user_id
          WHERE messages_fts MATCH ? {scope_sql}
     """
-    args = [fts, *args]
+    args = [*markers, fts, *args]
     if client_id:
         sql += " AND c.client_id = ?"
         args.append(client_id)
@@ -216,12 +316,41 @@ def import_conversation(payload: dict) -> dict:
                 "INSERT INTO client_identities (client_id, channel, handle) VALUES (?, ?, ?)",
                 (client_id, payload["channel"], payload["handle"]),
             )
-        conv_id = conn.execute(
-            "INSERT INTO conversations (client_id, owner_user_id, channel, subject) VALUES (?, ?, ?, ?)",
+        # Reimportar es seguro: se reutiliza la conversación existente (mismo cliente, dueño, canal y asunto)
+        # y se saltan los mensajes que ya estaban (misma fecha y mismo texto).
+        existing = conn.execute(
+            """SELECT id FROM conversations
+                WHERE client_id = ? AND owner_user_id = ? AND channel = ? AND subject IS ?""",
             (client_id, payload["owner_user_id"], payload["channel"], payload.get("subject")),
-        ).lastrowid
-        conn.executemany(
-            "INSERT INTO messages (conversation_id, direction, sender, body, sent_at) VALUES (?, ?, ?, ?, ?)",
-            [(conv_id, m["direction"], m["sender"], m["body"], m["sent_at"]) for m in payload["messages"]],
-        )
-    return {"client_id": client_id, "conversation_id": conv_id, "messages": len(payload["messages"])}
+        ).fetchone()
+        if existing:
+            conv_id = existing["id"]
+        else:
+            conv_id = conn.execute(
+                "INSERT INTO conversations (client_id, owner_user_id, channel, subject) VALUES (?, ?, ?, ?)",
+                (client_id, payload["owner_user_id"], payload["channel"], payload.get("subject")),
+            ).lastrowid
+        seen = {(r["sent_at"], r["body"]) for r in conn.execute(
+            "SELECT sent_at, body FROM messages WHERE conversation_id = ?", (conv_id,))}
+        seen_ext = {r["external_id"] for r in conn.execute(
+            "SELECT external_id FROM messages WHERE conversation_id = ? AND external_id IS NOT NULL", (conv_id,))}
+        new, files = 0, 0
+        for m in payload["messages"]:
+            key = (m["sent_at"], m["body"])
+            ext = m.get("external_id")
+            if key in seen or (ext and ext in seen_ext):
+                continue
+            seen.add(key)
+            if ext:
+                seen_ext.add(ext)
+            message_id = conn.execute(
+                """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id)
+                   VALUES (?, ?, ?, ?, ?, ?)""",
+                (conv_id, m["direction"], m["sender"], m["body"], m["sent_at"], ext)).lastrowid
+            new += 1
+            for f in m.get("attachments") or []:
+                attachments.save(conn, client_id, f["filename"], f["data"], f.get("mime"), message_id,
+                                 payload["owner_user_id"])
+                files += 1
+    return {"client_id": client_id, "conversation_id": conv_id, "messages": new,
+            "duplicates": len(payload["messages"]) - new, "attachments": files}
