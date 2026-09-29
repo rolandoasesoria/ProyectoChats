@@ -164,6 +164,13 @@ frontend (navegador) ──HTTP──▶ FastAPI ──▶ SQLite (clientes, con
 
 Todas salvo el login requieren haber iniciado sesión.
 
+## Desarrollo
+
+- **Control de versiones**: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md) — commits pequeños,
+  ramas por funcionalidad, versiones en [`CHANGELOG.md`](CHANGELOG.md). Al clonar, activa los hooks:
+  `powershell -ExecutionPolicy Bypass -File scripts/instalar-hooks.ps1`.
+- **Pruebas**: [`tests/README.md`](tests/README.md) — `powershell -ExecutionPolicy Bypass -File tests/run_tests.ps1`.
+
 ## Limitaciones actuales / siguientes pasos
 
 - SSO (Google / Microsoft) o verificación en dos pasos, si se necesita.
