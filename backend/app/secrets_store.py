@@ -9,9 +9,9 @@ import os
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from .db import DB_PATH
+from .db import DATA_DIR
 
-KEY_FILE = DB_PATH.parent / "secret.key"
+KEY_FILE = DATA_DIR / "secret.key"
 _fernet: Fernet | None = None
 
 
