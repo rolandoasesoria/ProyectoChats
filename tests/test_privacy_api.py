@@ -1,5 +1,3 @@
-import os
-import sqlite3
 import sys
 
 from apitest import Session, check, results
@@ -57,11 +55,13 @@ check("sus tareas tampoco", all(t["client"] != "Laura Gómez" for t in ana.get("
 del_entry = ana.get("/api/admin/audit?action=client_delete")[1]["entries"][0]
 check("el registro conserva el nombre del cliente borrado", del_entry["client_name"] == "Laura Gómez", del_entry)
 
-db = sqlite3.connect(os.environ.get("DB_PATH", ""))
-leftovers = {t: db.execute(f"SELECT count(*) FROM {t} WHERE client_id = 1").fetchone()[0]
-             for t in ("conversations", "client_identities", "client_facts", "tasks", "client_notes", "chat_sessions",
-                       "client_visits", "client_tags", "notifications")}
+from app.db import get_conn  # noqa: E402
+
+with get_conn() as db:
+    leftovers = {t: db.execute(f"SELECT count(*) FROM {t} WHERE client_id = 1").fetchone()[0]
+                 for t in ("conversations", "client_identities", "client_facts", "tasks", "client_notes",
+                           "chat_sessions", "client_visits", "client_tags", "notifications")}
+    fts = db.execute("SELECT count(*) FROM messages WHERE tsv @@ to_tsquery('es_unaccent', 'Mayor')").fetchone()[0]
 check("no queda nada del cliente en la base de datos", not any(leftovers.values()), leftovers)
-fts = db.execute("SELECT count(*) FROM messages_fts WHERE messages_fts MATCH 'Mayor'").fetchone()[0]
 check("ni en el índice de búsqueda", fts == 0, fts)
 sys.exit(0 if results["ok"] else 1)

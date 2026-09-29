@@ -4,6 +4,8 @@ import json
 import urllib.error
 import urllib.request
 
+import testdb  # noqa: F401  (DATABASE_URL de pruebas)
+
 BASE = "http://127.0.0.1:8001"
 results = {"ok": True}
 

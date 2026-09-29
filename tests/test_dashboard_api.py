@@ -2,12 +2,11 @@
 
 Se usa el periodo de 1 año para que la prueba no dependa del día en que se ejecute (válida hasta mediados de 2027).
 """
-import os
-import sqlite3
 import sys
 from datetime import date, timedelta
 
 from apitest import Session, check, results
+from app.db import get_conn
 
 ana, carlos = Session("ana"), Session("carlos")
 
@@ -28,8 +27,8 @@ check("esperando respuesta por persona", (people["Ana Ruiz"]["waiting"], people[
 
 # 30 días: se compara con una consulta directa a la base de datos, sea cual sea la fecha de hoy.
 since = (date.today() - timedelta(days=29)).isoformat()
-db = sqlite3.connect(os.environ["DB_PATH"])
-expected = db.execute("SELECT count(*) FROM messages WHERE direction = 'in' AND sent_at >= ?", (since,)).fetchone()[0]
+with get_conn() as conn:
+    expected = conn.execute("SELECT count(*) FROM messages WHERE direction = 'in' AND sent_at >= ?", (since,)).fetchone()[0]
 check("30 días: solo los mensajes del periodo", ana.get("/api/dashboard?days=30")[1]["totals"]["received"] == expected)
 
 ana.post("/api/clients/1/tasks", {"title": "vencida", "due_date": (date.today() - timedelta(days=10)).isoformat()})

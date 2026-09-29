@@ -37,7 +37,7 @@ def make_pdf(text: str) -> bytes:
 PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==")
 b64 = lambda data: base64.b64encode(data).decode()  # noqa: E731
 ana, carlos = Session("ana"), Session("carlos")
-STORAGE = Path(os.environ["DB_PATH"]).parent / "attachments"
+STORAGE = Path(os.environ["DATA_DIR"]) / "attachments"
 
 # Subir documentos a la ficha
 st, pdf = ana.post("/api/clients/1/documents", {"filename": "Factura 2026-117.pdf", "data": b64(make_pdf("Factura 2026-117 Importe total 1250 EUR"))})

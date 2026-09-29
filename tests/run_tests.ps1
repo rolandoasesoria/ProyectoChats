@@ -18,6 +18,19 @@ New-Item -ItemType Directory -Force $tmp | Out-Null
 $env:PYTHONIOENCODING = "utf-8"
 $env:PORT = "8001"
 $env:DISABLE_SYNC = "true"
+$env:DATA_DIR = $tmp
+
+# Base de datos de pruebas (TEST_DATABASE_URL de backend/.env). Se vacía antes de cada archivo, así que
+# nunca debe ser la base de datos real: su nombre tiene que contener "test".
+$testUrl = (Get-Content (Join-Path $backend ".env") -ErrorAction SilentlyContinue |
+  Where-Object { $_ -match "^TEST_DATABASE_URL=" } | Select-Object -First 1) -replace "^TEST_DATABASE_URL=", ""
+if (-not $testUrl -or ($testUrl -split "/")[-1] -notmatch "test") {
+  Write-Output "Falta TEST_DATABASE_URL (una base de datos cuyo nombre contenga 'test') en backend/.env."
+  Write-Output "Ejecuta: powershell -ExecutionPolicy Bypass -File scripts/postgres.ps1 instalar"
+  exit 1
+}
+$env:DATABASE_URL = $testUrl
+$env:TEST_DATABASE_URL = $testUrl
 
 # Sin servidor: lógica pura, con respuestas de Claude simuladas.
 $unitarias = @("check_js.py", "test_importers.py", "test_insights.py", "test_agent_tools.py")
@@ -34,10 +47,9 @@ foreach ($t in $Pruebas) {
   Write-Output "=== $t"
   $server = $null
   if ($unitarias -notcontains $t) {
-    Remove-Item "$tmp\test.db*", "$tmp\attachments" -Recurse -ErrorAction SilentlyContinue
-    $env:DB_PATH = "$tmp\test.db"
+    Remove-Item "$tmp\attachments" -Recurse -ErrorAction SilentlyContinue
     Push-Location $backend
-    & $py -m app.seed | Out-Null
+    & $py -m app.seed --reset --basico | Out-Null
     $server = Start-Process -FilePath $py -ArgumentList "-m", "app.serve" -WorkingDirectory $backend -PassThru `
       -WindowStyle Hidden -RedirectStandardError "$tmp\server.log" -RedirectStandardOutput "$tmp\server.out"
     Pop-Location
