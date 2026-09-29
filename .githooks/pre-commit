@@ -1,0 +1,29 @@
+#!/bin/sh
+# 1) Impide añadir secretos o datos. 2) Vigila el tamaño del commit (docs/CONTROL_DE_VERSIONES.md §1).
+
+AVISO=400
+LIMITE=800
+
+# --- 1. Archivos que nunca deben entrar en el repositorio
+prohibidos=$(git diff --cached --name-only --diff-filter=AM | grep -E '(^|/)\.env$|\.db$|\.db-(wal|shm)$|(^|/)secret\.key$|^backend/data/')
+if [ -n "$prohibidos" ]; then
+  echo "✗ Estos archivos no deben subirse (secretos o datos):"
+  echo "$prohibidos" | sed 's/^/    /'
+  echo "  Quítalos con: git restore --staged <archivo>"
+  exit 1
+fi
+
+# --- 2. Tamaño: líneas añadidas + borradas (sin contar binarios)
+lineas=$(git diff --cached --numstat | awk '$1 != "-" { total += $1 + $2 } END { print total + 0 }')
+archivos=$(git diff --cached --name-only | wc -l | tr -d ' ')
+
+if [ "$lineas" -gt "$LIMITE" ] && [ "${GIT_COMMIT_GRANDE:-0}" != "1" ]; then
+  echo "✗ Commit demasiado grande: $lineas líneas en $archivos archivos (límite $LIMITE)."
+  echo "  Divídelo en cambios lógicos más pequeños (git add -p)."
+  echo "  Si de verdad debe ir junto (p. ej. mover archivos): GIT_COMMIT_GRANDE=1 git commit ..."
+  exit 1
+fi
+if [ "$lineas" -gt "$AVISO" ]; then
+  echo "⚠ Commit grande: $lineas líneas en $archivos archivos. ¿Se puede dividir? (objetivo: < 300)"
+fi
+exit 0

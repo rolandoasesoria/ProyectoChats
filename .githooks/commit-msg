@@ -1,0 +1,27 @@
+#!/bin/sh
+# Comprueba que el mensaje sigue «tipo(ámbito): resumen» (docs/CONTROL_DE_VERSIONES.md §2).
+
+msg_file="$1"
+# Primera línea que no sea comentario ni esté vacía.
+subject=$(grep -v '^#' "$msg_file" | sed '/^[[:space:]]*$/d' | head -n 1)
+
+case "$subject" in
+  Merge\ *|Revert\ *|fixup!\ *|squash!\ *) exit 0 ;;
+esac
+
+if ! printf '%s' "$subject" | grep -Eq '^(feat|fix|refactor|perf|style|test|docs|chore)(\([a-z0-9-]+\))?: .{5,}$'; then
+  echo "✗ Mensaje de commit no válido:"
+  echo "    $subject"
+  echo ""
+  echo "  Formato: tipo(ámbito): resumen"
+  echo "  Tipos:   feat fix refactor perf style test docs chore"
+  echo "  Ejemplo: feat(notas): autocompletar @menciones"
+  exit 1
+fi
+
+length=$(printf '%s' "$subject" | wc -m)
+if [ "$length" -gt 72 ]; then
+  echo "✗ El resumen tiene $length caracteres (máximo 72). Pasa los detalles al cuerpo del mensaje."
+  exit 1
+fi
+exit 0
