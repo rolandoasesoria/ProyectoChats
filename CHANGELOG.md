@@ -5,7 +5,20 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 
 ## [Sin publicar]
 
+### Cambiado
+- **La base de datos pasa de SQLite a PostgreSQL**: pool de conexiones, esquema con tipos propios e índices GIN.
+  `scripts/postgres.ps1` instala PostgreSQL portable para desarrollo (sin permisos de administrador).
+- Búsqueda de texto en español: sin tildes y por raíz de palabra («entregas» encuentra «entrega» y «entreguen»).
+  La búsqueda de clientes ya no distingue mayúsculas ni tildes.
+- Las pruebas usan su propia base de datos (`TEST_DATABASE_URL`) y se niegan a vaciar una que no sea de pruebas.
+
 ### Añadido
+- Datos de prueba abundantes (`python -m app.seed --reset`): ~85 clientes, 6 personas, ~1.500 mensajes de los
+  últimos seis meses, presupuestos en PDF, tareas, notas con menciones y clientes duplicados para practicar.
+
+### Corregido
+- La lista de clientes mostraba como mucho 50.
+- En la pestaña «Tareas» de la columna izquierda las casillas se estiraban y el texto quedaba fuera de la vista.
 - Guía de control de versiones: un cambio lógico por commit, Conventional Commits en español, ramas por
   funcionalidad y versionado semántico.
 - Hooks de git (`.githooks/`): formato del mensaje, bloqueo de secretos y datos, aviso y límite de tamaño.
