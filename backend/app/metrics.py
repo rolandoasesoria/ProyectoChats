@@ -52,7 +52,7 @@ def dashboard(days: int, include_people: bool) -> dict:
     since = since_day.isoformat()
     with get_conn() as conn:
         received = rows(conn.execute(
-            """SELECT substr(m.sent_at, 1, 10) AS day, c.channel, count(*) AS n
+            """SELECT to_char(m.sent_at, 'YYYY-MM-DD') AS day, c.channel, count(*) AS n
                  FROM messages m JOIN conversations c ON c.id = m.conversation_id
                 WHERE m.direction = 'in' AND m.sent_at >= ? GROUP BY day, c.channel""", (since,)))
         sent = conn.execute("SELECT count(*) FROM messages WHERE direction = 'out' AND sent_at >= ?", (since,)).fetchone()[0]

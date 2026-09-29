@@ -188,12 +188,12 @@ def analyze_client(client_id: int) -> dict:
                   t["message_id"] if t["message_id"] in by_id else None) for t in new_tasks],
             )
             conn.executemany(
-                "UPDATE tasks SET status = 'done', done_at = datetime('now') WHERE id = ? AND status = 'open'",
+                "UPDATE tasks SET status = 'done', done_at = localtimestamp(0) WHERE id = ? AND status = 'open'",
                 [(i,) for i in completed],
             )
             conn.execute(
                 """INSERT INTO client_analysis (client_id, summary, last_message_id, analyzed_at)
-                   VALUES (?, ?, ?, datetime('now'))
+                   VALUES (?, ?, ?, localtimestamp(0))
                    ON CONFLICT(client_id) DO UPDATE SET summary = excluded.summary,
                        last_message_id = excluded.last_message_id, analyzed_at = excluded.analyzed_at""",
                 (client_id, result["summary"].strip(), max(by_id)),
@@ -314,7 +314,7 @@ def profile(client_id: int) -> dict:
         facts = rows(conn.execute(
             """SELECT f.id, f.label, f.value, f.origin, f.source_message_id, f.updated_at, u.name AS updated_by
                  FROM client_facts f LEFT JOIN users u ON u.id = f.updated_by
-                WHERE f.client_id = ? AND f.origin != 'dismissed' ORDER BY f.label COLLATE NOCASE""",
+                WHERE f.client_id = ? AND f.origin != 'dismissed' ORDER BY lower(f.label)""",
             (client_id,),
         ))
     return {

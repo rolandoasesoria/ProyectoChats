@@ -23,7 +23,7 @@ def _digits(handle: str) -> str:
 
 def create_client(name: str, company: str | None, user_id: int) -> int:
     with get_conn() as conn:
-        return conn.execute("INSERT INTO clients (name, company, assignee_user_id) VALUES (?, ?, ?)",
+        return conn.execute("INSERT INTO clients (name, company, assignee_user_id) VALUES (?, ?, ?) RETURNING id",
                             (name.strip(), (company or "").strip() or None, user_id)).lastrowid
 
 
@@ -56,7 +56,7 @@ def set_tags(client_id: int, tags: list[str]) -> list[str]:
 def all_tags() -> list[dict]:
     with get_conn() as conn:
         return rows(conn.execute(
-            "SELECT tag, count(*) AS clients FROM client_tags GROUP BY tag COLLATE NOCASE ORDER BY tag COLLATE NOCASE"))
+            "SELECT min(tag) AS tag, count(*) AS clients FROM client_tags GROUP BY lower(tag) ORDER BY lower(min(tag))"))
 
 
 def add_identity(client_id: int, channel: str, handle: str) -> dict:
@@ -70,13 +70,13 @@ def add_identity(client_id: int, channel: str, handle: str) -> dict:
     with get_conn() as conn:
         other = conn.execute(
             """SELECT cl.id, cl.name FROM client_identities ci JOIN clients cl ON cl.id = ci.client_id
-                WHERE ci.channel = ? AND ci.handle = ? COLLATE NOCASE""", (channel, handle)).fetchone()
+                WHERE ci.channel = ? AND lower(ci.handle) = lower(?)""", (channel, handle)).fetchone()
         if other:
             if other["id"] == client_id:
                 raise HTTPException(409, "Este cliente ya tiene ese identificador.")
             raise HTTPException(409, f"Ese identificador ya pertenece a «{other['name']}». "
                                      "Si es la misma persona, usa «Unir con otro cliente».")
-        ident_id = conn.execute("INSERT INTO client_identities (client_id, channel, handle) VALUES (?, ?, ?)",
+        ident_id = conn.execute("INSERT INTO client_identities (client_id, channel, handle) VALUES (?, ?, ?) RETURNING id",
                                 (client_id, channel, handle)).lastrowid
     return {"id": ident_id, "channel": channel, "handle": handle}
 
@@ -128,15 +128,16 @@ def merge_clients(source_id: int, target_id: int) -> dict:
                       "attachments"):
             moved[table] = conn.execute(f"UPDATE {table} SET client_id = ? WHERE client_id = ?",
                                         (target_id, source_id)).rowcount
-        conn.execute("INSERT OR IGNORE INTO client_tags (client_id, tag) SELECT ?, tag FROM client_tags WHERE client_id = ?",
+        conn.execute("INSERT INTO client_tags (client_id, tag) SELECT ?, tag FROM client_tags WHERE client_id = ? "
+                     "ON CONFLICT DO NOTHING",
                      (target_id, source_id))
         # Visitas: se conserva la más reciente de cada usuario.
         conn.execute(
             """INSERT INTO client_visits (user_id, client_id, visited_at, last_message_id)
                SELECT user_id, ?, visited_at, last_message_id FROM client_visits WHERE client_id = ?
                ON CONFLICT(user_id, client_id) DO UPDATE SET
-                   visited_at = max(visited_at, excluded.visited_at),
-                   last_message_id = min(last_message_id, excluded.last_message_id)""",
+                   visited_at = GREATEST(client_visits.visited_at, excluded.visited_at),
+                   last_message_id = LEAST(client_visits.last_message_id, excluded.last_message_id)""",
             (target_id, source_id))
         # Conversaciones con el asistente: las del cliente que desaparece quedan archivadas en el que se queda.
         conn.execute("UPDATE chat_sessions SET client_id = ?, archived = 1 WHERE client_id = ?", (target_id, source_id))

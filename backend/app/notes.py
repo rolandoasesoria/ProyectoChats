@@ -60,7 +60,7 @@ def get_note(note_id: int) -> dict | None:
 
 def add_note(client_id: int, author: dict, body: str) -> dict:
     with get_conn() as conn:
-        note_id = conn.execute("INSERT INTO client_notes (client_id, user_id, body) VALUES (?, ?, ?)",
+        note_id = conn.execute("INSERT INTO client_notes (client_id, user_id, body) VALUES (?, ?, ?) RETURNING id",
                                (client_id, author["id"], body)).lastrowid
         client = conn.execute("SELECT name FROM clients WHERE id = ?", (client_id,)).fetchone()
         mentioned = find_mentions(body, _active_users(conn))
@@ -74,7 +74,7 @@ def update_note(note_id: int, author: dict, body: str) -> dict:
     """Al editar, solo se avisa a quienes no estaban mencionados antes."""
     with get_conn() as conn:
         old = conn.execute("SELECT client_id, body FROM client_notes WHERE id = ?", (note_id,)).fetchone()
-        conn.execute("UPDATE client_notes SET body = ?, updated_at = datetime('now') WHERE id = ?", (body, note_id))
+        conn.execute("UPDATE client_notes SET body = ?, updated_at = localtimestamp(0) WHERE id = ?", (body, note_id))
         users = _active_users(conn)
         new_mentions = find_mentions(body, users) - find_mentions(old["body"], users)
         client = conn.execute("SELECT name FROM clients WHERE id = ?", (old["client_id"],)).fetchone()
@@ -113,9 +113,9 @@ def list_notifications(user_id: int, limit: int = 30) -> dict:
 def mark_read(user_id: int, ids: list[int] | None = None) -> None:
     with get_conn() as conn:
         if ids is None:
-            conn.execute("UPDATE notifications SET read_at = datetime('now') WHERE user_id = ? AND read_at IS NULL",
+            conn.execute("UPDATE notifications SET read_at = localtimestamp(0) WHERE user_id = ? AND read_at IS NULL",
                          (user_id,))
         else:
             conn.executemany(
-                "UPDATE notifications SET read_at = datetime('now') WHERE id = ? AND user_id = ? AND read_at IS NULL",
+                "UPDATE notifications SET read_at = localtimestamp(0) WHERE id = ? AND user_id = ? AND read_at IS NULL",
                 [(i, user_id) for i in ids])
