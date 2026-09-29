@@ -1,4 +1,4 @@
-# Activa los hooks del proyecto (.githooks) y la plantilla de mensaje de commit en este clon del repositorio.
+﻿# Activa los hooks del proyecto (.githooks) y la plantilla de mensaje de commit en este clon del repositorio.
 # Uso (desde la raíz del repositorio):  powershell -ExecutionPolicy Bypass -File scripts/instalar-hooks.ps1
 
 $raiz = git rev-parse --show-toplevel
