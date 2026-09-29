@@ -1,11 +1,14 @@
 """Carga datos de demostración (desde la carpeta backend):
 
-  python -m app.seed           carga los datos si la base de datos está vacía
-  python -m app.seed --reset   BORRA todo y vuelve a cargarlos
+  python -m app.seed                   carga los datos si la base de datos está vacía
+  python -m app.seed --reset           BORRA todo y vuelve a cargarlos
+  python -m app.seed --reset --basico  solo los 3 clientes básicos (los usan las pruebas automáticas)
+
+Sin --basico se añaden además los datos de prueba abundantes de demo_data.py (~80 clientes, 6 personas).
 """
 import sys
 
-from . import search
+from . import demo_data, search
 from .auth import hash_password
 from .db import get_conn, init_db, reset_db
 
@@ -63,7 +66,7 @@ CONVERSATIONS = [
 ]
 
 
-def seed(reset: bool = False) -> None:
+def seed(reset: bool = False, basico: bool = False) -> None:
     if reset:
         reset_db()
     else:
@@ -93,9 +96,14 @@ def seed(reset: bool = False) -> None:
     with get_conn() as conn:
         conn.execute("UPDATE clients SET company = 'Floristería Gómez S.L.' WHERE name = 'Laura Gómez'")
         conn.execute("UPDATE clients SET company = 'Talleres Martín' WHERE name = 'Jorge Martín'")
+    if not basico:
+        t = demo_data.generar()
+        print(f"Datos de prueba: {t['clientes']} clientes más, {t['conversaciones']} conversaciones, "
+              f"{t['mensajes']} mensajes, {t['tareas']} tareas, {t['notas']} notas y {t['documentos']} documentos.")
     print("Datos de demostración cargados.")
-    print(f"Usuarios: {', '.join(u[0] for u in USERS)} (contraseña: {DEMO_PASSWORD}). 'ana' es administradora.")
+    usuarios = [u[0] for u in USERS] + ([] if basico else [u[0] for u in demo_data.EXTRA_USERS])
+    print(f"Usuarios: {', '.join(usuarios)} (contraseña: {DEMO_PASSWORD}). 'ana' es administradora.")
 
 
 if __name__ == "__main__":
-    seed(reset="--reset" in sys.argv)
+    seed(reset="--reset" in sys.argv, basico="--basico" in sys.argv)
