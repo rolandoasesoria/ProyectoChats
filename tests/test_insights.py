@@ -12,7 +12,7 @@ import testdb  # noqa: F401,E402  (base de datos de pruebas; antes que la app)
 from app import agent, insights, seed  # noqa: E402
 from app.db import get_conn  # noqa: E402
 
-seed.seed(reset=True)
+seed.seed(reset=True, basico=True)
 ok = True
 
 

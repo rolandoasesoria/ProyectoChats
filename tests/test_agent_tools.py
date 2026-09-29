@@ -9,7 +9,7 @@ from app import agent, audit, notes, seed  # noqa: E402
 from app.db import get_conn  # noqa: E402
 from apitest import check, results  # noqa: E402
 
-seed.seed(reset=True)
+seed.seed(reset=True, basico=True)
 ANA = 1
 
 mine = agent._run_tool("buscar_mensajes", {"consulta": "CIF factura", "alcance": "mias"}, ANA)

@@ -13,7 +13,7 @@ from app import agent, insights, seed  # noqa: E402
 from app.db import get_conn  # noqa: E402
 from apitest import Session, check, results  # noqa: E402
 
-seed.seed(reset=True)
+seed.seed(reset=True, basico=True)
 calls = []
 agent._create = lambda **p: calls.append(p) or SimpleNamespace(
     stop_reason="end_turn", content=[SimpleNamespace(type="text", text="Hola Laura, ...")])
