@@ -57,7 +57,7 @@ def save_exchange(session_id: str, api_messages: list, user_text: str, reply: st
     """Guarda el historial de la API y los dos turnos visibles (pregunta y respuesta) en una transacción."""
     with get_conn() as conn:
         conn.execute(
-            "UPDATE chat_sessions SET api_messages = ?, updated_at = datetime('now') WHERE id = ?",
+            "UPDATE chat_sessions SET api_messages = ?, updated_at = localtimestamp(0) WHERE id = ?",
             (json.dumps(api_messages, ensure_ascii=False), session_id),
         )
         conn.executemany(
