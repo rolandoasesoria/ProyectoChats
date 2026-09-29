@@ -1,0 +1,54 @@
+# Registro de cambios
+
+Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y versionado semántico.
+Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md).
+
+## [Sin publicar]
+
+### Añadido
+- Guía de control de versiones: un cambio lógico por commit, Conventional Commits en español, ramas por
+  funcionalidad y versionado semántico.
+- Hooks de git (`.githooks/`): formato del mensaje, bloqueo de secretos y datos, aviso y límite de tamaño.
+  Se activan con `scripts/instalar-hooks.ps1`.
+- Plantilla de mensaje de commit (`.gitmessage`) y fines de línea uniformes (`.gitattributes`).
+- Pruebas dentro del repositorio (`tests/`), con `tests/run_tests.ps1` y dependencias en
+  `backend/requirements-dev.txt`.
+
+## [0.2.0] - 2026-09-29
+
+Commit `6e8d047`. Agrupa todo el trabajo siguiente, anterior a la guía de control de versiones:
+
+### Añadido
+- Inicio de sesión con usuario y contraseña, administración de cuentas y comando `python -m app.manage`.
+- Conversaciones con el asistente guardadas por usuario y cliente; una conversación por cliente.
+- Chispa, la mascota de ayuda sobre el uso de la app.
+- Tema claro y oscuro guardado en el perfil; tutorial de bienvenida versionado (versión 12).
+- Importar exportaciones de WhatsApp (.txt/.zip), Telegram (.json) y email (.eml/.mbox).
+- Ficha del cliente con IA (resumen, datos clave con su mensaje de origen) y tareas detectadas.
+- Bandeja «Sin responder», no leídos y resumen de novedades.
+- Borradores de respuesta con IA.
+- Notas internas con @menciones y campana de avisos.
+- Gestión de clientes: estado, responsable, etiquetas, filtros, identificadores y unir duplicados.
+- Protección de datos: registro de accesos, exportar y borrar los datos de un cliente.
+- Panel de actividad con gráficos.
+- Documentos y adjuntos (texto de PDF, lectura de imágenes con IA).
+- Buscador por palabras y por significado.
+- Integraciones: email (IMAP/SMTP), bot de Telegram y WhatsApp Business, con envío desde la app.
+
+### Seguridad
+- Bloqueo por intentos fallidos, cabeceras de seguridad (CSP, HSTS…), protección CSRF, límites de tamaño.
+- Preparado para HTTPS (Caddy o certificado propio); secretos de integraciones cifrados.
+
+## [0.1.0] - 2026-09-29
+
+Commit `c360944`. Base del proyecto:
+
+### Añadido
+- Backend FastAPI con SQLite y búsqueda de texto completo (FTS5).
+- Clientes unificados con identidades por canal y conversaciones de cada miembro del equipo.
+- Asistente con Claude y herramientas de búsqueda, con alcance «mías» o «equipo» aplicado en el servidor.
+- Interfaz en tres columnas (clientes, asistente, línea de tiempo) y datos de ejemplo.
+
+[Sin publicar]: https://github.com/rolandoasesoria/ProyectoChats/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/rolandoasesoria/ProyectoChats/compare/v0.1.0...v0.2.0
+[0.1.0]: https://github.com/rolandoasesoria/ProyectoChats/releases/tag/v0.1.0

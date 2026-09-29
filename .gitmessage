@@ -1,0 +1,13 @@
+
+
+# tipo(ámbito): resumen en presente, sin punto final (máx. 72 caracteres)
+#
+# Por qué se hace el cambio (no qué: eso ya se ve en el diff).
+#
+# Tipos: feat · fix · refactor · perf · style · test · docs · chore
+# Ámbitos: auth asistente chispa clientes ficha tareas notas bandeja borradores
+#          importar documentos busqueda panel integraciones datos tutorial
+#          seguridad db ui readme tests git
+#
+# Un commit = un cambio lógico. ¿Cabe en una línea sin usar «y»? Si no, divídelo
+# (git add -p). Guía completa: docs/CONTROL_DE_VERSIONES.md

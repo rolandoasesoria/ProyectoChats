@@ -1,0 +1,14 @@
+# Fin de línea uniforme en el repositorio (LF), sea cual sea el sistema de quien haga el commit.
+* text=auto eol=lf
+
+# Los scripts de PowerShell se usan en Windows.
+*.ps1 text eol=crlf
+
+# Los hooks se ejecutan con sh: deben tener LF siempre.
+.githooks/* text eol=lf
+
+# Binarios
+*.png binary
+*.jpg binary
+*.pdf binary
+*.db binary
