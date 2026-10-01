@@ -69,10 +69,11 @@ sin ventanas (registro en `backend/data/app.log`). `-QuitarInicio` lo desactiva;
 - **Límites de tamaño** en mensajes al asistente (4.000 caracteres) y contraseñas (128).
 - `/docs` (documentación de la API) desactivado salvo `ENABLE_DOCS=true`.
 
-## Conectar canales (Administración → Integraciones)
+## Conectar canales (menú de usuario → Mis cuentas)
 
-Lógica en `backend/app/integrations.py`. Cada integración tiene un responsable: sus mensajes entran como
-conversaciones de esa persona, que puede responder desde el borrador con **📤 Enviar**.
+Lógica en `backend/app/integrations.py`. Cada persona conecta sus propias cuentas: sus mensajes entran como
+conversaciones suyas y puede responder desde el borrador con **Enviar**. Al conectar una cuenta se prueba al
+momento. Los administradores ven y gestionan las de todo el equipo («Todo el equipo»).
 
 | Canal | Cómo entra | Cómo se responde | Requisitos |
 |---|---|---|---|

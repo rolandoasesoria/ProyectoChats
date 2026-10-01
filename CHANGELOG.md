@@ -24,6 +24,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Tutorial más breve: 12 pasos de una o dos frases (versión 14).
 
 ### Añadido
+- «Mis cuentas» (menú de usuario): cada persona conecta su correo, su bot de Telegram o su WhatsApp Business;
+  la cuenta se prueba al conectarla y el correo se configura eligiendo el proveedor (Gmail, Outlook, Yahoo,
+  iCloud…). Sustituye a la pestaña de administración «Integraciones» (los administradores ven «Todo el equipo»).
 - Etiquetas en «Editar cliente» con desplegable (las básicas y las que ya usa el equipo) y la opción de
   escribir una nueva.
 - El estado del cliente lo decide la IA al analizarlo (también automáticamente cuando entran mensajes por una
