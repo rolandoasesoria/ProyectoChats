@@ -299,6 +299,35 @@ def draft_reply(conversation_id: int, author: dict, instructions: str = "") -> d
     return {"draft": draft, "channel": conv["channel"], "subject": conv["subject"], "client_id": conv["client_id"]}
 
 
+REWRITE_ACTIONS = {
+    "formal": "Hazlo más formal y profesional (de usted si el original tutea), sin cambiar el contenido.",
+    "friendly": "Hazlo más cercano y cálido, sin perder la profesionalidad ni cambiar el contenido.",
+    "shorter": "Hazlo más breve: quita lo que sobra y deja solo lo esencial.",
+    "fix": "Corrige la ortografía, la gramática y la puntuación. No cambies el tono ni el contenido.",
+    "translate": "Tradúcelo al idioma indicado, con el mismo tono.",
+}
+
+
+def rewrite_draft(text: str, action: str, language: str = "", channel: str | None = None) -> str:
+    """Retoca un borrador ya escrito (tono, longitud, ortografía o idioma) sin inventar nada nuevo."""
+    if action not in REWRITE_ACTIONS:
+        raise AnalysisError("Acción no válida.")
+    if action == "translate" and not language.strip():
+        raise AnalysisError("Indica a qué idioma traducirlo.")
+    task = REWRITE_ACTIONS[action] + (f" Idioma: {language.strip()}." if action == "translate" else "")
+    response = agent._create(
+        system="Retocas borradores de mensajes que una persona del equipo va a enviar a un cliente. "
+               f"{task} Conserva los datos (precios, fechas, nombres) y los huecos entre corchetes como [precio]; "
+               "no añadas información nueva. Devuelve solo el texto retocado, sin comentarios.\n\n"
+               + CHANNEL_STYLE.get(channel or "", ""),
+        messages=[{"role": "user", "content": text}],
+        output_config={"effort": "low"},
+    )
+    if response.stop_reason == "refusal":
+        raise AnalysisError("La IA no ha podido retocar este texto.")
+    return "\n".join(b.text for b in response.content if b.type == "text").strip()
+
+
 # ---------------------------------------------------------------- Consultas y edición manual
 
 def profile(client_id: int) -> dict:

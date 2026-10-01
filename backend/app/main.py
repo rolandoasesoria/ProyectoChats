@@ -458,6 +458,23 @@ def draft(conversation_id: int, req: DraftRequest, user: CurrentUser):
             raise HTTPException(404 if "no encontrada" in str(exc) else 400, str(exc))
 
 
+class RewriteRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=10000)
+    action: Literal["formal", "friendly", "shorter", "fix", "translate"]
+    language: str = Field("", max_length=40)
+    channel: Literal["email", "whatsapp", "telegram"] | None = None
+
+
+@app.post("/api/drafts/rewrite")
+def rewrite(req: RewriteRequest, _: CurrentUser):
+    """Retoca con IA un borrador ya escrito: más formal, más cercano, más corto, corregido o traducido."""
+    with claude_errors():
+        try:
+            return {"text": insights.rewrite_draft(req.text, req.action, req.language, req.channel)}
+        except insights.AnalysisError as exc:
+            raise HTTPException(400, str(exc))
+
+
 # ---------------------------------------------------------------- Respuestas guardadas y macros
 
 class ReplyIn(BaseModel):
