@@ -18,8 +18,9 @@ mismo cliente (email, WhatsApp, Telegram…) y permite preguntar por un dato con
    powershell -ExecutionPolicy Bypass -File scripts/postgres.ps1 iniciar    # después de reiniciar el equipo
    ```
 
-   Crea las bases `proyectochats` y `proyectochats_test` y guarda la conexión en `backend/.env`.
-   (En producción, usa un PostgreSQL gestionado o como servicio y pon su `DATABASE_URL` en `.env`.)
+   Crea las bases `proyectochats` y `proyectochats_test`, con conexión cifrada y dos usuarios (ver
+   [Base de datos](#base-de-datos)), y guarda las conexiones en `backend/.env`. Si ya lo tenías instalado de antes,
+   ejecuta una vez `scripts/postgres.ps1 asegurar`.
 3. En una terminal, dentro de `backend/`:
 
    ```powershell
@@ -68,6 +69,29 @@ sin ventanas (registro en `backend/data/app.log`). `-QuitarInicio` lo desactiva;
 - **CSRF:** cookie `SameSite=Lax` + rechazo de peticiones que modifican datos desde otro origen.
 - **Límites de tamaño** en mensajes al asistente (4.000 caracteres) y contraseñas (128).
 - `/docs` (documentación de la API) desactivado salvo `ENABLE_DOCS=true`.
+
+## Base de datos
+
+El esquema está separado del código: vive en [`backend/database/`](backend/database/) como archivos SQL.
+
+- **Migraciones** (`backend/database/migrations/0001_….sql`, `0002_…`): se aplican en orden y una sola vez
+  (tabla `schema_migrations`). Una migración ya aplicada no se edita: cada cambio va en un archivo nuevo. Si
+  alguien la modifica, la app no arranca. Por defecto se aplican solas al arrancar (`DB_AUTO_MIGRATE=true`);
+  a mano: `python -m app.manage migrate`. Estado: `python -m app.manage db-status`.
+- **Dos usuarios** ([`roles.sql`](backend/database/roles.sql)):
+  - la app trabaja con `proyectochats_app` (`DATABASE_URL`), que solo puede leer y escribir datos, no crear,
+    cambiar ni borrar tablas;
+  - `proyectochats`, dueño del esquema (`DATABASE_ADMIN_URL`), solo se usa para migrar.
+
+  En producción se puede migrar aparte, quitar `DATABASE_ADMIN_URL` del servidor y poner
+  `DB_AUTO_MIGRATE=false`: la app comprobará que el esquema está al día y no arrancará si no lo está.
+- **Conexión cifrada:** TLS 1.3, verificando el certificado del servidor (`DB_SSLMODE=verify-full`,
+  `DB_SSLROOTCERT`).
+  - PostgreSQL solo acepta conexiones cifradas, con contraseña SCRAM y desde este equipo.
+  - Si la base de datos está en otro equipo, la app se niega a conectarse sin cifrar.
+  - Las contraseñas son aleatorias de 32 caracteres, y `backend/.env` y las claves solo las puede leer tu
+    usuario de Windows.
+- **Tiempos límite:** 10 s para conectar y 30 s por consulta (`DB_CONNECT_TIMEOUT`, `DB_STATEMENT_TIMEOUT_MS`).
 
 ## Conectar canales (menú de usuario → Mis cuentas)
 

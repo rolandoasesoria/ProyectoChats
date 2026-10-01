@@ -5,7 +5,21 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 
 ## [Sin publicar]
 
+### Seguridad
+- Conexión a la base de datos cifrada con TLS 1.3 y certificado verificado (`DB_SSLMODE=verify-full`). PostgreSQL
+  solo acepta conexiones cifradas y con contraseña SCRAM; con un servidor remoto, la app se niega a conectarse
+  sin cifrar.
+- Usuarios separados: la app trabaja con `proyectochats_app`, que solo lee y escribe datos; el dueño del
+  esquema (`DATABASE_ADMIN_URL`) solo se usa para migrar. `scripts/postgres.ps1 asegurar` lo aplica a una
+  instalación existente y cambia las contraseñas (aleatorias, generadas con un generador criptográfico).
+- Tiempos límite de conexión y de consulta. `backend/.env`, la contraseña del superusuario y las claves privadas
+  quedan legibles solo por el usuario de Windows.
+
 ### Cambiado
+- El esquema de la base de datos sale del código Python a migraciones SQL versionadas
+  (`backend/database/migrations`), con control de cambios (`schema_migrations`) y los comandos
+  `python -m app.manage migrate` y `db-status`.
+- Toda la configuración se lee en un único módulo (`backend/app/config.py`).
 - Se quita la importación de chats exportados (botón «Importar»): los mensajes entran solo por las
   integraciones, en tiempo real. La lectura de correos pasa a `backend/app/emails.py`.
 - Pestaña «Mensajes» al estilo de un chat: burbujas del cliente a la izquierda y del equipo a la derecha,
