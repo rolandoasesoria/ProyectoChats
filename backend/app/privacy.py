@@ -4,14 +4,15 @@
   por una marca ("[IBAN oculto]"). El texto original no se guarda en ningún sitio (tampoco en el índice de búsqueda,
   que se recalcula solo). El CIF de una empresa no se considera dato personal y no se toca.
 - Retención: si un administrador fija un plazo (meses), los mensajes más antiguos se borran, junto con sus adjuntos
-  y las conversaciones que queden vacías. Se aplica al arrancar y una vez al día.
+  y las conversaciones que queden vacías. Se aplica al arrancar y una vez al día, junto con la regla que pasa a
+  Inactivo a los clientes sin actividad (clients.mark_inactive).
 """
 import logging
 import re
 import threading
 import time
 
-from . import attachments, settings
+from . import attachments, clients, settings
 from .db import get_conn, rows
 
 log = logging.getLogger(__name__)
@@ -111,15 +112,18 @@ def apply_retention(months: int | None = None) -> dict:
     return {"months": months, "messages": deleted, "conversations": convs}
 
 
-def start_retention_job() -> None:
-    """Aplica la retención al arrancar y luego una vez al día (si hay un plazo fijado)."""
+def start_daily_jobs() -> None:
+    """Al arrancar y luego una vez al día: retención de mensajes (si hay plazo) y clientes inactivos."""
     def loop():
         while True:
             try:
                 result = apply_retention()
                 if result["messages"]:
                     log.info("Retención: borrados %s mensajes de más de %s meses", result["messages"], result["months"])
+                inactive = clients.mark_inactive(settings.get("inactive_days"))
+                if inactive:
+                    log.info("%s clientes pasan a Inactivo por falta de actividad", inactive)
             except Exception:  # noqa: BLE001 - un fallo no debe parar la app
-                log.exception("Fallo al aplicar la retención de mensajes")
+                log.exception("Fallo en las tareas diarias")
             time.sleep(24 * 3600)
-    threading.Thread(target=loop, daemon=True, name="retencion").start()
+    threading.Thread(target=loop, daemon=True, name="tareas-diarias").start()

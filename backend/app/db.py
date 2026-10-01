@@ -60,6 +60,13 @@ CREATE TABLE IF NOT EXISTS clients (
     company           TEXT,
     notes             TEXT,
     status            TEXT NOT NULL DEFAULT 'active',   -- lead | active | issue | inactive
+    -- Quién decidió el estado: auto (la IA o la regla de inactividad) | manual (una persona). Un cambio manual
+    -- se respeta hasta que llegan mensajes nuevos (posteriores a status_last_message_id).
+    status_source          TEXT NOT NULL DEFAULT 'auto',
+    status_reason          TEXT,
+    status_updated_at      TIMESTAMP,
+    status_updated_by      BIGINT REFERENCES users(id) ON DELETE SET NULL,
+    status_last_message_id BIGINT,
     assignee_user_id  BIGINT REFERENCES users(id) ON DELETE SET NULL,  -- responsable del cliente
     created_at        TIMESTAMP NOT NULL DEFAULT localtimestamp(0)
 );
@@ -322,6 +329,11 @@ CREATE INDEX IF NOT EXISTS idx_chat_turns_session ON chat_turns (session_id, id)
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS snoozed_until TIMESTAMP;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS snoozed_message_id BIGINT;
 ALTER TABLE client_analysis ADD COLUMN IF NOT EXISTS priority TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS status_source TEXT NOT NULL DEFAULT 'auto';
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS status_reason TEXT;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS status_updated_at TIMESTAMP;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS status_updated_by BIGINT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE clients ADD COLUMN IF NOT EXISTS status_last_message_id BIGINT;
 ALTER TABLE client_analysis ADD COLUMN IF NOT EXISTS mood TEXT;
 ALTER TABLE client_analysis ADD COLUMN IF NOT EXISTS priority_reason TEXT;
 """

@@ -27,7 +27,7 @@ from email.utils import formataddr, make_msgid
 
 from fastapi import HTTPException
 
-from . import importers, search, secrets_store
+from . import clients, importers, insights, search, secrets_store, settings
 from .db import get_conn, rows
 
 log = logging.getLogger(__name__)
@@ -205,12 +205,17 @@ def ingest(integ: dict, *, handle: str, client_name: str, direction: str, sender
            sent_at: str, external_id: str | None, subject: str | None = None,
            attachments: list | None = None) -> dict:
     channel = KIND_CHANNEL[integ["kind"]]
-    return search.import_conversation({
+    result = search.import_conversation({
         "owner_user_id": integ["owner_user_id"], "channel": channel,
         "handle": _existing_handle(channel, handle), "client_name": client_name, "subject": subject,
         "messages": [{"direction": direction, "sender": sender, "body": body, "sent_at": sent_at,
                       "external_id": external_id, "attachments": attachments or []}],
     })
+    # Mensaje nuevo del cliente: la IA pone al día ficha, tareas, prioridad y estado (unos minutos después).
+    if result["messages"] and direction == "in":
+        clients.reactivate(result["client_id"], settings.get("inactive_days"))
+        insights.schedule_analysis(result["client_id"])
+    return result
 
 
 def _now_local() -> str:

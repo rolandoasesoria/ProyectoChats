@@ -27,7 +27,14 @@ def create_client(name: str, company: str | None, user_id: int) -> int:
                             (name.strip(), (company or "").strip() or None, user_id)).lastrowid
 
 
-def update_client(client_id: int, fields: dict) -> None:
+def _last_message_id(conn, client_id: int) -> int:
+    return conn.execute("""SELECT coalesce(max(m.id), 0) FROM messages m JOIN conversations c ON c.id = m.conversation_id
+                            WHERE c.client_id = ?""", (client_id,)).fetchone()[0]
+
+
+def update_client(client_id: int, fields: dict, user_id: int | None = None) -> None:
+    """Cambia datos del cliente. Un cambio de estado hecho por una persona (user_id) queda como manual: la IA no lo
+    toca hasta que lleguen mensajes nuevos."""
     allowed = {"name", "company", "status", "assignee_user_id"}
     fields = {k: v for k, v in fields.items() if k in allowed}
     if "status" in fields and fields["status"] not in STATUSES:
@@ -37,8 +44,67 @@ def update_client(client_id: int, fields: dict) -> None:
     if not fields:
         return
     with get_conn() as conn:
-        conn.execute(f"UPDATE clients SET {', '.join(f'{k} = ?' for k in fields)} WHERE id = ?",
-                     [*fields.values(), client_id])
+        sets, args = [f"{k} = ?" for k in fields], list(fields.values())
+        if "status" in fields:
+            current = conn.execute("SELECT status FROM clients WHERE id = ?", (client_id,)).fetchone()
+            if current and current["status"] != fields["status"]:
+                sets += ["status_source = 'manual'", "status_reason = NULL", "status_updated_at = localtimestamp(0)",
+                         "status_updated_by = ?", "status_last_message_id = ?"]
+                args += [user_id, _last_message_id(conn, client_id)]
+        conn.execute(f"UPDATE clients SET {', '.join(sets)} WHERE id = ?", [*args, client_id])
+
+
+def release_status(client_id: int) -> None:
+    """Deshace el «fijado a mano»: el estado se queda como está hasta que lo decida la IA o la regla de inactividad."""
+    with get_conn() as conn:
+        conn.execute("""UPDATE clients SET status_source = 'auto', status_reason = NULL, status_updated_by = NULL
+                         WHERE id = ? AND status_source = 'manual'""", (client_id,))
+
+
+def set_auto_status(conn, client_id: int, status: str, reason: str) -> str | None:
+    """Estado decidido por la IA o por la regla de inactividad. No pisa un cambio manual mientras no haya mensajes
+    nuevos desde entonces. Devuelve el estado anterior si ha cambiado (None si no)."""
+    row = conn.execute("SELECT status, status_source, status_last_message_id FROM clients WHERE id = ?",
+                       (client_id,)).fetchone()
+    if not row or status not in STATUSES:
+        return None
+    last = _last_message_id(conn, client_id)
+    if row["status_source"] == "manual" and last <= (row["status_last_message_id"] or 0):
+        return None
+    conn.execute("""UPDATE clients SET status = ?, status_source = 'auto', status_reason = ?,
+                        status_updated_at = localtimestamp(0), status_updated_by = NULL, status_last_message_id = ?
+                     WHERE id = ?""", (status, reason or None, last, client_id))
+    return row["status"] if row["status"] != status else None
+
+
+def reactivate(client_id: int, days: int) -> bool:
+    """Sin IA: un cliente inactivo que vuelve a escribir (en los últimos `days` días) pasa a Activo."""
+    with get_conn() as conn:
+        recent = conn.execute(
+            f"""SELECT 1 FROM clients cl WHERE cl.id = ? AND cl.status = 'inactive'
+                  AND EXISTS (SELECT 1 FROM messages m JOIN conversations c ON c.id = m.conversation_id
+                               WHERE c.client_id = cl.id AND m.direction = 'in'
+                                 AND m.sent_at > localtimestamp - interval '{int(days or 90)} days')""",
+            (client_id,)).fetchone()
+        return bool(recent and set_auto_status(conn, client_id, "active", "Ha vuelto a escribir"))
+
+
+def mark_inactive(days: int) -> int:
+    """Regla diaria (sin IA): pasa a Inactivo a los clientes sin mensajes en `days` días. Devuelve cuántos."""
+    if not days:
+        return 0
+    changed = 0
+    with get_conn() as conn:
+        stale = conn.execute(
+            f"""SELECT cl.id FROM clients cl
+                 WHERE cl.status != 'inactive'
+                   AND NOT EXISTS (SELECT 1 FROM messages m JOIN conversations c ON c.id = m.conversation_id
+                                    WHERE c.client_id = cl.id AND m.sent_at > localtimestamp - interval '{int(days)} days')
+                   AND EXISTS (SELECT 1 FROM conversations c WHERE c.client_id = cl.id)""").fetchall()
+        for r in stale:
+            if set_auto_status(conn, r["id"], "inactive", f"Sin mensajes en los últimos {days} días"):
+                changed += 1
+    return changed
 
 
 def set_tags(client_id: int, tags: list[str]) -> list[str]:

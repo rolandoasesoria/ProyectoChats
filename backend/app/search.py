@@ -175,8 +175,10 @@ def messages_since(client_id: int, since_message_id: int, limit: int = 300) -> l
 def client_overview(client_id: int, user_id: int) -> dict | None:
     with get_conn() as conn:
         client = conn.execute(
-            """SELECT cl.id, cl.name, cl.company, cl.notes, cl.status, cl.assignee_user_id, u.name AS assignee
-                 FROM clients cl LEFT JOIN users u ON u.id = cl.assignee_user_id WHERE cl.id = ?""", (client_id,)
+            """SELECT cl.id, cl.name, cl.company, cl.notes, cl.status, cl.assignee_user_id, u.name AS assignee,
+                      cl.status_source, cl.status_reason, cl.status_updated_at, su.name AS status_updated_by
+                 FROM clients cl LEFT JOIN users u ON u.id = cl.assignee_user_id
+                 LEFT JOIN users su ON su.id = cl.status_updated_by WHERE cl.id = ?""", (client_id,)
         ).fetchone()
         if not client:
             return None

@@ -8,7 +8,7 @@ from app.db import get_conn
 
 ana, carlos = Session("ana"), Session("carlos")
 
-check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0})
+check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0, "inactive_days": 90})
 check("solo administradores lo cambian = 403", carlos.patch("/api/admin/settings", {"sla_hours": 4})[0] == 403)
 check("fuera de rango = 422", ana.patch("/api/admin/settings", {"sla_hours": 0})[0] == 422
       and ana.patch("/api/admin/settings", {"sla_hours": 500})[0] == 422)

@@ -20,6 +20,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Tutorial más breve: 12 pasos de una o dos frases (versión 14).
 
 ### Añadido
+- El estado del cliente lo decide la IA al analizarlo (también automáticamente cuando entran mensajes por una
+  integración), con su motivo y aviso al responsable si hay una incidencia. Se puede cambiar a mano pulsando el
+  estado; el cambio manual se respeta hasta que haya mensajes nuevos. Sin IA, regla diaria de inactividad
+  (Ajustes, 90 días) y reactivación al volver a escribir.
 - Respuestas guardadas para todo el equipo, con variables ({nombre}, {empresa}, {dato:CIF}…) y atajos: en el
   borrador se insertan con un botón o escribiendo /atajo. Con acciones (estado, etiqueta, marcar atendida)
   funcionan como macros.

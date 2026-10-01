@@ -60,9 +60,21 @@ fake_result = {
     "priority": "alta",
     "priority_reason": "  Espera la reposición de 3 cajas defectuosas ",
     "mood": "molesto",
+    "status": "issue",
+    "status_reason": "Reclama 3 cajas defectuosas",
 }
+with get_conn() as conn:
+    conn.execute("UPDATE clients SET assignee_user_id = 2 WHERE id = 1")
 changes = insights.analyze_client(1)
-check("cambios devueltos", changes == {"facts": 3, "new_tasks": 3, "completed_tasks": 0}, changes)
+check("cambios devueltos", changes == {"facts": 3, "new_tasks": 3, "completed_tasks": 0, "status": "issue"}, changes)
+with get_conn() as conn:
+    st = conn.execute("SELECT status, status_source, status_reason FROM clients WHERE id = 1").fetchone()
+    notif = conn.execute("SELECT user_id, text FROM notifications WHERE kind = 'status_issue'").fetchall()
+check("la IA pone el estado con su motivo", dict(st) == {"status": "issue", "status_source": "auto",
+                                                          "status_reason": "Reclama 3 cajas defectuosas"}, dict(st))
+check("avisa al responsable de la incidencia", [(n["user_id"], n["text"]) for n in notif]
+      == [(2, "La IA ha marcado a Laura Gómez como Incidencia: Reclama 3 cajas defectuosas")], notif)
+check("el esquema pide el estado", "status" in prompts[-1]["output_config"]["format"]["schema"]["required"])
 p = prompts[-1]
 check("usa salida estructurada", p["output_config"]["format"]["type"] == "json_schema")
 check("el prompt incluye los mensajes con su id", f"[{addr_msg}]" in p["messages"][0]["content"])
@@ -100,8 +112,26 @@ fake_result = {
     "new_tasks": [],
     "completed_task_ids": [repo["id"], 424242],
 }
+# Una persona cambia el estado a mano: la IA no lo pisa mientras no lleguen mensajes nuevos.
+from app import clients  # noqa: E402
+clients.update_client(1, {"status": "active"}, 3)
+second_result = {**fake_result, "status": "issue", "status_reason": "Sigue la reclamación"}
+fake_result = {**second_result, "completed_task_ids": []}
+changes = insights.analyze_client(1)
+with get_conn() as conn:
+    st = conn.execute("SELECT status, status_source, status_updated_by FROM clients WHERE id = 1").fetchone()
+check("respeta el estado puesto a mano", dict(st) == {"status": "active", "status_source": "manual", "status_updated_by": 3}
+      and changes["status"] is None, (dict(st), changes))
+with get_conn() as conn:
+    conv = conn.execute("SELECT id FROM conversations WHERE client_id = 1 ORDER BY id LIMIT 1").fetchone()["id"]
+    conn.execute("""INSERT INTO messages (conversation_id, direction, sender, body, sent_at)
+                    VALUES (?, 'in', 'Laura', 'Siguen sin llegar las cajas', localtimestamp(0))""", (conv,))
+fake_result = second_result
 changes = insights.analyze_client(1)
 second_prompt = prompts[-1]["messages"][0]["content"]
+with get_conn() as conn:
+    st = conn.execute("SELECT status, status_source FROM clients WHERE id = 1").fetchone()
+check("con mensajes nuevos, la IA vuelve a decidir", dict(st) == {"status": "issue", "status_source": "auto"}, dict(st))
 check("el prompt pasa los datos confirmados y descartados",
       "- CIF: B12345678 (verificado)" in second_prompt and "- Inventado: x" in second_prompt)
 check("el prompt pasa las tareas existentes con id", f"[{repo['id']}] (abierta)" in second_prompt)
