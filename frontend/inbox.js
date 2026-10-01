@@ -9,7 +9,7 @@ function waitLabel(sentAt) {
   if (hours < 1) text = `${Math.max(1, Math.round(hours * 60))} min`;
   else if (hours < 48) text = `${Math.round(hours)} h`;
   else text = `${Math.round(hours / 24)} días`;
-  return `<span class="wait ${hours >= WAIT_ALERT_HOURS ? "late" : ""}" title="Esperando respuesta desde ${formatDate(sentAt)}">⏱ ${text}</span>`;
+  return `<span class="wait ${hours >= WAIT_ALERT_HOURS ? "late" : ""}" title="Esperando respuesta desde ${formatDate(sentAt)}">${text}</span>`;
 }
 
 // Número de conversaciones en cada lado del selector «Mías · Todo el equipo».
@@ -32,12 +32,12 @@ async function loadInbox() {
       <div class="inbox-bottom">
         <span class="muted small">${i.is_mine ? "La llevas tú" : `La lleva ${escapeHtml(i.owner)}`}</span>
         <span>
-          <button class="link small" data-reply title="Redactar la respuesta con IA">✍️ Responder</button>
+          <button class="link small" data-reply title="Redactar la respuesta con IA">Responder</button>
           <button class="link small" data-dismiss title="Quitar de la bandeja: no necesita respuesta">✓ Atendido</button>
         </span>
       </div>
     </li>`).join("")
-    : `<li class="muted small empty-tasks">${inboxScope === "mine" ? "Nadie espera tu respuesta. 🎉" : "Nadie espera respuesta del equipo. 🎉"}</li>`;
+    : `<li class="muted small empty-tasks">${inboxScope === "mine" ? "Nadie espera tu respuesta." : "Nadie espera respuesta del equipo."}</li>`;
 }
 
 function setInboxCount(items) {

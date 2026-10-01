@@ -203,8 +203,8 @@ verify token que muestra la app en Meta y suscribirse a "messages"; requiere la 
 permite respuestas libres dentro de las 24 h desde el último mensaje del cliente. "↻ Sincronizar ahora" fuerza la \
 revisión; si algo falla se muestra el error. Desactivar una integración la pausa; borrarla conserva lo importado.
 - Enviar desde la app: en el borrador de respuesta, si tienes una integración activa del canal de esa conversación, \
-aparece "📤 Enviar por …" (pide confirmación); el mensaje enviado queda en la conversación. En email se responde \
-en el mismo hilo. "o escribirla yo" abre el cuadro para escribir sin IA. Si no hay integración, se copia (📋).
+aparece "Enviar por …" (pide confirmación); el mensaje enviado queda en la conversación. En email se responde \
+en el mismo hilo. "o escribirla yo" abre el cuadro para escribir sin IA. Si no hay integración, se copia con "Copiar".
 - Protección de datos (solo administradores), en ✎ Editar cliente: "Descargar todos sus datos" genera un archivo \
 JSON con todo lo guardado del cliente (derecho de acceso); "Borrar cliente y todos sus datos" lo elimina por completo \
 (derecho de supresión), pidiendo escribir su nombre para confirmar. No se puede deshacer y queda en el registro.
@@ -255,7 +255,7 @@ lo encontrado) y "✨ Por significado" (la IA entiende la pregunta aunque el men
 búsqueda con sinónimos, busca en mensajes y documentos y ordena lo que de verdad responde, con una frase de por \
 qué). Ambos buscan en tus conversaciones o en las del equipo según la casilla "Solo mis conversaciones". Al pulsar un resultado se \
 salta a ese mensaje. Debajo, todos los mensajes del cliente en orden cronológico. Por defecto se ve el historial completo, \
-con "la lleva X" en las conversaciones de compañeros; la casilla "Solo mis conversaciones" deja solo las tuyas. Se puede filtrar por canal. Arriba está "✍️ Redactar respuesta": se elige la conversación (canal) a la que responder, se pueden dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y la IA redacta un borrador con el contexto de todos los canales, la ficha y las tareas del cliente, en el estilo del canal (breve en WhatsApp/Telegram; con saludo y firma en email). No inventa precios ni fechas: deja huecos entre corchetes como [precio]. El borrador se puede editar, regenerar y copiar (📋) para pegarlo en WhatsApp, el correo, etc., o se envía directamente con "📤 Enviar" si el canal está conectado en Integraciones. En "Sin responder", "✍️ Responder" abre directamente el borrador de esa conversación.
+con "la lleva X" en las conversaciones de compañeros; la casilla "Solo mis conversaciones" deja solo las tuyas. Se puede filtrar por canal. Arriba está "Redactar respuesta": se elige la conversación (canal) a la que responder, se pueden dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y la IA redacta un borrador con el contexto de todos los canales, la ficha y las tareas del cliente, en el estilo del canal (breve en WhatsApp/Telegram; con saludo y firma en email). No inventa precios ni fechas: deja huecos entre corchetes como [precio]. El borrador se puede editar, regenerar y copiar para pegarlo en WhatsApp, el correo, etc., o se envía directamente con "Enviar" si el canal está conectado en Integraciones. En "Sin responder", "Responder" abre directamente el borrador de esa conversación.
 - Tú (Chispa) estás en la esquina inferior derecha; tu conversación también se guarda.
 - Consejos para preguntar: sé concreto ("¿qué CIF nos dio?", "¿qué fecha de entrega acordamos?"). \
 El asistente prueba sinónimos solo, pero conviene nombrar el dato que buscas.

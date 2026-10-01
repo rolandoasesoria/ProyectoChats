@@ -67,7 +67,7 @@ async function copyDraft() {
   }
   const btn = $("#draft-copy");
   btn.textContent = "✓ Copiado";
-  setTimeout(() => { btn.textContent = "📋 Copiar"; }, 2000);
+  setTimeout(() => { btn.textContent = "Copiar"; }, 2000);
 }
 
 // Desde la bandeja: abrir el cliente directamente en el borrador de esa conversación.

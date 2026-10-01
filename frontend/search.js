@@ -19,7 +19,7 @@ function renderResults(html) {
 function resultItem(r, { reason = "", text = "" } = {}) {
   if (r.kind === "document") {
     return `<li class="result" data-attachment="${r.attachment_id}">
-      <div class="result-meta">📄 ${escapeHtml(r.filename)} · ${formatDate(r.sent_at)}</div>
+      <div class="result-meta"><span class="doc-icon">${fileIcon(r.mime || "application/pdf")}</span> ${escapeHtml(r.filename)} · ${formatDate(r.sent_at)}</div>
       ${reason ? `<div class="result-reason">${escapeHtml(reason)}</div>` : ""}
       <div class="result-text">${text}</div></li>`;
   }
