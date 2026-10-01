@@ -97,7 +97,7 @@ async function loadInbox() {
   $("#inbox-list").innerHTML = followHtml + (items.length ? items.map((i) => `
     <li class="inbox-item" data-client="${i.client_id}" data-message="${i.message_id}" data-conversation="${i.conversation_id}">
       <div class="inbox-top">
-        <strong>${escapeHtml(i.client)}</strong>
+        <span class="inbox-name"><strong>${escapeHtml(i.client)}</strong>${priorityChips(i)}</span>
         ${waitLabel(i.sent_at)}
       </div>
       <div class="inbox-snippet">${badge(i.channel)} ${escapeHtml(i.body.length > 140 ? `${i.body.slice(0, 140)}…` : i.body)}</div>
