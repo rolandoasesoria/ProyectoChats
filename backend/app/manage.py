@@ -12,11 +12,11 @@ import argparse
 import getpass
 import sys
 
-from fastapi import HTTPException
 
 from . import auth
 from .config import config
 from .db import get_conn, init_db, migrations, safe_url
+from .errors import AppError
 
 
 def _ask_password() -> str:
@@ -80,8 +80,8 @@ def main() -> None:
             for u in auth.list_users():
                 state = "activo" if u["active"] else "desactivado"
                 print(f"{u['id']:>3}  {u['username'] or '-':<15} {u['name']:<25} {u['role']:<6} {state}")
-    except HTTPException as exc:
-        sys.exit(exc.detail)
+    except AppError as exc:
+        sys.exit(exc.message)
 
 
 if __name__ == "__main__":

@@ -4,9 +4,9 @@ Se crean al responder (enviando desde la app o copiando el borrador). Cuando ven
 escrito nada nuevo en esa conversación, aparece en la bandeja «Sin responder» de quien lo pidió. Si el cliente
 contesta antes, el seguimiento se resuelve solo.
 """
-from fastapi import HTTPException
 
 from .db import get_conn, rows
+from .errors import NotFound
 
 # Mensaje nuevo del cliente en la conversación después de crear el seguimiento.
 _ANSWERED = """EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = f.conversation_id
@@ -17,7 +17,7 @@ def create(conversation_id: int, user_id: int, days: int) -> dict:
     with get_conn() as conn:
         last = conn.execute("SELECT max(id) AS id FROM messages WHERE conversation_id = ?", (conversation_id,)).fetchone()
         if last is None or last["id"] is None:
-            raise HTTPException(404, "Conversación no encontrada o vacía")
+            raise NotFound("Conversación no encontrada o vacía")
         # Un seguimiento por persona y conversación: el nuevo sustituye al anterior.
         conn.execute("DELETE FROM follow_ups WHERE conversation_id = ? AND user_id = ?", (conversation_id, user_id))
         row = conn.execute(
@@ -46,4 +46,4 @@ def delete(follow_up_id: int, user_id: int) -> None:
     with get_conn() as conn:
         cur = conn.execute("DELETE FROM follow_ups WHERE id = ? AND user_id = ?", (follow_up_id, user_id))
     if not cur.rowcount:
-        raise HTTPException(404, "Seguimiento no encontrado")
+        raise NotFound("Seguimiento no encontrado")

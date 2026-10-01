@@ -2,9 +2,9 @@
 import re
 import unicodedata
 
-from fastapi import HTTPException
 
 from .db import get_conn, rows
+from .errors import Conflict, InvalidInput, NotFound
 
 STATUSES = {"lead": "Potencial", "active": "Activo", "issue": "Incidencia", "inactive": "Inactivo"}
 CHANNELS = ("email", "whatsapp", "telegram", "phone", "other")
@@ -38,9 +38,9 @@ def update_client(client_id: int, fields: dict, user_id: int | None = None) -> N
     allowed = {"name", "company", "status", "assignee_user_id"}
     fields = {k: v for k, v in fields.items() if k in allowed}
     if "status" in fields and fields["status"] not in STATUSES:
-        raise HTTPException(400, "Estado no válido.")
+        raise InvalidInput("Estado no válido.")
     if "name" in fields and not (fields["name"] or "").strip():
-        raise HTTPException(400, "El nombre es obligatorio.")
+        raise InvalidInput("El nombre es obligatorio.")
     if not fields:
         return
     with get_conn() as conn:
@@ -128,9 +128,9 @@ def all_tags() -> list[dict]:
 def add_identity(client_id: int, channel: str, handle: str) -> dict:
     handle = handle.strip()
     if channel not in CHANNELS:
-        raise HTTPException(400, "Canal no válido.")
+        raise InvalidInput("Canal no válido.")
     if not handle:
-        raise HTTPException(400, "El identificador es obligatorio.")
+        raise InvalidInput("El identificador es obligatorio.")
     if channel == "email":
         handle = handle.lower()
     with get_conn() as conn:
@@ -139,8 +139,8 @@ def add_identity(client_id: int, channel: str, handle: str) -> dict:
                 WHERE ci.channel = ? AND lower(ci.handle) = lower(?)""", (channel, handle)).fetchone()
         if other:
             if other["id"] == client_id:
-                raise HTTPException(409, "Este cliente ya tiene ese identificador.")
-            raise HTTPException(409, f"Ese identificador ya pertenece a «{other['name']}». "
+                raise Conflict("Este cliente ya tiene ese identificador.")
+            raise Conflict(f"Ese identificador ya pertenece a «{other['name']}». "
                                      "Si es la misma persona, usa «Unir con otro cliente».")
         ident_id = conn.execute("INSERT INTO client_identities (client_id, channel, handle) VALUES (?, ?, ?) RETURNING id",
                                 (client_id, channel, handle)).lastrowid
@@ -150,7 +150,7 @@ def add_identity(client_id: int, channel: str, handle: str) -> dict:
 def delete_identity(identity_id: int) -> None:
     with get_conn() as conn:
         if not conn.execute("DELETE FROM client_identities WHERE id = ?", (identity_id,)).rowcount:
-            raise HTTPException(404, "Identificador no encontrado.")
+            raise NotFound("Identificador no encontrado.")
 
 
 def possible_duplicates(client_id: int) -> list[dict]:
@@ -183,12 +183,12 @@ def possible_duplicates(client_id: int) -> list[dict]:
 def merge_clients(source_id: int, target_id: int) -> dict:
     """Mueve todo lo del cliente `source` al `target` y borra `source`. No se puede deshacer."""
     if source_id == target_id:
-        raise HTTPException(400, "No se puede unir un cliente consigo mismo.")
+        raise InvalidInput("No se puede unir un cliente consigo mismo.")
     with get_conn() as conn:
         src = conn.execute("SELECT * FROM clients WHERE id = ?", (source_id,)).fetchone()
         dst = conn.execute("SELECT * FROM clients WHERE id = ?", (target_id,)).fetchone()
         if not src or not dst:
-            raise HTTPException(404, "Cliente no encontrado.")
+            raise NotFound("Cliente no encontrado.")
         moved = {}
         for table in ("client_identities", "conversations", "client_facts", "tasks", "client_notes", "notifications",
                       "attachments"):

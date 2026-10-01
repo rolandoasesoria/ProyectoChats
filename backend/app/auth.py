@@ -8,10 +8,11 @@ import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Cookie, HTTPException
+from fastapi import Cookie
 
 from .config import config
 from .db import get_conn, rows
+from .errors import Conflict, Forbidden, InvalidInput, NotAuthenticated, NotFound, TooManyAttempts
 
 COOKIE_NAME = "pc_session"
 SESSION_DAYS = 30
@@ -47,9 +48,9 @@ def verify_password(password: str, stored: str | None) -> bool:
 
 def validate_password(password: str) -> None:
     if len(password) < MIN_PASSWORD_LENGTH:
-        raise HTTPException(400, f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres.")
+        raise InvalidInput(f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres.")
     if len(password) > MAX_PASSWORD_LENGTH:
-        raise HTTPException(400, f"La contraseña no puede tener más de {MAX_PASSWORD_LENGTH} caracteres.")
+        raise InvalidInput(f"La contraseña no puede tener más de {MAX_PASSWORD_LENGTH} caracteres.")
 
 
 # Hash de relleno: si el usuario no existe se verifica contra él igualmente, para que el tiempo
@@ -85,9 +86,8 @@ def _check_lockout(username: str, ip: str) -> None:
                 unlock = datetime.fromisoformat(row["created_at"]).replace(tzinfo=timezone.utc) \
                     + timedelta(minutes=LOCK_MINUTES)
                 minutes = max(1, round((unlock - datetime.now(timezone.utc)).total_seconds() / 60))
-                raise HTTPException(
-                    429, f"Demasiados intentos fallidos. Vuelve a intentarlo en {minutes} min "
-                         "o pide a un administrador que restablezca tu contraseña.")
+                raise TooManyAttempts(f"Demasiados intentos fallidos. Vuelve a intentarlo en {minutes} min "
+                                      "o pide a un administrador que restablezca tu contraseña.")
 
 
 def _record_failure(username: str, ip: str) -> None:
@@ -114,7 +114,7 @@ def login(username: str, password: str, ip: str) -> tuple[str, dict]:
     valid = verify_password(password, row["password_hash"] if row else _DUMMY_HASH)
     if not row or not valid or not row["active"]:
         _record_failure(username, ip)
-        raise HTTPException(401, "Usuario o contraseña incorrectos.")
+        raise NotAuthenticated("Usuario o contraseña incorrectos.")
     clear_failures(username)
     token = secrets.token_urlsafe(32)
     expires = (datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
@@ -145,7 +145,7 @@ def end_all_sessions(user_id: int, except_token: str | None = None) -> None:
 def current_user(pc_session: str | None = Cookie(None)) -> dict:
     """Dependencia de FastAPI: usuario autenticado o 401."""
     if not pc_session:
-        raise HTTPException(401, "Inicia sesión para continuar.")
+        raise NotAuthenticated("Inicia sesión para continuar.")
     with get_conn() as conn:
         row = conn.execute(
             f"""SELECT {', '.join('u.' + f.strip() for f in USER_FIELDS.split(','))}
@@ -154,13 +154,13 @@ def current_user(pc_session: str | None = Cookie(None)) -> dict:
             (_token_hash(pc_session), _now()),
         ).fetchone()
     if not row:
-        raise HTTPException(401, "La sesión ha caducado. Vuelve a iniciar sesión.")
+        raise NotAuthenticated("La sesión ha caducado. Vuelve a iniciar sesión.")
     return dict(row)
 
 
 def require_admin(user: dict) -> dict:
     if user["role"] != "admin":
-        raise HTTPException(403, "Solo los administradores pueden hacer esto.")
+        raise Forbidden("Solo los administradores pueden hacer esto.")
     return user
 
 
@@ -174,12 +174,12 @@ def create_user(username: str, name: str, password: str, email: str | None = Non
     validate_password(password)
     username = username.strip()
     if not username:
-        raise HTTPException(400, "El nombre de usuario es obligatorio.")
+        raise InvalidInput("El nombre de usuario es obligatorio.")
     with get_conn() as conn:
         if conn.execute("SELECT 1 FROM users WHERE lower(username) = lower(?)", (username,)).fetchone():
-            raise HTTPException(409, "Ese nombre de usuario ya existe.")
+            raise Conflict("Ese nombre de usuario ya existe.")
         if email and conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
-            raise HTTPException(409, "Ese email ya está en uso.")
+            raise Conflict("Ese email ya está en uso.")
         user_id = conn.execute(
             "INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?) RETURNING id",
             (username, name.strip() or username, email or None, hash_password(password), role),
@@ -203,7 +203,7 @@ def update_user(user_id: int, **fields) -> dict:
             conn.execute(f"UPDATE users SET {sets} WHERE id = ?", [*updates.values(), user_id])
         row = conn.execute(f"SELECT {USER_FIELDS} FROM users WHERE id = ?", (user_id,)).fetchone()
     if not row:
-        raise HTTPException(404, "Usuario no encontrado.")
+        raise NotFound("Usuario no encontrado.")
     if password or fields.get("active") == 0:
         end_all_sessions(user_id, except_token=fields.get("keep_token"))
     if password and row["username"]:

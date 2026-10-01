@@ -11,11 +11,11 @@ al usarla se aplican al cliente y a la conversación.
 """
 import re
 
-from fastapi import HTTPException
 
 from . import clients, search
 from .clients import STATUSES, _norm_name
 from .db import get_conn, rows
+from .errors import Forbidden, InvalidInput, NotFound
 
 VARIABLE = re.compile(r"\{(nombre|cliente|empresa|yo|dato:([^{}]{1,100}))\}", re.IGNORECASE)
 SHORTCUT = re.compile(r"^[a-z0-9_-]{1,30}$")
@@ -30,22 +30,22 @@ def _clean(fields: dict) -> dict:
     if "shortcut" in out:
         sc = (out["shortcut"] or "").strip().lstrip("/").lower() or None
         if sc and not SHORTCUT.match(sc):
-            raise HTTPException(400, "El atajo solo puede tener letras sin tildes, números, guiones y _ (máx. 30).")
+            raise InvalidInput("El atajo solo puede tener letras sin tildes, números, guiones y _ (máx. 30).")
         out["shortcut"] = sc
     if out.get("set_status") and out["set_status"] not in STATUSES:
-        raise HTTPException(400, "Estado no válido.")
+        raise InvalidInput("Estado no válido.")
     if "mark_done" in out:
         out["mark_done"] = int(bool(out["mark_done"]))
     for required in ("title", "body"):
         if required in out and not out[required]:
-            raise HTTPException(400, "El título y el texto son obligatorios.")
+            raise InvalidInput("El título y el texto son obligatorios.")
     return out
 
 
 def _check_shortcut(conn, shortcut: str | None, reply_id: int | None = None) -> None:
     if shortcut and conn.execute("SELECT 1 FROM saved_replies WHERE lower(shortcut) = ? AND id IS DISTINCT FROM ?",
                                  (shortcut, reply_id)).fetchone():
-        raise HTTPException(400, f"Ya hay otra respuesta con el atajo /{shortcut}.")
+        raise InvalidInput(f"Ya hay otra respuesta con el atajo /{shortcut}.")
 
 
 def list_replies() -> list[dict]:
@@ -60,14 +60,14 @@ def list_replies() -> list[dict]:
 def get_reply(reply_id: int) -> dict:
     reply = next((r for r in list_replies() if r["id"] == reply_id), None)
     if not reply:
-        raise HTTPException(404, "Respuesta guardada no encontrada")
+        raise NotFound("Respuesta guardada no encontrada")
     return reply
 
 
 def create(fields: dict, user_id: int) -> dict:
     data = _clean(fields)
     if not data.get("title") or not data.get("body"):
-        raise HTTPException(400, "El título y el texto son obligatorios.")
+        raise InvalidInput("El título y el texto son obligatorios.")
     with get_conn() as conn:
         _check_shortcut(conn, data.get("shortcut"))
         reply_id = conn.execute(
@@ -78,7 +78,7 @@ def create(fields: dict, user_id: int) -> dict:
 
 def _can_edit(reply: dict, user: dict) -> None:
     if reply["created_by"] != user["id"] and user["role"] != "admin":
-        raise HTTPException(403, "Solo quien la creó (o un administrador) puede cambiarla.")
+        raise Forbidden("Solo quien la creó (o un administrador) puede cambiarla.")
 
 
 def update(reply_id: int, fields: dict, user: dict) -> dict:
@@ -124,7 +124,7 @@ def use(reply_id: int, client_id: int, conversation_id: int | None, user: dict) 
     with get_conn() as conn:
         client = conn.execute("SELECT id, name, company FROM clients WHERE id = ?", (client_id,)).fetchone()
         if not client:
-            raise HTTPException(404, "Cliente no encontrado")
+            raise NotFound("Cliente no encontrado")
         facts = rows(conn.execute(
             "SELECT label, value FROM client_facts WHERE client_id = ? AND origin != 'dismissed'", (client_id,)))
         tags = [r["tag"] for r in conn.execute("SELECT tag FROM client_tags WHERE client_id = ?", (client_id,))]

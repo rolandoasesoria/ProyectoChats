@@ -25,11 +25,11 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 from email.utils import formataddr, make_msgid
 
-from fastapi import HTTPException
 
 from . import clients, emails, insights, search, secrets_store, settings
 from .config import config
 from .db import get_conn, rows
+from .errors import ExternalServiceError, InvalidInput, NotFound
 
 log = logging.getLogger(__name__)
 
@@ -112,14 +112,14 @@ def _clean_config(kind: str, data: dict, old: dict | None = None) -> dict:
         if not value and "default" in f:
             value = f["default"]
         if f.get("required") and not value:
-            raise HTTPException(400, f"Falta «{f['label']}».")
+            raise InvalidInput(f"Falta «{f['label']}».")
         cfg[f["key"]] = value
     if kind == "whatsapp" and not cfg.get("verify_token"):
         cfg["verify_token"] = secrets.token_urlsafe(24)
     if kind == "email":
         for k in ("imap_port", "smtp_port", "sync_minutes", "first_sync_days"):
             if not cfg[k].isdigit():
-                raise HTTPException(400, f"«{next(f['label'] for f in FIELDS['email'] if f['key'] == k)}» debe ser un número.")
+                raise InvalidInput(f"«{next(f['label'] for f in FIELDS['email'] if f['key'] == k)}» debe ser un número.")
     return cfg
 
 
@@ -140,7 +140,7 @@ def get(integration_id: int) -> dict:
     with get_conn() as conn:
         row = conn.execute("SELECT * FROM integrations WHERE id = ?", (integration_id,)).fetchone()
     if not row:
-        raise HTTPException(404, "Integración no encontrada")
+        raise NotFound("Integración no encontrada")
     data = dict(row)
     data["config"] = secrets_store.decrypt(data["config"])
     data["state"] = json.loads(data["state"])
@@ -459,7 +459,7 @@ def sender_for(conversation_id: int, user: dict) -> dict | None:
 def send_reply(conversation_id: int, user: dict, text: str) -> dict:
     integ = sender_for(conversation_id, user)
     if not integ:
-        raise HTTPException(400, "No tienes una integración activa de este canal para enviar mensajes.")
+        raise InvalidInput("No tienes una integración activa de este canal para enviar mensajes.")
     with get_conn() as conn:
         conv = conn.execute(
             "SELECT id, channel, subject, client_id, owner_user_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
@@ -470,7 +470,7 @@ def send_reply(conversation_id: int, user: dict, text: str) -> dict:
             """SELECT external_id FROM messages WHERE conversation_id = ? AND direction = 'in'
                 AND external_id IS NOT NULL ORDER BY sent_at DESC, id DESC LIMIT 1""", (conversation_id,)).fetchone()
     if not idents:
-        raise HTTPException(400, "El cliente no tiene identificador en este canal.")
+        raise InvalidInput("El cliente no tiene identificador en este canal.")
     try:
         if conv["channel"] == "email":
             ext = send_email(integ, idents[0], text, conv["subject"], last_in["external_id"] if last_in else None)
@@ -480,7 +480,7 @@ def send_reply(conversation_id: int, user: dict, text: str) -> dict:
         else:
             ext = send_whatsapp(integ, idents[0], text)
     except (IntegrationError, OSError, smtplib.SMTPException) as exc:
-        raise HTTPException(502, f"No se pudo enviar: {exc}")
+        raise ExternalServiceError(f"No se pudo enviar: {exc}")
     # El mensaje enviado se guarda en la conversación (como enviado por quien lo escribió).
     with get_conn() as conn:
         message_id = conn.execute(

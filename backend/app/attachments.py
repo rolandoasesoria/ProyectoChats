@@ -5,11 +5,11 @@ import mimetypes
 import re
 import uuid
 
-from fastapi import HTTPException
 
 from . import agent
 from .config import config
 from .db import TS_CONFIG, get_conn, rows
+from .errors import InvalidInput, NotFound
 
 STORAGE = config.data_dir / "attachments"
 MAX_BYTES = 20 * 1024 * 1024
@@ -51,7 +51,7 @@ def save(conn, client_id: int, filename: str, data: bytes, mime: str | None = No
          message_id: int | None = None, uploaded_by: int | None = None) -> int:
     """Guarda el archivo en disco y su fila (usa la conexión de quien llama, dentro de su transacción)."""
     if len(data) > MAX_BYTES:
-        raise HTTPException(400, f"«{filename}» supera el máximo de 20 MB.")
+        raise InvalidInput(f"«{filename}» supera el máximo de 20 MB.")
     mime = _guess_mime(filename, mime)
     STORAGE.mkdir(parents=True, exist_ok=True)
     path = STORAGE / f"{uuid.uuid4().hex}_{_safe_name(filename)}"
@@ -101,7 +101,7 @@ def by_message(message_ids: list[int]) -> dict[int, list[dict]]:
 def delete(attachment_id: int) -> None:
     att = get(attachment_id)
     if not att:
-        raise HTTPException(404, "Documento no encontrado")
+        raise NotFound("Documento no encontrado")
     with get_conn() as conn:
         conn.execute("DELETE FROM attachments WHERE id = ?", (attachment_id,))
     file_path(att).unlink(missing_ok=True)
@@ -119,17 +119,17 @@ def read_with_ai(attachment_id: int) -> dict:
     """Lee una imagen o un PDF (también escaneado) con Claude y guarda el texto para poder buscarlo."""
     att = get(attachment_id)
     if not att:
-        raise HTTPException(404, "Documento no encontrado")
+        raise NotFound("Documento no encontrado")
     data = file_path(att).read_bytes()
     b64 = base64.standard_b64encode(data).decode()
     if att["mime"] in AI_IMAGE_TYPES:
         if len(data) > AI_IMAGE_MAX_BYTES:
-            raise HTTPException(400, "La imagen supera los 5 MB que admite la IA.")
+            raise InvalidInput("La imagen supera los 5 MB que admite la IA.")
         block = {"type": "image", "source": {"type": "base64", "media_type": att["mime"], "data": b64}}
     elif att["mime"] == "application/pdf":
         block = {"type": "document", "source": {"type": "base64", "media_type": "application/pdf", "data": b64}}
     else:
-        raise HTTPException(400, "La IA solo puede leer imágenes (PNG, JPG, GIF, WEBP) y PDF.")
+        raise InvalidInput("La IA solo puede leer imágenes (PNG, JPG, GIF, WEBP) y PDF.")
     response = agent._create(
         system="Extraes el contenido de documentos e imágenes que los clientes envían a una empresa, para poder "
                "buscarlo después. Transcribe todo el texto legible tal cual (importes, fechas, referencias, "
@@ -139,7 +139,7 @@ def read_with_ai(attachment_id: int) -> dict:
         output_config={"effort": "low"},
     )
     if response.stop_reason == "refusal":
-        raise HTTPException(400, "La IA no ha podido leer este archivo.")
+        raise InvalidInput("La IA no ha podido leer este archivo.")
     text = "\n".join(b.text for b in response.content if b.type == "text").strip()[:MAX_TEXT]
     with get_conn() as conn:
         conn.execute("UPDATE attachments SET extracted_text = ?, extracted_by = 'ai' WHERE id = ?", (text, attachment_id))
