@@ -422,6 +422,13 @@ button.link.small { font-size: 12px; }
 .status-dot { background: var(--st, var(--other)); }
 .status-badge { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 999px; color: var(--st); border: 1px solid var(--st); white-space: nowrap; }
 .detail-title { display: flex; align-items: center; gap: 8px; }
+.status-wrap { position: relative; }
+button.status-badge { cursor: pointer; background: none; font: inherit; font-size: 11px; font-weight: 700; }
+button.status-badge:hover { background: color-mix(in srgb, var(--st) 12%, transparent); }
+.status-badge.auto::after { content: " ✨"; font-size: 9px; }
+.status-menu { left: 0; right: auto; min-width: 200px; }
+.status-menu button.current { font-weight: 600; background: var(--bg); }
+.status-note { margin: -6px 0 8px; }
 .detail-title h2 { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tag-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 8px; }
 .tag-chips:empty { display: none; }

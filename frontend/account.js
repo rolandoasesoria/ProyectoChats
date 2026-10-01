@@ -106,6 +106,7 @@ async function loadSettingsForm() {
   const s = await api("/api/settings");
   $("#set-sla").value = s.sla_hours;
   $("#set-retention").value = s.retention_months;
+  $("#set-inactive").value = s.inactive_days;
   $("#retention-apply").hidden = !s.retention_months;
   updateRetentionPreview();
 }
@@ -141,7 +142,11 @@ async function submitSettings(e) {
   try {
     const res = await api("/api/admin/settings", {
       method: "PATCH",
-      body: JSON.stringify({ sla_hours: Number($("#set-sla").value), retention_months: Number($("#set-retention").value) }),
+      body: JSON.stringify({
+        sla_hours: Number($("#set-sla").value),
+        retention_months: Number($("#set-retention").value),
+        inactive_days: Number($("#set-inactive").value),
+      }),
     });
     slaHours = res.sla_hours;
     $("#retention-apply").hidden = !res.retention_months;

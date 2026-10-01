@@ -35,11 +35,27 @@ function tagChips(tags, max = Infinity) {
 
 /* ---------- Cabecera de la ficha ---------- */
 
+// Quién decidió el estado: la IA (o la regla de inactividad) con su motivo, o una persona a mano.
+function statusNote(data) {
+  const label = STATUS_LABELS[data.status] || "";
+  if (data.status_source === "manual") {
+    return `${label}: puesto a mano${data.status_updated_by ? ` por ${data.status_updated_by}` : ""}`
+      + `${data.status_updated_at ? ` ${timeAgo(data.status_updated_at)}` : ""}. La IA lo volverá a decidir cuando haya mensajes nuevos.`;
+  }
+  return data.status_reason ? `${label} (decidido automáticamente): ${data.status_reason}` : "";
+}
+
 function renderClientHeader(data) {
   $("#detail-name").textContent = data.name;
   const statusEl = $("#detail-status");
   statusEl.textContent = STATUS_LABELS[data.status] || "";
-  statusEl.className = `status-badge ${data.status}`;
+  // ✨ (por CSS) cuando lo decide la IA; sin marca cuando lo ha puesto una persona.
+  statusEl.className = `status-badge ${data.status} ${data.status_source === "manual" ? "manual" : "auto"}`;
+  statusEl.title = data.status_source === "manual" ? "Puesto a mano · pulsa para cambiarlo" : "Lo decide la IA · pulsa para cambiarlo a mano";
+  const note = statusNote(data);
+  $("#status-note").textContent = note;
+  $("#status-note").hidden = !note;
+  $("#status-menu").hidden = true;
   $("#detail-company").textContent = [data.company, data.assignee && `Responsable: ${data.assignee}`].filter(Boolean).join(" · ");
   $("#detail-tags").innerHTML = tagChips(data.tags);
   $("#detail-identities").innerHTML = data.identities
@@ -118,6 +134,36 @@ async function openClientDialog(mode) {
   }
   dialog.showModal();
   $("#cf-name").focus();
+}
+
+/* ---------- Cambiar el estado desde la cabecera ---------- */
+
+function toggleStatusMenu() {
+  const menu = $("#status-menu");
+  if (!menu.hidden) { menu.hidden = true; return; }
+  const c = state.clientData;
+  menu.innerHTML = Object.entries(STATUS_LABELS).map(([value, label]) =>
+    `<button role="menuitem" data-status="${value}" class="${value === c.status ? "current" : ""}">${statusDot(value)}${label}</button>`).join("")
+    + (c.status_source === "manual" ? `<button role="menuitem" data-status-auto>✨ Que lo decida la IA</button>` : "");
+  menu.hidden = false;
+}
+
+async function onStatusMenuClick(e) {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  const clientId = state.clientId;
+  const body = btn.dataset.statusAuto !== undefined ? { status_auto: true } : { status: btn.dataset.status };
+  $("#status-menu").hidden = true;
+  try {
+    const data = await api(`/api/clients/${clientId}`, { method: "PATCH", body: JSON.stringify(body) });
+    if (state.clientId !== clientId) return;
+    state.clientData = { ...state.clientData, ...data };
+    renderClientHeader(state.clientData);
+    const dot = document.querySelector(`#client-list li[data-id="${clientId}"] .status-dot`);
+    if (dot) dot.className = `status-dot ${data.status}`;
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 /* ---------- Protección de datos (administradores) ---------- */
@@ -264,6 +310,11 @@ function bindClientEvents() {
   $("#delete-client-btn").addEventListener("click", deleteClient);
   $("#sensitive-btn").addEventListener("click", () => loadSensitive().catch((err) => alert(err.message)));
   $("#sensitive-list").addEventListener("click", onSensitiveClick);
+  $("#detail-status").addEventListener("click", toggleStatusMenu);
+  $("#status-menu").addEventListener("click", onStatusMenuClick);
+  document.addEventListener("click", (e) => {
+    if (!e.target.closest(".status-wrap")) $("#status-menu").hidden = true;
+  });
   $("#merge-btn").addEventListener("click", () => {
     const target = Number($("#merge-target").value);
     if (!target) return;

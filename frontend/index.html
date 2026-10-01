@@ -98,10 +98,14 @@
       <div class="detail-body" hidden>
         <div class="detail-title">
           <h2 id="detail-name"></h2>
-          <span id="detail-status" class="status-badge"></span>
+          <span class="status-wrap">
+            <button id="detail-status" class="status-badge" aria-haspopup="true" title="Cambiar el estado"></button>
+            <div class="menu status-menu" id="status-menu" role="menu" hidden></div>
+          </span>
           <button class="icon-link" id="edit-client-btn" title="Editar cliente: datos, estado, responsable, etiquetas, identificadores o unir con otro">✎</button>
         </div>
         <p id="detail-company" class="muted"></p>
+        <p id="status-note" class="muted small status-note" hidden></p>
         <p id="presence-bar" class="presence-bar" role="status" hidden></p>
         <div id="detail-tags" class="tag-chips"></div>
         <div id="detail-identities" class="identities"></div>
@@ -389,6 +393,11 @@
         </label>
         <p class="muted small">Tiempo máximo para contestar a un cliente. En «Sin responder» se avisa cuando queda poco
           («vence en…») y se marca en rojo al pasarse; el panel muestra qué porcentaje se responde a tiempo.</p>
+        <label>Pasar a Inactivo tras (días sin mensajes)
+          <input id="set-inactive" type="number" min="0" max="730" required>
+        </label>
+        <p class="muted small">Cada día, los clientes que lleven ese tiempo sin escribir ni recibir mensajes pasan a
+          Inactivo (0 = nunca). Si vuelven a escribir, pasan a Activo. Los estados puestos a mano se respetan.</p>
         <label>Conservar los mensajes (meses)
           <input id="set-retention" type="number" min="0" max="120" required>
         </label>
