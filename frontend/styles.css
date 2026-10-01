@@ -435,6 +435,9 @@ button.link.small { font-size: 12px; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .duplicate { background: #3b2f12; color: #fde68a; } }
 .client-section { border-top: 1px solid var(--border); margin-top: 16px; padding-top: 12px; display: flex; flex-direction: column; gap: 8px; }
 .client-section h3 { margin: 0; }
+.sensitive-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 260px; overflow-y: auto; }
+.sensitive-list li { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.sensitive-body { font-size: 13px; white-space: pre-wrap; word-break: break-word; }
 .client-section p { margin: 0; }
 .identity-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
 .identity-list li { display: flex; align-items: center; gap: 6px; }
