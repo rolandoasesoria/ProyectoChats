@@ -38,6 +38,8 @@ owner: nombre de la persona del equipo responsable si está claro; si no, "". \
 No repitas tareas que ya estén en "Tareas existentes" (abiertas o hechas), aunque estén redactadas distinto. \
 No crees tareas de cosas ya resueltas en la conversación.
 4. completed_task_ids: ids de "Tareas existentes" abiertas que la conversación demuestra ya cumplidas.
+5. priority: urgencia de lo que el cliente espera ahora del equipo. "alta": incidencia, queja, plazo inminente, pedido o pago bloqueado, o un cliente que insiste sin respuesta; "media": peticiones normales pendientes (presupuestos, dudas); "baja": nada pendiente o solo agradecimientos. priority_reason: el motivo en una frase corta ("Pedido con cajas defectuosas, espera la reposición").
+6. mood: tono del cliente en sus últimos mensajes: "contento", "neutral" o "molesto".
 
 Si no hay nada para un apartado, devuelve una lista vacía."""
 
@@ -58,8 +60,11 @@ SCHEMA = {
             "required": ["title", "due_date", "owner", "message_id"], "additionalProperties": False,
         }},
         "completed_task_ids": {"type": "array", "items": {"type": "integer"}},
+        "priority": {"type": "string", "enum": ["alta", "media", "baja"]},
+        "priority_reason": {"type": "string"},
+        "mood": {"type": "string", "enum": ["contento", "neutral", "molesto"]},
     },
-    "required": ["summary", "facts", "new_tasks", "completed_task_ids"],
+    "required": ["summary", "facts", "new_tasks", "completed_task_ids", "priority", "priority_reason", "mood"],
     "additionalProperties": False,
 }
 
@@ -192,11 +197,14 @@ def analyze_client(client_id: int) -> dict:
                 [(i,) for i in completed],
             )
             conn.execute(
-                """INSERT INTO client_analysis (client_id, summary, last_message_id, analyzed_at)
-                   VALUES (?, ?, ?, localtimestamp(0))
+                """INSERT INTO client_analysis (client_id, summary, last_message_id, priority, mood, priority_reason,
+                                               analyzed_at)
+                   VALUES (?, ?, ?, ?, ?, ?, localtimestamp(0))
                    ON CONFLICT(client_id) DO UPDATE SET summary = excluded.summary,
-                       last_message_id = excluded.last_message_id, analyzed_at = excluded.analyzed_at""",
-                (client_id, result["summary"].strip(), max(by_id)),
+                       last_message_id = excluded.last_message_id, priority = excluded.priority, mood = excluded.mood,
+                       priority_reason = excluded.priority_reason, analyzed_at = excluded.analyzed_at""",
+                (client_id, result["summary"].strip(), max(by_id), result.get("priority"), result.get("mood"),
+                 (result.get("priority_reason") or "").strip() or None),
             )
         return {"facts": len(facts), "new_tasks": len(new_tasks), "completed_tasks": len(completed)}
 
@@ -333,7 +341,8 @@ def rewrite_draft(text: str, action: str, language: str = "", channel: str | Non
 def profile(client_id: int) -> dict:
     with get_conn() as conn:
         analysis = conn.execute(
-            "SELECT summary, analyzed_at, last_message_id FROM client_analysis WHERE client_id = ?", (client_id,)
+            """SELECT summary, analyzed_at, last_message_id, priority, mood, priority_reason
+                 FROM client_analysis WHERE client_id = ?""", (client_id,)
         ).fetchone()
         new_since = conn.execute(
             """SELECT count(*) FROM messages m JOIN conversations c ON c.id = m.conversation_id
@@ -349,6 +358,9 @@ def profile(client_id: int) -> dict:
     return {
         "summary": analysis["summary"] if analysis else None,
         "analyzed_at": analysis["analyzed_at"] if analysis else None,
+        "priority": analysis["priority"] if analysis else None,
+        "mood": analysis["mood"] if analysis else None,
+        "priority_reason": analysis["priority_reason"] if analysis else None,
         "new_messages_since_analysis": new_since,
         "facts": facts,
     }

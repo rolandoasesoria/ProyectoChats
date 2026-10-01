@@ -108,11 +108,13 @@ def unanswered(user_id: int, scope: str = "mine", snoozed: bool = False) -> list
             SELECT c.id AS conversation_id, c.channel, c.subject, cl.id AS client_id, cl.name AS client,
                    u.name AS owner, c.owner_user_id = ? AS is_mine,
                    last.id AS message_id, last.sender, last.body, last.sent_at,
-                   CASE WHEN {is_snoozed} THEN c.snoozed_until END AS snoozed_until
+                   CASE WHEN {is_snoozed} THEN c.snoozed_until END AS snoozed_until,
+                   ca.priority, ca.mood, ca.priority_reason
               FROM conversations c
               JOIN last ON last.conversation_id = c.id AND last.rn = 1
               JOIN clients cl ON cl.id = c.client_id
               JOIN users u ON u.id = c.owner_user_id
+              LEFT JOIN client_analysis ca ON ca.client_id = cl.id
              WHERE last.direction = 'in'
                AND (c.dismissed_message_id IS NULL OR c.dismissed_message_id < last.id)
                AND {"" if snoozed else "NOT "}coalesce({is_snoozed}, false) {scope_sql}

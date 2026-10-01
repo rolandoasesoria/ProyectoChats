@@ -62,6 +62,16 @@ async function loadProfile(clientId) {
   return data;
 }
 
+// Prioridad y tono que la IA dedujo en el último análisis (solo se muestra lo que pide atención).
+function priorityChips(p) {
+  const reason = p.priority_reason ? ` title="${escapeHtml(p.priority_reason)}"` : "";
+  return [
+    p.priority === "alta" ? `<span class="prio-chip high"${reason}>Prioridad alta</span>` : "",
+    p.priority === "media" ? `<span class="prio-chip medium"${reason}>Prioridad media</span>` : "",
+    p.mood === "molesto" ? `<span class="prio-chip upset" title="Tono del cliente en sus últimos mensajes">Molesto</span>` : "",
+  ].join("");
+}
+
 function renderProfile(p) {
   $("#summary-text").textContent = p.summary
     || "Todavía no hay resumen. Pulsa «Actualizar con IA» para que lea las conversaciones y rellene la ficha y las tareas.";
@@ -72,6 +82,9 @@ function renderProfile(p) {
     meta.push(`${p.new_messages_since_analysis} mensaje${p.new_messages_since_analysis === 1 ? "" : "s"} nuevo${p.new_messages_since_analysis === 1 ? "" : "s"} desde entonces`);
   }
   $("#summary-meta").textContent = meta.join(" · ");
+  const chips = priorityChips(p);
+  $("#summary-priority").innerHTML = chips ? `${chips}${p.priority_reason ? `<span class="muted small">${escapeHtml(p.priority_reason)}</span>` : ""}` : "";
+  $("#summary-priority").hidden = !chips;
 
   $("#facts").innerHTML = p.facts.length ? p.facts.map((f) => `
     <li data-fact="${f.id}">

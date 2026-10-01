@@ -34,7 +34,7 @@ const TOUR_STEPS = [
   {
     target: ".detail",
     title: "Ficha del cliente",
-    text: "«Ficha»: resumen, datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. Con ✎ editas estado, responsable y etiquetas.",
+    text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. Con ✎ editas estado, responsable y etiquetas.",
   },
   {
     target: "#side-inbox-tab",

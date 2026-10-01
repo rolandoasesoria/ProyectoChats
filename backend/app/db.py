@@ -139,6 +139,9 @@ CREATE TABLE IF NOT EXISTS client_analysis (
     client_id        BIGINT PRIMARY KEY REFERENCES clients(id) ON DELETE CASCADE,
     summary          TEXT NOT NULL,
     last_message_id  BIGINT,
+    priority         TEXT,     -- alta | media | baja: urgencia de lo que espera el cliente
+    mood             TEXT,     -- contento | neutral | molesto: tono del cliente en lo último que ha escrito
+    priority_reason  TEXT,
     analyzed_at      TIMESTAMP NOT NULL DEFAULT localtimestamp(0)
 );
 
@@ -309,6 +312,9 @@ CREATE INDEX IF NOT EXISTS idx_chat_turns_session ON chat_turns (session_id, id)
 -- Columnas añadidas después de crear las tablas (bases de datos ya existentes).
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS snoozed_until TIMESTAMP;
 ALTER TABLE conversations ADD COLUMN IF NOT EXISTS snoozed_message_id BIGINT;
+ALTER TABLE client_analysis ADD COLUMN IF NOT EXISTS priority TEXT;
+ALTER TABLE client_analysis ADD COLUMN IF NOT EXISTS mood TEXT;
+ALTER TABLE client_analysis ADD COLUMN IF NOT EXISTS priority_reason TEXT;
 """
 
 

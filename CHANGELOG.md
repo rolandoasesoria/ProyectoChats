@@ -20,6 +20,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Respuestas guardadas para todo el equipo, con variables ({nombre}, {empresa}, {dato:CIF}…) y atajos: en el
   borrador se insertan con un botón o escribiendo /atajo. Con acciones (estado, etiqueta, marcar atendida)
   funcionan como macros.
+- La IA detecta la prioridad (alta, media, baja) y el tono del cliente al analizarlo; se ve en la ficha y en
+  «Sin responder».
 - Plazo de respuesta (Administración > Ajustes): «vence en…» en la bandeja, rojo al pasarse y «Respondidas en
   plazo» en el panel, también por persona.
 - Paleta de comandos (Ctrl+K) para abrir clientes y lanzar acciones, y atajos de teclado (j/k, r, g c/s/t, ?).
