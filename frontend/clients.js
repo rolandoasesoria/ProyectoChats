@@ -21,7 +21,109 @@ async function loadTagOptions() {
   $("#filter-tag").innerHTML = `<option value="">Etiquetas</option>` +
     tags.map((t) => `<option value="${escapeHtml(t.tag)}">${escapeHtml(t.tag)} (${t.clients})</option>`).join("");
   $("#filter-tag").value = tags.some((t) => t.tag === current) ? current : "";
-  $("#tag-suggestions").innerHTML = tags.map((t) => `<option value="${escapeHtml(t.tag)}">`).join("");
+  knownTags = tags;
+}
+
+/* ---------- Selector de etiquetas (editar cliente) ----------
+   Desplegable con las etiquetas básicas y las que ya usa el equipo; también se puede escribir una nueva. */
+
+const BASIC_TAGS = ["VIP", "Mayorista", "Minorista", "Nuevo", "Habitual", "Paga tarde", "Presupuesto enviado", "Urgente"];
+let knownTags = [];      // [{tag, clients}] de /api/tags
+let editorTags = [];     // etiquetas elegidas en el diálogo
+let tagActive = 0;
+
+function tagOptions() {
+  const typed = $("#tag-input").value.trim();
+  const q = normText(typed);
+  const chosen = new Set(editorTags.map(normText));
+  const seen = new Map(); // sin distinguir mayúsculas ni tildes; manda cómo la escribe ya el equipo
+  knownTags.forEach((t) => seen.set(normText(t.tag), { tag: t.tag, clients: t.clients }));
+  BASIC_TAGS.forEach((t) => { if (!seen.has(normText(t))) seen.set(normText(t), { tag: t, clients: 0 }); });
+  const list = [...seen.entries()].filter(([k]) => !chosen.has(k) && (!q || k.includes(q))).map(([, v]) => v)
+    .sort((a, b) => b.clients - a.clients || a.tag.localeCompare(b.tag, "es"));
+  if (typed && !seen.has(q) && !chosen.has(q)) list.unshift({ tag: typed, clients: 0, isNew: true });
+  return list;
+}
+
+function renderTagEditor() {
+  $("#tag-editor-chips").innerHTML = editorTags.map((t, i) =>
+    `<span class="chip-tag removable">${escapeHtml(t)}<button type="button" data-remove-tag="${i}" aria-label="Quitar ${escapeHtml(t)}">×</button></span>`).join("");
+}
+
+function renderTagOptions(open = true) {
+  const menu = $("#tag-options");
+  const opts = tagOptions();
+  tagActive = Math.min(tagActive, Math.max(0, opts.length - 1));
+  menu.innerHTML = opts.map((o, i) => `
+    <li role="option" class="${i === tagActive ? "active" : ""}" data-i="${i}">
+      <span>${o.isNew ? `Crear «${escapeHtml(o.tag)}»` : escapeHtml(o.tag)}</span>
+      ${o.clients ? `<span class="muted small">${o.clients}</span>` : ""}
+    </li>`).join("");
+  menu.hidden = !open || !opts.length;
+  $("#tag-input").setAttribute("aria-expanded", String(!menu.hidden));
+}
+
+function addTag(tag) {
+  const t = tag.trim().split(/\s+/).join(" ").slice(0, 40);
+  if (t && !editorTags.some((x) => normText(x) === normText(t))) editorTags.push(t);
+  $("#tag-input").value = "";
+  tagActive = 0;
+  renderTagEditor();
+  renderTagOptions(document.activeElement === $("#tag-input"));
+}
+
+function setEditorTags(tags) {
+  editorTags = [...tags];
+  $("#tag-input").value = "";
+  $("#tag-options").hidden = true;
+  renderTagEditor();
+}
+
+function onTagKey(e) {
+  const opts = tagOptions();
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (!opts.length) return;
+    tagActive = (tagActive + (e.key === "ArrowDown" ? 1 : opts.length - 1)) % opts.length;
+    renderTagOptions();
+  } else if (e.key === "Enter" || e.key === ",") {
+    e.preventDefault();
+    const typed = $("#tag-input").value.trim();
+    if (!$("#tag-options").hidden && opts[tagActive]) addTag(opts[tagActive].tag);
+    else if (typed) addTag(typed);
+  } else if (e.key === "Backspace" && !$("#tag-input").value && editorTags.length) {
+    editorTags.pop();
+    renderTagEditor();
+    renderTagOptions();
+  } else if (e.key === "Escape" && !$("#tag-options").hidden) {
+    e.preventDefault(); // cierra el desplegable, no el diálogo
+    $("#tag-options").hidden = true;
+  }
+}
+
+function bindTagEditor() {
+  const input = $("#tag-input");
+  input.addEventListener("focus", () => renderTagOptions());
+  input.addEventListener("click", () => renderTagOptions());
+  input.addEventListener("input", () => { tagActive = 0; renderTagOptions(); });
+  input.addEventListener("keydown", onTagKey);
+  input.addEventListener("blur", () => setTimeout(() => {
+    if (document.activeElement !== input) $("#tag-options").hidden = true;
+  }, 150));
+  $("#tag-options").addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li[data-i]");
+    if (!li) return;
+    e.preventDefault(); // el campo no pierde el foco: se pueden elegir varias seguidas
+    addTag(tagOptions()[Number(li.dataset.i)].tag);
+  });
+  $("#tag-editor-chips").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-remove-tag]");
+    if (!btn) return;
+    editorTags.splice(Number(btn.dataset.removeTag), 1);
+    renderTagEditor();
+    input.focus();
+  });
+  $("#tag-editor").addEventListener("click", (e) => { if (e.target.id === "tag-editor") input.focus(); });
 }
 
 function statusDot(status) {
@@ -125,7 +227,7 @@ async function openClientDialog(mode) {
     $("#cf-company").value = c.company || "";
     $("#cf-status").value = c.status;
     $("#cf-assignee").innerHTML = assigneeOptions(c.assignee_user_id);
-    $("#cf-tags").value = c.tags.join(", ");
+    setEditorTags(c.tags);
     renderIdentities(c.identities);
     $("#sensitive-list").hidden = true;
     const all = await api("/api/clients");
@@ -263,7 +365,8 @@ async function submitClientForm(e) {
         status: $("#cf-status").value, assignee_user_id: Number($("#cf-assignee").value) || null,
       }),
     });
-    const tags = $("#cf-tags").value.split(",").map((t) => t.trim()).filter(Boolean);
+    if ($("#tag-input").value.trim()) addTag($("#tag-input").value); // lo escrito sin confirmar también cuenta
+    const tags = [...editorTags];
     await api(`/api/clients/${id}/tags`, { method: "PUT", body: JSON.stringify({ tags }) });
     $("#client-dialog").close();
     await Promise.all([refreshCurrentClient(), loadClients($("#client-search").value), loadTagOptions()]);
@@ -311,6 +414,7 @@ function bindClientEvents() {
   $("#sensitive-btn").addEventListener("click", () => loadSensitive().catch((err) => alert(err.message)));
   $("#sensitive-list").addEventListener("click", onSensitiveClick);
   $("#detail-status").addEventListener("click", toggleStatusMenu);
+  bindTagEditor();
   $("#status-menu").addEventListener("click", onStatusMenuClick);
   document.addEventListener("click", (e) => {
     if (!e.target.closest(".status-wrap")) $("#status-menu").hidden = true;

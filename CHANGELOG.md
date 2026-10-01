@@ -20,6 +20,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Tutorial más breve: 12 pasos de una o dos frases (versión 14).
 
 ### Añadido
+- Etiquetas en «Editar cliente» con desplegable (las básicas y las que ya usa el equipo) y la opción de
+  escribir una nueva.
 - El estado del cliente lo decide la IA al analizarlo (también automáticamente cuando entran mensajes por una
   integración), con su motivo y aviso al responsable si hay una incidencia. Se puede cambiar a mano pulsando el
   estado; el cambio manual se respeta hasta que haya mensajes nuevos. Sin IA, regla diaria de inactividad
