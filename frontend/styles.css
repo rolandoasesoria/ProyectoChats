@@ -304,6 +304,7 @@ button.link.small { font-size: 12px; }
 .draft-panel textarea { resize: vertical; line-height: 1.45; min-height: 140px; }
 .draft-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .primary.small-btn { padding: 5px 12px; }
+.small-select { padding: 4px 8px; font-size: 13px; }
 
 /* Respuestas guardadas: selector en el borrador y gestión */
 .reply-picker-wrap { position: relative; }

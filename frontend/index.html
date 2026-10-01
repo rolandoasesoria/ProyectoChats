@@ -226,7 +226,18 @@
             <div class="draft-actions" id="draft-result-actions" hidden>
               <button class="primary small-btn" id="draft-send" hidden>Enviar</button>
               <button class="ghost small-btn" id="draft-copy">Copiar</button>
-              <span class="muted small">Revísalo y edítalo antes de enviarlo.</span>
+              <select id="draft-rewrite" class="small-select" title="Retocar el texto con IA">
+                <option value="">✨ Retocar…</option>
+                <option value="formal">Más formal</option>
+                <option value="friendly">Más cercano</option>
+                <option value="shorter">Más corto</option>
+                <option value="fix">Corregir ortografía</option>
+                <option value="translate:inglés">Traducir al inglés</option>
+                <option value="translate:francés">Traducir al francés</option>
+                <option value="translate:">Traducir a otro idioma…</option>
+              </select>
+              <button class="link small" id="draft-undo" hidden>Deshacer</button>
+              <span class="muted small">Revísalo antes de enviarlo.</span>
             </div>
           </div>
           <div class="timeline-controls">

@@ -23,6 +23,8 @@ function openDraftPanel(conversationId = null) {
   $("#draft-text").value = "";
   $("#draft-result-actions").hidden = true;
   $("#draft-applied").hidden = true;
+  $("#draft-undo").hidden = true;
+  draftBeforeRewrite = null;
   $("#reply-picker").hidden = true;
   $("#draft-instructions").value = "";
   $("#draft-panel").hidden = false;
@@ -73,6 +75,47 @@ async function copyDraft() {
   setTimeout(() => { btn.textContent = "Copiar"; }, 2000);
 }
 
+// Retocar con IA lo que ya está escrito; «Deshacer» recupera la versión anterior.
+let draftBeforeRewrite = null;
+
+async function rewriteDraft() {
+  const select = $("#draft-rewrite");
+  const [action, presetLanguage] = select.value.split(":");
+  select.value = "";
+  const text = $("#draft-text").value.trim();
+  if (!action || !text) return;
+  let language = presetLanguage || "";
+  if (action === "translate" && !language) {
+    language = (prompt("¿A qué idioma lo traduzco?") || "").trim();
+    if (!language) return;
+  }
+  const clientId = state.clientId;
+  const conv = (state.clientData?.conversations || []).find((c) => c.id === Number($("#draft-conversation").value));
+  select.disabled = true;
+  select.options[0].textContent = "✨ Retocando…";
+  try {
+    const res = await api("/api/drafts/rewrite", {
+      method: "POST", body: JSON.stringify({ text, action, language, channel: conv?.channel || null }),
+    });
+    if (state.clientId !== clientId) return;
+    draftBeforeRewrite = $("#draft-text").value;
+    $("#draft-text").value = res.text;
+    $("#draft-undo").hidden = false;
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    select.disabled = false;
+    select.options[0].textContent = "✨ Retocar…";
+  }
+}
+
+function undoRewrite() {
+  if (draftBeforeRewrite === null) return;
+  $("#draft-text").value = draftBeforeRewrite;
+  draftBeforeRewrite = null;
+  $("#draft-undo").hidden = true;
+}
+
 // Desde la bandeja: abrir el cliente directamente en el borrador de esa conversación.
 async function replyFromInbox(clientId, conversationId) {
   await selectClient(clientId);
@@ -85,6 +128,8 @@ function bindDraftEvents() {
   $("#draft-close").addEventListener("click", closeDraftPanel);
   $("#draft-generate").addEventListener("click", generateDraft);
   $("#draft-copy").addEventListener("click", copyDraft);
+  $("#draft-rewrite").addEventListener("change", rewriteDraft);
+  $("#draft-undo").addEventListener("click", undoRewrite);
   $("#draft-instructions").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); generateDraft(); }
   });
