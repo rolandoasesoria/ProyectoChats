@@ -193,6 +193,8 @@ body.login-page { align-items: center; justify-content: center; padding: 16px; }
 }
 .count.alert { background: var(--danger-bg); color: var(--danger-text); }
 .side-pane { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; }
+/* Solo la lista se desplaza: los controles de arriba (selectores, buscador, filtros) nunca se encogen. */
+.side-pane > :not(ul) { flex-shrink: 0; }
 .tab-pane { flex: 1; min-height: 0; overflow-y: auto; padding-top: 12px; display: flex; flex-direction: column; }
 .detail-tabs { margin-top: 4px; }
 
