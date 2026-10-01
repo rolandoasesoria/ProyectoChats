@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 12;
+const TOUR_VERSION = 13;
 
 const TOUR_STEPS = [
   {
@@ -49,12 +49,12 @@ const TOUR_STEPS = [
   {
     target: ".detail",
     title: "Ficha, tareas y mensajes del cliente",
-    text: "Al elegir un cliente verás arriba su estado, responsable y etiquetas; con ✎ los cambias, añades identificadores (email, teléfono…) o lo unes con otro cliente si es la misma persona (y si la app detecta un posible duplicado, te lo propone). Debajo hay cuatro pestañas. «Ficha»: un resumen de cómo va todo y sus datos clave (dirección, CIF, forma de pago…), que la IA saca de las conversaciones; puedes corregirlos, añadir los tuyos o descartar los que sobren, y con ↗ ves el mensaje de donde sale cada uno. Debajo están sus «Documentos»: adjuntos de correos y WhatsApp y los que subas tú; la IA puede leer fotos y PDF para que también se pueda buscar en ellos. «Tareas»: lo que hay pendiente con ese cliente, incluidos los compromisos que la IA detecta («te mando el presupuesto el lunes»). «Notas»: comentarios internos del equipo que el cliente nunca ve; escribe @ y el nombre de un compañero para avisarle. «Mensajes»: todo el historial de todos los canales («Mías» o «Equipo»), con un buscador por palabras o ✨ por significado (entiende la pregunta aunque el mensaje use otras palabras), y el botón «✍️ Redactar respuesta» para que la IA te prepare la contestación (o escribirla tú); si el canal está conectado, la envías desde aquí con «📤 Enviar», y si no, la copias. Si han llegado mensajes desde tu última visita, te lo avisaré arriba y podrás pedir un resumen de las novedades.",
+    text: "Al elegir un cliente verás arriba su estado, responsable y etiquetas; con ✎ los cambias, añades identificadores (email, teléfono…) o lo unes con otro cliente si es la misma persona (y si la app detecta un posible duplicado, te lo propone). Debajo hay cuatro pestañas. «Ficha»: un resumen de cómo va todo y sus datos clave (dirección, CIF, forma de pago…), que la IA saca de las conversaciones; puedes corregirlos, añadir los tuyos o descartar los que sobren, y con ↗ ves el mensaje de donde sale cada uno. Debajo están sus «Documentos»: adjuntos de correos y WhatsApp y los que subas tú; la IA puede leer fotos y PDF para que también se pueda buscar en ellos. «Tareas»: lo que hay pendiente con ese cliente, incluidos los compromisos que la IA detecta («te mando el presupuesto el lunes»). «Notas»: comentarios internos del equipo que el cliente nunca ve; escribe @ y el nombre de un compañero para avisarle. «Mensajes»: todo el historial del cliente en todos los canales, también lo que hablaron tus compañeros (verás «la lleva…» en esas conversaciones; marca «Solo mis conversaciones» para ver solo las tuyas), con un buscador por palabras o ✨ por significado (entiende la pregunta aunque el mensaje use otras palabras), y el botón «✍️ Redactar respuesta» para que la IA te prepare la contestación (o escribirla tú); si el canal está conectado, la envías desde aquí con «📤 Enviar», y si no, la copias. Si han llegado mensajes desde tu última visita, te lo avisaré arriba y podrás pedir un resumen de las novedades.",
   },
   {
     target: "#side-inbox-tab",
     title: "Sin responder",
-    text: "Clientes que te han escrito y esperan respuesta, del que más tiempo lleva esperando al que menos (en rojo si pasan de 24 h). Pulsa uno para ir directo a su mensaje. Con «✍️ Responder» la IA te prepara un borrador. Si un mensaje no necesita respuesta (un «¡gracias!»), márcalo como «Atendido». Con «Equipo» ves también los de tus compañeros.",
+    text: "Clientes que te han escrito y esperan respuesta, del que más tiempo lleva esperando al que menos (en rojo si pasan de 24 h). Pulsa uno para ir directo a su mensaje. Con «✍️ Responder» la IA te prepara un borrador. Si un mensaje no necesita respuesta (un «¡gracias!»), márcalo como «Atendido». Arriba eliges «Mías» o «Todo el equipo» (con el número de cada lado); en las de tus compañeros verás quién la lleva.",
   },
   {
     target: "#side-tasks-tab",
