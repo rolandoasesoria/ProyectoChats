@@ -5,31 +5,44 @@ mismo cliente (email, WhatsApp, Telegram…) y permite preguntar por un dato con
 
 - **Frontend:** HTML + CSS + JavaScript sin frameworks (`frontend/`).
 - **Backend:** Python + FastAPI (`backend/`).
-- **Base de datos:** SQLite con índice de texto completo FTS5 (ignora tildes).
+- **Base de datos:** PostgreSQL, con búsqueda de texto en español (sin tildes y por raíz de palabra).
 - **IA:** Claude (API de Anthropic) con herramientas de búsqueda sobre la base de datos.
 
 ## Puesta en marcha (Windows)
 
 1. Instala Python 3.12 o superior: `winget install Python.Python.3.12` (o desde python.org).
-2. En una terminal, dentro de `backend/`:
+2. Instala PostgreSQL para desarrollo (versión portable, sin permisos de administrador; en la raíz del repositorio):
+
+   ```powershell
+   powershell -ExecutionPolicy Bypass -File scripts/postgres.ps1 instalar   # una vez
+   powershell -ExecutionPolicy Bypass -File scripts/postgres.ps1 iniciar    # después de reiniciar el equipo
+   ```
+
+   Crea las bases `proyectochats` y `proyectochats_test` y guarda la conexión en `backend/.env`.
+   (En producción, usa un PostgreSQL gestionado o como servicio y pon su `DATABASE_URL` en `.env`.)
+3. En una terminal, dentro de `backend/`:
 
    ```powershell
    python -m venv .venv
    .venv\Scripts\Activate.ps1
    pip install -r requirements.txt
-   copy .env.example .env      # y pon tu ANTHROPIC_API_KEY
-   python -m app.seed          # datos de demostración (opcional)
+   # añade a .env tu ANTHROPIC_API_KEY (ver .env.example)
+   python -m app.seed --reset      # datos de prueba abundantes (BORRA lo que haya)
    uvicorn app.main:app --reload   # desarrollo
    python -m app.serve             # uso real (lee HOST, PORT, HTTPS... de .env)
    ```
 
-3. Abre http://localhost:8000 e inicia sesión.
+4. Abre http://localhost:8000 e inicia sesión.
 
 ## Usuarios y acceso
 
 - Cada persona entra con **usuario y contraseña**. No hay registro libre: las cuentas las crea un administrador
   desde la app (menú de usuario → *Administrar usuarios*) o desde la consola del servidor.
-- Datos de demostración: `ana` (administradora), `carlos` y `marta`, todos con contraseña `demo1234`.
+- Datos de prueba (`python -m app.seed --reset`): `ana` (administradora), `carlos`, `marta`, `lucia`, `javier` y
+  `elena`, todos con contraseña `demo1234`. Unos 85 clientes de una empresa de packaging, ~1.500 mensajes de los
+  últimos seis meses por email, WhatsApp y Telegram, presupuestos en PDF, tareas (algunas vencidas), notas con
+  menciones y dos pares de clientes duplicados a propósito para practicar «Unir». Se generan según la fecha de hoy
+  (`backend/app/demo_data.py`). Con `--basico` solo se cargan los 3 clientes que usan las pruebas automáticas.
 - Crear el primer administrador en una instalación nueva (sin datos de demostración):
 
   ```powershell
@@ -110,7 +123,8 @@ En local (`localhost`) se puede seguir usando HTTP para desarrollar.
 - **Notas internas** por cliente con **@menciones**, y **campana de avisos** (menciones y tareas asignadas).
 - **Borradores de respuesta con IA** (pestaña Mensajes y botón *Responder* de la bandeja): usa el contexto
   de todos los canales, la ficha y las tareas; estilo según el canal; sin inventar datos (deja `[huecos]`).
-- **Buscador de mensajes** (pestaña Mensajes): por palabras (índice FTS, resaltado) o **✨ por significado**
+- **Buscador de mensajes** (pestaña Mensajes): por palabras (índice de PostgreSQL, en español: «entregas»
+  encuentra «entrega» y «entreguen»; resaltado) o **✨ por significado**
   (`backend/app/smartsearch.py`): Claude amplía la pregunta en palabras clave, se busca en mensajes y documentos
   y Claude ordena lo relevante con un motivo. Sin proveedor de *embeddings* adicional.
 - **Documentos y adjuntos** (`backend/app/attachments.py`): adjuntos de correos, WhatsApp exportado con archivos
@@ -128,7 +142,7 @@ En local (`localhost`) se puede seguir usando HTTP para desarrollar.
 ## Cómo funciona
 
 ```
-frontend (navegador) ──HTTP──▶ FastAPI ──▶ SQLite (clientes, conversaciones, mensajes + FTS5)
+frontend (navegador) ──HTTP──▶ FastAPI ──▶ PostgreSQL (clientes, conversaciones, mensajes + búsqueda en español)
                                    │
                                    └──▶ Claude  ◀─ herramientas: buscar_cliente, resumen_cliente,
                                                                 buscar_mensajes, leer_contexto

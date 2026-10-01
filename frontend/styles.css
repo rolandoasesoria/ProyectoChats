@@ -518,7 +518,7 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 
 /* Clientes */
 .clients { padding: 12px; gap: 10px; }
-.clients input { width: 100%; }
+.clients input[type="search"] { width: 100%; }
 .client-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
 .client-list li {
   padding: 10px; border-radius: 8px; cursor: pointer; display: flex; flex-direction: column; gap: 4px;

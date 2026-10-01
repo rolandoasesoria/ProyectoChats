@@ -22,8 +22,8 @@ def log(user_id: int, action: str, client_id: int | None = None, detail: str | N
         throttle: bool = False) -> None:
     with get_conn() as conn:
         if throttle and conn.execute(
-                f"""SELECT 1 FROM audit_log WHERE user_id = ? AND action = ? AND client_id IS ?
-                     AND created_at > datetime('now', '-{THROTTLE_MINUTES} minutes')""",
+                f"""SELECT 1 FROM audit_log WHERE user_id = ? AND action = ? AND client_id IS NOT DISTINCT FROM ?
+                     AND created_at > localtimestamp - interval '{THROTTLE_MINUTES} minutes'""",
                 (user_id, action, client_id)).fetchone():
             return
         name = None

@@ -73,7 +73,8 @@ def _check_lockout(username: str, ip: str) -> None:
     """Lanza 429 si el usuario o la IP han superado el número de intentos fallidos permitidos."""
     since = _minutes_ago(LOCK_MINUTES)
     with get_conn() as conn:
-        for column, value, limit in (("username", username, MAX_FAILS_PER_USER), ("ip", ip, MAX_FAILS_PER_IP)):
+        for column, value, limit in (("lower(username)", username.lower(), MAX_FAILS_PER_USER),
+                                     ("ip", ip, MAX_FAILS_PER_IP)):
             # El intento que activó el bloqueo es el N-ésimo más reciente; el bloqueo dura hasta que caduque.
             row = conn.execute(
                 f"""SELECT created_at FROM login_failures WHERE {column} = ? AND created_at > ?
@@ -81,7 +82,7 @@ def _check_lockout(username: str, ip: str) -> None:
                 (value, since, limit - 1),
             ).fetchone()
             if row:
-                unlock = datetime.strptime(row["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc) \
+                unlock = datetime.fromisoformat(row["created_at"]).replace(tzinfo=timezone.utc) \
                     + timedelta(minutes=LOCK_MINUTES)
                 minutes = max(1, round((unlock - datetime.now(timezone.utc)).total_seconds() / 60))
                 raise HTTPException(
@@ -98,7 +99,7 @@ def _record_failure(username: str, ip: str) -> None:
 
 def clear_failures(username: str) -> None:
     with get_conn() as conn:
-        conn.execute("DELETE FROM login_failures WHERE username = ?", (username,))
+        conn.execute("DELETE FROM login_failures WHERE lower(username) = lower(?)", (username,))
 
 
 def login(username: str, password: str, ip: str) -> tuple[str, dict]:
@@ -107,7 +108,7 @@ def login(username: str, password: str, ip: str) -> tuple[str, dict]:
     _check_lockout(username, ip)
     with get_conn() as conn:
         row = conn.execute(
-            f"SELECT {USER_FIELDS}, password_hash FROM users WHERE username = ? COLLATE NOCASE",
+            f"SELECT {USER_FIELDS}, password_hash FROM users WHERE lower(username) = lower(?)",
             (username,),
         ).fetchone()
     valid = verify_password(password, row["password_hash"] if row else _DUMMY_HASH)
@@ -175,12 +176,12 @@ def create_user(username: str, name: str, password: str, email: str | None = Non
     if not username:
         raise HTTPException(400, "El nombre de usuario es obligatorio.")
     with get_conn() as conn:
-        if conn.execute("SELECT 1 FROM users WHERE username = ? COLLATE NOCASE", (username,)).fetchone():
+        if conn.execute("SELECT 1 FROM users WHERE lower(username) = lower(?)", (username,)).fetchone():
             raise HTTPException(409, "Ese nombre de usuario ya existe.")
         if email and conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
             raise HTTPException(409, "Ese email ya está en uso.")
         user_id = conn.execute(
-            "INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?) RETURNING id",
             (username, name.strip() or username, email or None, hash_password(password), role),
         ).lastrowid
         return dict(conn.execute(f"SELECT {USER_FIELDS} FROM users WHERE id = ?", (user_id,)).fetchone())
@@ -189,7 +190,9 @@ def create_user(username: str, name: str, password: str, email: str | None = Non
 def update_user(user_id: int, **fields) -> dict:
     """Actualiza campos permitidos. `password` se guarda como hash y cierra las sesiones abiertas."""
     allowed = {"name", "email", "role", "active", "theme", "tour_version"}
-    updates = {k: v for k, v in fields.items() if k in allowed and v is not None}
+    # Los indicadores (active) se guardan como 0/1: PostgreSQL no convierte booleanos a número solo.
+    updates = {k: int(v) if isinstance(v, bool) else v
+               for k, v in fields.items() if k in allowed and v is not None}
     password = fields.get("password")
     if password:
         validate_password(password)

@@ -44,7 +44,7 @@ def main() -> None:
             print(f"Cuenta creada: {user['username']} ({user['role']})")
         elif args.command == "set-password":
             with get_conn() as conn:
-                row = conn.execute("SELECT id FROM users WHERE username = ? COLLATE NOCASE",
+                row = conn.execute("SELECT id FROM users WHERE lower(username) = lower(?)",
                                    (args.username,)).fetchone()
             if not row:
                 sys.exit("No existe ese usuario.")

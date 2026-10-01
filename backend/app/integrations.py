@@ -146,7 +146,7 @@ def get(integration_id: int) -> dict:
 def create(kind: str, name: str, owner_user_id: int, config: dict) -> int:
     cfg = _clean_config(kind, config)
     with get_conn() as conn:
-        return conn.execute("INSERT INTO integrations (kind, name, owner_user_id, config) VALUES (?, ?, ?, ?)",
+        return conn.execute("INSERT INTO integrations (kind, name, owner_user_id, config) VALUES (?, ?, ?, ?) RETURNING id",
                             (kind, name.strip() or kind, owner_user_id, secrets_store.encrypt(cfg))).lastrowid
 
 
@@ -179,7 +179,7 @@ def delete(integration_id: int) -> None:
 
 def _save_state(integration_id: int, state: dict, error: str | None = None) -> None:
     with get_conn() as conn:
-        conn.execute("UPDATE integrations SET state = ?, last_sync_at = datetime('now'), last_error = ? WHERE id = ?",
+        conn.execute("UPDATE integrations SET state = ?, last_sync_at = localtimestamp(0), last_error = ? WHERE id = ?",
                      (json.dumps(state), error, integration_id))
 
 
@@ -466,7 +466,7 @@ def send_reply(conversation_id: int, user: dict, text: str) -> dict:
     with get_conn() as conn:
         message_id = conn.execute(
             """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id)
-               VALUES (?, 'out', ?, ?, ?, ?)""", (conversation_id, user["name"], text, _now_local(), ext)).lastrowid
+               VALUES (?, 'out', ?, ?, ?, ?) RETURNING id""", (conversation_id, user["name"], text, _now_local(), ext)).lastrowid
     return {"message_id": message_id, "via": integ["name"]}
 
 
@@ -481,7 +481,7 @@ def _due(integ_row: dict) -> bool:
             minutes = max(1, int(secrets_store.decrypt(integ_row["config"]).get("sync_minutes") or 5))
         except Exception:  # noqa: BLE001
             minutes = 5
-    last = datetime.strptime(integ_row["last_sync_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=timezone.utc)
+    last = datetime.fromisoformat(integ_row["last_sync_at"]).replace(tzinfo=timezone.utc)
     return datetime.now(timezone.utc) - last >= timedelta(minutes=minutes)
 
 

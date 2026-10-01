@@ -7,15 +7,12 @@ from types import SimpleNamespace
 
 SCRATCH = Path(__file__).resolve().parent / ".tmp"
 SCRATCH.mkdir(exist_ok=True)
-db = SCRATCH / "insights_test.db"
-db.unlink(missing_ok=True)
-os.environ["DB_PATH"] = str(db)
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+import testdb  # noqa: F401,E402  (base de datos de pruebas; antes que la app)
 
 from app import agent, insights, seed  # noqa: E402
 from app.db import get_conn  # noqa: E402
 
-seed.seed()
+seed.seed(reset=True, basico=True)
 ok = True
 
 
@@ -118,5 +115,4 @@ try:
     check("rechazo de la IA da error", False)
 except insights.AnalysisError as e:
     check(f"rechazo de la IA: {e}", True)
-db.unlink()
 sys.exit(0 if ok else 1)

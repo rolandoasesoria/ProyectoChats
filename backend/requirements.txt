@@ -4,3 +4,5 @@ anthropic>=1.0
 python-dotenv>=1.0
 pypdf>=5
 cryptography>=43
+psycopg[binary]>=3.2
+psycopg-pool>=3.2

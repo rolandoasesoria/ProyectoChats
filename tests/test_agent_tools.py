@@ -3,17 +3,13 @@ import os
 import sys
 from pathlib import Path
 
-db = Path(__file__).resolve().parent / ".tmp" / "agent_tools_test.db"
-db.parent.mkdir(exist_ok=True)
-db.unlink(missing_ok=True)
-os.environ["DB_PATH"] = str(db)
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
+import testdb  # noqa: F401,E402  (base de datos de pruebas; antes que la app)
 
 from app import agent, audit, notes, seed  # noqa: E402
 from app.db import get_conn  # noqa: E402
 from apitest import check, results  # noqa: E402
 
-seed.seed()
+seed.seed(reset=True, basico=True)
 ANA = 1
 
 mine = agent._run_tool("buscar_mensajes", {"consulta": "CIF factura", "alcance": "mias"}, ANA)
@@ -45,5 +41,4 @@ check("notas internas", ficha["notas_internas"][0]["nota"] == "Paga tarde" and f
 check("estado y etiquetas", ficha["status"] == "active" and ficha["tags"] == [])
 found = agent._run_tool("buscar_cliente", {"texto": "floristeria"}, ANA)
 check("buscar_cliente por empresa (sin tilde)", [c["name"] for c in found] == ["Laura Gómez"], found)
-db.unlink()
 sys.exit(0 if results["ok"] else 1)

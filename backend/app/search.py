@@ -8,7 +8,7 @@ El control de alcance se aplica aquí (en el servidor), no en el modelo.
 import re
 
 from . import attachments
-from .db import get_conn, rows
+from .db import TS_CONFIG, get_conn, rows
 
 SCOPES = ("mine", "team")
 
@@ -22,11 +22,20 @@ def _scope_clause(scope: str, user_id: int, alias: str = "c") -> tuple[str, list
 
 
 def _fts_query(text: str) -> str:
-    """Convierte texto libre en una consulta FTS5 segura: términos OR con prefijo."""
-    terms = [t for t in re.findall(r"\w+", text, flags=re.UNICODE) if len(t) > 1]
+    """Convierte texto libre en una consulta segura para to_tsquery: términos OR con prefijo.
+
+    La configuración es_unaccent quita tildes y reduce a la raíz ("entregas" -> "entreg"), así que
+    "direccion", "dirección" o "direcciones" encuentran lo mismo.
+    """
+    terms = [t for t in re.findall(r"[^\W_]+", text, flags=re.UNICODE) if len(t) > 1]
     if not terms:
         return ""
-    return " OR ".join(f'"{t}"*' for t in terms)
+    return " | ".join(f"{t}:*" for t in terms)
+
+
+def _markers(snippet: str | None, markers: tuple[str, str]) -> str:
+    """ts_headline marca las coincidencias con ⟦ ⟧; se cambian por las marcas pedidas."""
+    return (snippet or "").replace("⟦", markers[0]).replace("⟧", markers[1])
 
 
 def list_users() -> list[dict]:
@@ -53,8 +62,8 @@ def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, s
         result = rows(conn.execute(
             f"""
             SELECT cl.id, cl.name, cl.company, cl.status, cl.assignee_user_id,
-                   (SELECT group_concat(t.tag, '|') FROM client_tags t WHERE t.client_id = cl.id) AS tags,
-                   (SELECT group_concat(DISTINCT ci.channel) FROM client_identities ci
+                   (SELECT string_agg(t.tag, '|') FROM client_tags t WHERE t.client_id = cl.id) AS tags,
+                   (SELECT string_agg(DISTINCT ci.channel, ',') FROM client_identities ci
                      WHERE ci.client_id = cl.id) AS channels,
                    (SELECT max(m.sent_at) FROM messages m
                       JOIN conversations c ON c.id = m.conversation_id
@@ -65,10 +74,11 @@ def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, s
               FROM clients cl
               LEFT JOIN client_visits v ON v.client_id = cl.id AND v.user_id = ?
              WHERE (? = '%%'
-                    OR cl.name LIKE ? OR cl.company LIKE ?
+                    OR unaccent(cl.name) ILIKE unaccent(?) OR unaccent(cl.company) ILIKE unaccent(?)
                     OR EXISTS (SELECT 1 FROM client_identities ci
-                                WHERE ci.client_id = cl.id AND ci.handle LIKE ?)
-                    OR EXISTS (SELECT 1 FROM client_tags t WHERE t.client_id = cl.id AND t.tag LIKE ?)) {filters}
+                                WHERE ci.client_id = cl.id AND ci.handle ILIKE ?)
+                    OR EXISTS (SELECT 1 FROM client_tags t
+                                WHERE t.client_id = cl.id AND unaccent(t.tag) ILIKE unaccent(?))) {filters}
              ORDER BY last_message_at DESC NULLS LAST, cl.name
              LIMIT ?
             """,
@@ -127,7 +137,7 @@ def record_visit(user_id: int, client_id: int) -> dict:
             (prev["last_message_id"] if prev else 0, client_id)).fetchone()
         conn.execute(
             """INSERT INTO client_visits (user_id, client_id, visited_at, last_message_id)
-               VALUES (?, ?, datetime('now'), ?)
+               VALUES (?, ?, localtimestamp(0), ?)
                ON CONFLICT(user_id, client_id) DO UPDATE SET visited_at = excluded.visited_at,
                    last_message_id = excluded.last_message_id""",
             (user_id, client_id, stats["max_id"]))
@@ -161,7 +171,7 @@ def client_overview(client_id: int, user_id: int) -> dict | None:
             (client_id,),
         ))
         tags = [r["tag"] for r in conn.execute(
-            "SELECT tag FROM client_tags WHERE client_id = ? ORDER BY tag COLLATE NOCASE", (client_id,))]
+            "SELECT tag FROM client_tags WHERE client_id = ? ORDER BY lower(tag)", (client_id,))]
         conversations = rows(conn.execute(
             """
             SELECT c.id, c.channel, c.subject, u.id AS owner_id, u.name AS owner,
@@ -170,7 +180,7 @@ def client_overview(client_id: int, user_id: int) -> dict | None:
               JOIN users u ON u.id = c.owner_user_id
               LEFT JOIN messages m ON m.conversation_id = c.id
              WHERE c.client_id = ?
-             GROUP BY c.id
+             GROUP BY c.id, u.id
              ORDER BY last_at DESC
             """,
             (client_id,),
@@ -218,17 +228,17 @@ def search_messages(query: str, user_id: int, scope: str = "mine",
     scope_sql, args = _scope_clause(scope, user_id)
     sql = f"""
         SELECT m.id AS message_id, m.sent_at, m.direction, m.sender,
-               snippet(messages_fts, 0, ?, ?, '…', 24) AS snippet,
+               ts_headline('{TS_CONFIG}', m.body, q, 'StartSel=⟦, StopSel=⟧, MaxWords=35, MinWords=12, ShortWord=2, MaxFragments=2, FragmentDelimiter=" … "') AS snippet,
                c.id AS conversation_id, c.channel, cl.id AS client_id, cl.name AS client,
                u.name AS owner
-          FROM messages_fts
-          JOIN messages m ON m.id = messages_fts.rowid
+          FROM messages m
+          CROSS JOIN to_tsquery('{TS_CONFIG}', ?) AS q
           JOIN conversations c ON c.id = m.conversation_id
           JOIN clients cl ON cl.id = c.client_id
           JOIN users u ON u.id = c.owner_user_id
-         WHERE messages_fts MATCH ? {scope_sql}
+         WHERE m.tsv @@ q {scope_sql}
     """
-    args = [*markers, fts, *args]
+    args = [fts, *args]
     if client_id:
         sql += " AND c.client_id = ?"
         args.append(client_id)
@@ -241,10 +251,13 @@ def search_messages(query: str, user_id: int, scope: str = "mine",
     if date_to:
         sql += " AND m.sent_at <= ?"
         args.append(date_to)
-    sql += " ORDER BY bm25(messages_fts) LIMIT ?"
+    sql += " ORDER BY ts_rank(m.tsv, q) DESC, m.sent_at DESC LIMIT ?"
     args.append(min(limit, 50))
     with get_conn() as conn:
-        return rows(conn.execute(sql, args))
+        result = rows(conn.execute(sql, args))
+    for r in result:
+        r["snippet"] = _markers(r["snippet"], markers)
+    return result
 
 
 def message_context(message_id: int, user_id: int, scope: str = "mine",
@@ -308,7 +321,7 @@ def import_conversation(payload: dict) -> dict:
         client_id = payload.get("client_id") or (ident["client_id"] if ident else None)
         if not client_id:
             client_id = conn.execute(
-                "INSERT INTO clients (name) VALUES (?)",
+                "INSERT INTO clients (name) VALUES (?) RETURNING id",
                 (payload.get("client_name") or payload["handle"],),
             ).lastrowid
         if not ident:
@@ -320,14 +333,14 @@ def import_conversation(payload: dict) -> dict:
         # y se saltan los mensajes que ya estaban (misma fecha y mismo texto).
         existing = conn.execute(
             """SELECT id FROM conversations
-                WHERE client_id = ? AND owner_user_id = ? AND channel = ? AND subject IS ?""",
+                WHERE client_id = ? AND owner_user_id = ? AND channel = ? AND subject IS NOT DISTINCT FROM ?""",
             (client_id, payload["owner_user_id"], payload["channel"], payload.get("subject")),
         ).fetchone()
         if existing:
             conv_id = existing["id"]
         else:
             conv_id = conn.execute(
-                "INSERT INTO conversations (client_id, owner_user_id, channel, subject) VALUES (?, ?, ?, ?)",
+                "INSERT INTO conversations (client_id, owner_user_id, channel, subject) VALUES (?, ?, ?, ?) RETURNING id",
                 (client_id, payload["owner_user_id"], payload["channel"], payload.get("subject")),
             ).lastrowid
         seen = {(r["sent_at"], r["body"]) for r in conn.execute(
@@ -345,7 +358,7 @@ def import_conversation(payload: dict) -> dict:
                 seen_ext.add(ext)
             message_id = conn.execute(
                 """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?) RETURNING id""",
                 (conv_id, m["direction"], m["sender"], m["body"], m["sent_at"], ext)).lastrowid
             new += 1
             for f in m.get("attachments") or []:

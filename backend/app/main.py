@@ -328,7 +328,8 @@ def delete_client(client_id: int, admin: AdminUser, confirm: str = ""):
 @app.get("/api/clients")
 def list_clients(user: CurrentUser, q: str = "", status: Literal["lead", "active", "issue", "inactive"] | None = None,
                  tag: str | None = None, mine: bool = False):
-    return search.find_clients(q, user_id=user["id"], status=status, tag=tag or None,
+    # La lista de la interfaz muestra hasta 500 clientes (el buscador y los filtros acotan el resto).
+    return search.find_clients(q, limit=500, user_id=user["id"], status=status, tag=tag or None,
                                assignee_id=user["id"] if mine else None)
 
 
@@ -564,9 +565,9 @@ def _client_for_identity(channel: str, handle: str, name: str) -> dict | None:
     with get_conn() as conn:
         row = conn.execute(
             """SELECT cl.id, cl.name FROM client_identities ci JOIN clients cl ON cl.id = ci.client_id
-                WHERE ci.channel = ? AND ci.handle = ? COLLATE NOCASE""", (channel, handle)).fetchone()
+                WHERE ci.channel = ? AND lower(ci.handle) = lower(?)""", (channel, handle)).fetchone()
         if not row and name:
-            row = conn.execute("SELECT id, name FROM clients WHERE name = ? COLLATE NOCASE", (name,)).fetchone()
+            row = conn.execute("SELECT id, name FROM clients WHERE lower(name) = lower(?)", (name,)).fetchone()
     return dict(row) if row else None
 
 
@@ -608,7 +609,7 @@ def import_file(req: ImportFileCommit, user: CurrentUser):
         duplicates += result["duplicates"]
         files += result["attachments"]
     with get_conn() as conn:
-        imported_at = conn.execute("SELECT datetime('now')").fetchone()[0]  # mismo formato que analyzed_at
+        imported_at = conn.execute("SELECT localtimestamp(0)").fetchone()[0]  # mismo formato que analyzed_at
     analysis_started = bool(imported) and agent.credentials_configured()
     if analysis_started:
         insights.analyze_in_background(client_id)  # ficha y tareas al día sin hacer esperar
@@ -743,7 +744,7 @@ def edit_fact(fact_id: int, req: FactIn, user: CurrentUser):
     with get_conn() as conn:
         conn.execute(
             """UPDATE client_facts SET label = ?, value = ?, origin = 'manual', updated_by = ?,
-                   updated_at = datetime('now') WHERE id = ?""",
+                   updated_at = localtimestamp(0) WHERE id = ?""",
             (req.label.strip(), req.value.strip(), user["id"], fact_id))
     return insights.profile(fact["client_id"])
 
@@ -847,7 +848,7 @@ def add_task(client_id: int, req: TaskIn, user: CurrentUser):
     with get_conn() as conn:
         task_id = conn.execute(
             """INSERT INTO tasks (client_id, title, due_date, assignee_user_id, origin, created_by)
-               VALUES (?, ?, ?, ?, 'manual', ?)""",
+               VALUES (?, ?, ?, ?, 'manual', ?) RETURNING id""",
             (client_id, req.title.strip(), req.due_date, req.assignee_user_id or user["id"], user["id"]),
         ).lastrowid
     task = insights.get_task(task_id)
@@ -867,7 +868,7 @@ def update_task(task_id: int, req: TaskUpdate, user: CurrentUser):
             del fields[required]
     sets = [f"{k} = ?" for k in fields]
     if "status" in fields:
-        sets.append("done_at = " + ("datetime('now')" if fields["status"] == "done" else "NULL"))
+        sets.append("done_at = " + ("localtimestamp(0)" if fields["status"] == "done" else "NULL"))
     if sets:
         with get_conn() as conn:
             conn.execute(f"UPDATE tasks SET {', '.join(sets)} WHERE id = ?", [*fields.values(), task_id])

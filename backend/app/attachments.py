@@ -8,9 +8,9 @@ import uuid
 from fastapi import HTTPException
 
 from . import agent
-from .db import DB_PATH, get_conn, rows
+from .db import DATA_DIR, TS_CONFIG, get_conn, rows
 
-STORAGE = DB_PATH.parent / "attachments"
+STORAGE = DATA_DIR / "attachments"
 MAX_BYTES = 20 * 1024 * 1024
 MAX_TEXT = 100_000          # texto extraído que se guarda por archivo
 AI_IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
@@ -58,7 +58,8 @@ def save(conn, client_id: int, filename: str, data: bytes, mime: str | None = No
     text, method = extract_text(data, mime)
     return conn.execute(
         """INSERT INTO attachments (client_id, message_id, filename, mime, size, path, extracted_text,
-                                    extracted_by, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                                    extracted_by, uploaded_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           RETURNING id""",
         (client_id, message_id, filename, mime, len(data), path.name, text, method, uploaded_by)).lastrowid
 
 
@@ -147,15 +148,16 @@ def read_with_ai(attachment_id: int) -> dict:
 def search(query_fts: str, user_id: int, scope: str, client_id: int | None = None, limit: int = 15) -> list[dict]:
     """Busca en el nombre y el contenido de los documentos. Los adjuntos de mensajes respetan el alcance
     (solo conversaciones propias con 'mine'); los documentos subidos a la ficha son del equipo."""
-    sql = """SELECT a.id AS documento_id, a.filename, a.client_id, cl.name AS client, a.extracted_by,
-                    snippet(attachments_fts, 1, '[', ']', '…', 30) AS snippet,
+    sql = f"""SELECT a.id AS documento_id, a.filename, a.client_id, cl.name AS client, a.extracted_by,
+                    ts_headline('{TS_CONFIG}', coalesce(a.extracted_text, a.filename), q, 'StartSel=⟦, StopSel=⟧, MaxWords=35, MinWords=12, ShortWord=2, MaxFragments=2, FragmentDelimiter=" … "') AS snippet,
                     coalesce(m.sent_at, a.created_at) AS fecha, c.channel, u.name AS owner
-               FROM attachments_fts JOIN attachments a ON a.id = attachments_fts.rowid
+               FROM attachments a
+               CROSS JOIN to_tsquery('{TS_CONFIG}', ?) AS q
                JOIN clients cl ON cl.id = a.client_id
                LEFT JOIN messages m ON m.id = a.message_id
                LEFT JOIN conversations c ON c.id = m.conversation_id
                LEFT JOIN users u ON u.id = c.owner_user_id
-              WHERE attachments_fts MATCH ?"""
+              WHERE a.tsv @@ q"""
     args: list = [query_fts]
     if scope == "mine":
         sql += " AND (a.message_id IS NULL OR c.owner_user_id = ?)"
@@ -163,10 +165,13 @@ def search(query_fts: str, user_id: int, scope: str, client_id: int | None = Non
     if client_id:
         sql += " AND a.client_id = ?"
         args.append(client_id)
-    sql += " ORDER BY bm25(attachments_fts) LIMIT ?"
+    sql += " ORDER BY ts_rank(a.tsv, q) DESC LIMIT ?"
     args.append(limit)
     with get_conn() as conn:
-        return rows(conn.execute(sql, args))
+        found = rows(conn.execute(sql, args))
+    for f in found:
+        f["snippet"] = (f["snippet"] or "").replace("⟦", "[").replace("⟧", "]")
+    return found
 
 
 def texts_for_client(client_id: int, max_chars: int = 3000) -> list[dict]:
