@@ -10,6 +10,10 @@ from browser import Browser
 with get_conn() as conn:
     conn.execute("""INSERT INTO client_analysis (client_id, summary, last_message_id, priority, mood, priority_reason)
                     VALUES (2, 'Pide etiquetas resistentes a aceite.', 0, 'alta', 'molesto', 'Espera respuesta desde hace días')""")
+    # Un mensaje antiguo de Laura (cliente 1) con su IBAN, para ocultarlo desde la ficha.
+    conn.execute("""INSERT INTO messages (conversation_id, direction, sender, body, sent_at)
+                    SELECT id, 'in', 'Laura', ?, '2026-07-01T10:00:00' FROM conversations WHERE client_id = 1 ORDER BY id LIMIT 1""",
+                 ("Para domiciliar: ES91 2100 0418 4502 0005 1332",))
 
 BASE = "http://127.0.0.1:8001"
 b = Browser()
@@ -224,6 +228,12 @@ try:
     b.click('.side-tabs [data-side="clients"]')
     b.click("#edit-client-btn")
     b.wait("document.querySelector('#client-dialog').open")
+    b.click("#sensitive-btn")
+    b.wait("document.querySelectorAll('#sensitive-list li[data-message]').length === 1")
+    check("encuentra el IBAN en sus mensajes", "IBAN" in b.js("document.querySelector('#sensitive-list li').textContent"))
+    b.click("#sensitive-list [data-redact]")
+    b.wait("document.querySelectorAll('#sensitive-list li[data-message]').length === 0")
+    check("ocultarlo lo quita de la ficha", "[IBAN oculto]" in b.js("document.querySelector('#timeline').textContent"))
     b.js("document.querySelector('#cf-status').value = 'issue'")
     b.fill("#cf-tags", "VIP, mayorista")
     b.shot("10-editar-cliente")
@@ -290,6 +300,10 @@ try:
     b.js("document.querySelector('#settings-form').requestSubmit()")
     b.wait("!document.querySelector('#set-saved').hidden")
     check("cambiar el plazo de respuesta", b.js("slaHours") == 2)
+    b.fill("#set-retention", "1")
+    b.wait("document.querySelector('#retention-preview').textContent.includes('se borrarían')")
+    check("la retención avisa de cuántos mensajes borraría", True)
+    b.shot("14b-ajustes")
 
     # Integraciones: alta de un bot de Telegram desde el formulario
     b.click('[data-admin-tab="integrations"]')
