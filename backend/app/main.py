@@ -6,12 +6,13 @@ import json
 import re
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from enum import IntEnum
 from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
 
 import anthropic
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Request, Response
+from fastapi import Cookie, Depends, FastAPI, Query, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
@@ -21,6 +22,8 @@ from . import (agent, attachments, audit, auth, chats, clients, followups, insig
                presence, privacy, replies, search, settings, smartsearch)
 from .config import config
 from .db import get_conn, init_db, rows
+from .errors import (AppError, Conflict, ExternalServiceError, Forbidden, InvalidInput, NotAuthenticated, NotFound,
+                     ServiceUnavailable, TooManyAttempts)
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
@@ -37,6 +40,16 @@ app = FastAPI(
     openapi_url="/openapi.json" if ENABLE_DOCS else None,
 )
 init_db()
+
+# Errores de la lógica de la app -> código HTTP (el más específico de su jerarquía).
+ERROR_STATUS = {InvalidInput: 400, NotAuthenticated: 401, Forbidden: 403, NotFound: 404, Conflict: 409,
+                TooManyAttempts: 429, ExternalServiceError: 502, ServiceUnavailable: 503, AppError: 400}
+
+
+@app.exception_handler(AppError)
+def app_error(_: Request, exc: AppError) -> JSONResponse:
+    status = next(ERROR_STATUS[c] for c in type(exc).__mro__ if c in ERROR_STATUS)
+    return JSONResponse({"detail": exc.message}, status_code=status)
 # Sincronización periódica de los buzones y bots conectados (DISABLE_SYNC=true la desactiva, p. ej. en pruebas).
 if not config.integrations.sync_disabled:
     integrations.start_scheduler()
@@ -147,7 +160,7 @@ def change_password(req: PasswordChange, user: CurrentUser, pc_session: str | No
     with get_conn() as conn:
         stored = conn.execute("SELECT password_hash FROM users WHERE id = ?", (user["id"],)).fetchone()
     if not auth.verify_password(req.current_password, stored["password_hash"]):
-        raise HTTPException(400, "La contraseña actual no es correcta.")
+        raise InvalidInput("La contraseña actual no es correcta.")
     # Cierra las demás sesiones abiertas del usuario, pero no la actual.
     auth.update_user(user["id"], password=req.new_password, keep_token=pc_session)
     return {"ok": True}
@@ -186,7 +199,7 @@ class UserUpdate(BaseModel):
 @app.patch("/api/admin/users/{user_id}")
 def admin_update_user(user_id: int, req: UserUpdate, admin: AdminUser):
     if user_id == admin["id"] and (req.active is False or req.role == "user"):
-        raise HTTPException(400, "No puedes desactivarte ni quitarte el rol de administrador a ti mismo.")
+        raise InvalidInput("No puedes desactivarte ni quitarte el rol de administrador a ti mismo.")
     changes = req.model_dump(exclude_none=True)
     user = auth.update_user(user_id, **changes)
     described = ", ".join("contraseña restablecida" if k == "password" else f"{k}={v}" for k, v in changes.items())
@@ -264,7 +277,7 @@ def admin_sync_integration(integration_id: int, _: AdminUser):
     try:
         return integrations.sync(integration_id)
     except integrations.IntegrationError as exc:
-        raise HTTPException(502, f"No se pudo sincronizar: {exc}")
+        raise ExternalServiceError(f"No se pudo sincronizar: {exc}")
 
 
 # Cada persona conecta sus propias cuentas (correo, bot de Telegram, WhatsApp Business): los mensajes entran como
@@ -285,7 +298,7 @@ class MyIntegrationUpdate(BaseModel):
 def _my_integration(integration_id: int, user: dict) -> dict:
     integ = integrations.get(integration_id)
     if integ["owner_user_id"] != user["id"]:
-        raise HTTPException(404, "Integración no encontrada")
+        raise NotFound("Integración no encontrada")
     return integ
 
 
@@ -324,7 +337,7 @@ def sync_my_integration(integration_id: int, user: CurrentUser):
     try:
         return integrations.sync(integration_id)
     except integrations.IntegrationError as exc:
-        raise HTTPException(502, f"No se pudo sincronizar: {exc}")
+        raise ExternalServiceError(f"No se pudo sincronizar: {exc}")
 
 
 @app.get("/api/webhooks/whatsapp/{integration_id}")
@@ -334,7 +347,7 @@ def whatsapp_verify(integration_id: int, request: Request):
     p = request.query_params
     if integ["kind"] != "whatsapp" or p.get("hub.mode") != "subscribe" \
             or not hmac.compare_digest(p.get("hub.verify_token", ""), integ["config"]["verify_token"]):
-        raise HTTPException(403, "Token de verificación incorrecto")
+        raise Forbidden("Token de verificación incorrecto")
     return PlainTextResponse(p.get("hub.challenge", ""))
 
 
@@ -345,11 +358,11 @@ async def whatsapp_webhook(integration_id: int, request: Request):
     raw = await request.body()
     if integ["kind"] != "whatsapp" or not integ["enabled"] \
             or not integrations.verify_whatsapp_signature(integ, raw, request.headers.get("x-hub-signature-256")):
-        raise HTTPException(403, "Firma no válida")
+        raise Forbidden("Firma no válida")
     try:
         payload = json.loads(raw)
     except json.JSONDecodeError:
-        raise HTTPException(400, "JSON no válido")
+        raise InvalidInput("JSON no válido")
     n = await run_in_threadpool(integrations.receive_whatsapp, integ, payload)
     return {"ok": True, "imported": n}
 
@@ -384,7 +397,7 @@ def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
                 (conversation_id, req.after_message_id)))
         if newer:
             who = "un compañero ha respondido" if any(m["direction"] == "out" for m in newer) else "el cliente ha escrito"
-            raise HTTPException(409, f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
+            raise Conflict(f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
     result = integrations.send_reply(conversation_id, user, req.text.strip())
     with get_conn() as conn:
         client_id = conn.execute("SELECT client_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()[0]
@@ -409,12 +422,17 @@ def update_presence(req: PresenceRequest, user: CurrentUser):
 
 # ---------------------------------------------------------------- Panel de actividad
 
+class DashboardPeriod(IntEnum):
+    WEEK = 7
+    MONTH = 30
+    QUARTER = 90
+    YEAR = 365
+
+
 @app.get("/api/dashboard")
-def dashboard(user: CurrentUser, days: int = 30):
+def dashboard(user: CurrentUser, days: DashboardPeriod = DashboardPeriod.MONTH):
     """Métricas del equipo. El desglose por persona solo lo ven los administradores."""
-    if days not in (7, 30, 90, 365):
-        raise HTTPException(422, "Periodo no válido: 7, 30, 90 o 365 días.")
-    return metrics.dashboard(days, include_people=user["role"] == "admin")
+    return metrics.dashboard(int(days), include_people=user["role"] == "admin")
 
 
 # ---------------------------------------------------------------- Protección de datos (solo administradores)
@@ -429,7 +447,7 @@ def export_client(client_id: int, admin: AdminUser):
     """Todos los datos de un cliente en JSON (derecho de acceso y portabilidad)."""
     data = audit.export_client(client_id)
     if not data:
-        raise HTTPException(404, "Cliente no encontrado")
+        raise NotFound("Cliente no encontrado")
     audit.log(admin["id"], "client_export", client_id)
     return JSONResponse(data, headers={"Content-Disposition": f'attachment; filename="cliente-{client_id}.json"'})
 
@@ -450,7 +468,7 @@ def redact_message(message_id: int, req: RedactRequest, admin: AdminUser):
     """Oculta datos sensibles de un mensaje. No se puede deshacer: el texto original no se guarda."""
     result = privacy.redact_message(message_id, req.text)
     if result is None:
-        raise HTTPException(404, "Mensaje no encontrado")
+        raise NotFound("Mensaje no encontrado")
     if result["hidden"]:
         audit.log(admin["id"], "message_redact", result["client_id"],
                   detail=f"mensaje {message_id}: {', '.join(result['hidden'])}")
@@ -458,10 +476,8 @@ def redact_message(message_id: int, req: RedactRequest, admin: AdminUser):
 
 
 @app.get("/api/admin/retention")
-def retention_preview(_: AdminUser, months: int):
+def retention_preview(_: AdminUser, months: Annotated[int, Query(ge=1, le=120)]):
     """Cuántos mensajes se borrarían con ese plazo (sin borrar nada)."""
-    if not 1 <= months <= 120:
-        raise HTTPException(422, "Plazo no válido: de 1 a 120 meses.")
     return privacy.retention_preview(months)
 
 
@@ -480,7 +496,7 @@ def delete_client(client_id: int, admin: AdminUser, confirm: str = ""):
     """Borra el cliente y todos sus datos (derecho de supresión). `confirm` debe ser el nombre del cliente."""
     client = _client_or_404(client_id)
     if confirm.strip().lower() != client["name"].strip().lower():
-        raise HTTPException(400, "Para confirmar, escribe exactamente el nombre del cliente.")
+        raise InvalidInput("Para confirmar, escribe exactamente el nombre del cliente.")
     audit.log(admin["id"], "client_delete", client_id)  # antes de borrar, para guardar el nombre
     return audit.delete_client(client_id)
 
@@ -518,7 +534,7 @@ class ClientUpdate(BaseModel):
 def update_client(client_id: int, req: ClientUpdate, user: CurrentUser):
     before = search.client_overview(client_id, user["id"])
     if not before:
-        raise HTTPException(404, "Cliente no encontrado")
+        raise NotFound("Cliente no encontrado")
     fields = {k: getattr(req, k) for k in req.model_fields_set}
     if "company" in fields:
         fields["company"] = (fields["company"] or "").strip() or None
@@ -603,10 +619,7 @@ def whats_new(client_id: int, req: WhatsNewRequest, _: CurrentUser):
     if not messages:
         return {"summary": "No hay mensajes nuevos."}
     with claude_errors():
-        try:
-            return {"summary": insights.summarize_new_messages(client["name"], messages)}
-        except insights.AnalysisError as exc:
-            raise HTTPException(400, str(exc))
+        return {"summary": insights.summarize_new_messages(client["name"], messages)}
 
 
 class DraftRequest(BaseModel):
@@ -617,10 +630,7 @@ class DraftRequest(BaseModel):
 def draft(conversation_id: int, req: DraftRequest, user: CurrentUser):
     """Borrador de respuesta con IA para revisar, editar y copiar."""
     with claude_errors():
-        try:
-            return insights.draft_reply(conversation_id, user, req.instructions)
-        except insights.AnalysisError as exc:
-            raise HTTPException(404 if "no encontrada" in str(exc) else 400, str(exc))
+        return insights.draft_reply(conversation_id, user, req.instructions)
 
 
 class RewriteRequest(BaseModel):
@@ -634,10 +644,7 @@ class RewriteRequest(BaseModel):
 def rewrite(req: RewriteRequest, _: CurrentUser):
     """Retoca con IA un borrador ya escrito: más formal, más cercano, más corto, corregido o traducido."""
     with claude_errors():
-        try:
-            return {"text": insights.rewrite_draft(req.text, req.action, req.language, req.channel)}
-        except insights.AnalysisError as exc:
-            raise HTTPException(400, str(exc))
+        return {"text": insights.rewrite_draft(req.text, req.action, req.language, req.channel)}
 
 
 # ---------------------------------------------------------------- Respuestas guardadas y macros
@@ -717,16 +724,16 @@ def snooze(conversation_id: int, req: SnoozeRequest, _: CurrentUser):
     """Pospone la conversación: vuelve a la bandeja en esa fecha, o antes si el cliente escribe."""
     until = req.until.astimezone(timezone.utc).replace(tzinfo=None) if req.until.tzinfo else req.until
     if until <= datetime.now(timezone.utc).replace(tzinfo=None):
-        raise HTTPException(400, "La fecha tiene que ser futura.")
+        raise InvalidInput("La fecha tiene que ser futura.")
     if not search.snooze(conversation_id, until.isoformat(timespec="seconds"), req.message_id):
-        raise HTTPException(404, "Conversación no encontrada")
+        raise NotFound("Conversación no encontrada")
     return {"ok": True}
 
 
 @app.delete("/api/conversations/{conversation_id}/snooze")
 def unsnooze(conversation_id: int, _: CurrentUser):
     if not search.snooze(conversation_id, None):
-        raise HTTPException(404, "Conversación no encontrada")
+        raise NotFound("Conversación no encontrada")
     return {"ok": True}
 
 
@@ -760,7 +767,7 @@ class DismissRequest(BaseModel):
 def dismiss(conversation_id: int, req: DismissRequest, _: CurrentUser):
     """Marca como atendido (no necesita respuesta). Si el cliente vuelve a escribir, reaparece."""
     if not search.dismiss_unanswered(conversation_id, req.message_id):
-        raise HTTPException(404, "Conversación no encontrada")
+        raise NotFound("Conversación no encontrada")
     return {"ok": True}
 
 
@@ -768,7 +775,7 @@ def dismiss(conversation_id: int, req: DismissRequest, _: CurrentUser):
 def client_detail(client_id: int, user: CurrentUser):
     data = search.client_overview(client_id, user["id"])
     if not data:
-        raise HTTPException(404, "Cliente no encontrado")
+        raise NotFound("Cliente no encontrado")
     return data
 
 
@@ -805,10 +812,7 @@ def smart_search_endpoint(req: SmartSearchRequest, user: CurrentUser):
     if req.scope == "team":
         audit.log(user["id"], "team_search", req.client_id, detail=f"por significado: {req.question}"[:200])
     with claude_errors():
-        try:
-            return smartsearch.smart_search(req.question, user["id"], req.scope, req.client_id)
-        except smartsearch.SmartSearchError as exc:
-            raise HTTPException(400, str(exc))
+        return smartsearch.smart_search(req.question, user["id"], req.scope, req.client_id)
 
 
 # ---------------------------------------------------------------- Documentos y adjuntos
@@ -831,7 +835,7 @@ def upload_document(client_id: int, req: FileUpload, user: CurrentUser):
     try:
         data = base64.b64decode(req.data, validate=True)
     except (binascii.Error, ValueError):
-        raise HTTPException(400, "No se pudo leer el archivo.")
+        raise InvalidInput("No se pudo leer el archivo.")
     with get_conn() as conn:
         att_id = attachments.save(conn, client_id, req.filename, data, uploaded_by=user["id"])
     return attachments.get(att_id) | {"path": None, "extracted_text": None}
@@ -840,7 +844,7 @@ def upload_document(client_id: int, req: FileUpload, user: CurrentUser):
 def _attachment_or_404(attachment_id: int) -> dict:
     att = attachments.get(attachment_id)
     if not att:
-        raise HTTPException(404, "Documento no encontrado")
+        raise NotFound("Documento no encontrado")
     return att
 
 
@@ -849,7 +853,7 @@ def attachment_file(attachment_id: int, _: CurrentUser, download: bool = False):
     att = _attachment_or_404(attachment_id)
     path = attachments.file_path(att)
     if not path.exists():
-        raise HTTPException(404, "El archivo ya no está en el servidor.")
+        raise NotFound("El archivo ya no está en el servidor.")
     # Imágenes y PDF se abren en el navegador; el resto se descarga. Nunca se sirve HTML "en línea".
     inline = not download and (att["mime"] in attachments.AI_IMAGE_TYPES or att["mime"] == "application/pdf")
     return FileResponse(path, media_type=att["mime"], filename=att["filename"],
@@ -876,9 +880,9 @@ def delete_attachment(attachment_id: int, user: CurrentUser):
     with get_conn() as conn:
         row = conn.execute("SELECT uploaded_by, message_id FROM attachments WHERE id = ?", (attachment_id,)).fetchone()
     if not row:
-        raise HTTPException(404, "Documento no encontrado")
+        raise NotFound("Documento no encontrado")
     if row["uploaded_by"] != user["id"] and user["role"] != "admin":
-        raise HTTPException(403, "Solo quien lo subió (o un administrador) puede borrarlo.")
+        raise Forbidden("Solo quien lo subió (o un administrador) puede borrarlo.")
     attachments.delete(attachment_id)
     return {"ok": True}
 
@@ -905,10 +909,7 @@ def analyze_client(client_id: int, _: CurrentUser):
     """Actualiza ficha, tareas y resumen con IA."""
     _client_or_404(client_id)
     with claude_errors():
-        try:
-            changes = insights.analyze_client(client_id)
-        except insights.AnalysisError as exc:
-            raise HTTPException(400, str(exc))
+        changes = insights.analyze_client(client_id)
     return {"changes": changes, **insights.profile(client_id)}
 
 
@@ -921,7 +922,7 @@ def _fact_or_404(fact_id: int) -> dict:
     with get_conn() as conn:
         row = conn.execute("SELECT id, client_id, origin FROM client_facts WHERE id = ?", (fact_id,)).fetchone()
     if not row or row["origin"] == "dismissed":
-        raise HTTPException(404, "Dato no encontrado")
+        raise NotFound("Dato no encontrado")
     return dict(row)
 
 
@@ -969,7 +970,7 @@ class NoteIn(BaseModel):
 def _note_or_404(note_id: int) -> dict:
     note = notes.get_note(note_id)
     if not note:
-        raise HTTPException(404, "Nota no encontrada")
+        raise NotFound("Nota no encontrada")
     return note
 
 
@@ -988,14 +989,14 @@ def add_note(client_id: int, req: NoteIn, user: CurrentUser):
 @app.patch("/api/notes/{note_id}")
 def edit_note(note_id: int, req: NoteIn, user: CurrentUser):
     if _note_or_404(note_id)["user_id"] != user["id"]:
-        raise HTTPException(403, "Solo quien escribió la nota puede editarla.")
+        raise Forbidden("Solo quien escribió la nota puede editarla.")
     return notes.update_note(note_id, user, req.body.strip())
 
 
 @app.delete("/api/notes/{note_id}")
 def delete_note(note_id: int, user: CurrentUser):
     if _note_or_404(note_id)["user_id"] != user["id"] and user["role"] != "admin":
-        raise HTTPException(403, "Solo quien escribió la nota (o un administrador) puede borrarla.")
+        raise Forbidden("Solo quien escribió la nota (o un administrador) puede borrarla.")
     notes.delete_note(note_id)
     return {"ok": True}
 
@@ -1058,7 +1059,7 @@ def add_task(client_id: int, req: TaskIn, user: CurrentUser):
 def update_task(task_id: int, req: TaskUpdate, user: CurrentUser):
     before = insights.get_task(task_id)
     if not before:
-        raise HTTPException(404, "Tarea no encontrada")
+        raise NotFound("Tarea no encontrada")
     # Solo se tocan los campos enviados (así se puede quitar la fecha o el responsable enviando null).
     fields = {k: getattr(req, k) for k in req.model_fields_set}
     for required in ("title", "status"):
@@ -1079,7 +1080,7 @@ def update_task(task_id: int, req: TaskUpdate, user: CurrentUser):
 @app.delete("/api/tasks/{task_id}")
 def delete_task(task_id: int, _: CurrentUser):
     if not insights.get_task(task_id):
-        raise HTTPException(404, "Tarea no encontrada")
+        raise NotFound("Tarea no encontrada")
     with get_conn() as conn:
         conn.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
     return {"ok": True}
@@ -1093,15 +1094,15 @@ def claude_errors():
     try:
         yield
     except anthropic.AuthenticationError:
-        raise HTTPException(500, "Clave de API de Claude inválida o ausente (revisa backend/.env).")
+        raise ServiceUnavailable("Clave de API de Claude inválida o ausente (revisa backend/.env).")
     except anthropic.RateLimitError:
-        raise HTTPException(429, "Límite de uso de la API alcanzado. Inténtalo en unos segundos.")
+        raise TooManyAttempts("Límite de uso de la API alcanzado. Inténtalo en unos segundos.")
     except anthropic.APIConnectionError:
-        raise HTTPException(502, "No se pudo conectar con la API de Claude.")
+        raise ExternalServiceError("No se pudo conectar con la API de Claude.")
     except anthropic.APIStatusError as exc:
-        raise HTTPException(502, f"Error de la API de Claude: {exc.message}")
+        raise ExternalServiceError(f"Error de la API de Claude: {exc.message}")
     except agent.MissingCredentialsError:
-        raise HTTPException(503, "El asistente no está disponible: falta configurar ANTHROPIC_API_KEY en backend/.env.")
+        raise ServiceUnavailable("El asistente no está disponible: falta configurar ANTHROPIC_API_KEY en backend/.env.")
 
 
 def _client_or_404(client_id: int | None) -> dict | None:
@@ -1110,7 +1111,7 @@ def _client_or_404(client_id: int | None) -> dict | None:
     with get_conn() as conn:
         row = conn.execute("SELECT id, name FROM clients WHERE id = ?", (client_id,)).fetchone()
     if not row:
-        raise HTTPException(404, "Cliente no encontrado")
+        raise NotFound("Cliente no encontrado")
     return dict(row)
 
 

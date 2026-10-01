@@ -11,6 +11,7 @@ from datetime import date
 
 from . import agent, attachments, clients, notes
 from .db import get_conn, rows
+from .errors import AppError, NotFound
 
 log = logging.getLogger(__name__)
 
@@ -80,8 +81,12 @@ SCHEMA = {
 }
 
 
-class AnalysisError(Exception):
-    pass
+class AnalysisError(AppError):
+    """La IA no ha podido hacer el análisis, o no hay nada que analizar."""
+
+
+class AnalysisSubjectNotFound(AnalysisError, NotFound):
+    """El cliente o la conversación que se quiere analizar no existe."""
 
 
 def _load_context(client_id: int) -> dict | None:
@@ -173,7 +178,7 @@ def analyze_client(client_id: int) -> dict:
     with _locks[client_id]:
         ctx = _load_context(client_id)
         if ctx is None:
-            raise AnalysisError("Cliente no encontrado.")
+            raise AnalysisSubjectNotFound("Cliente no encontrado.")
         if not ctx["messages"]:
             raise AnalysisError("Este cliente todavía no tiene mensajes que analizar.")
         result = _call_claude(_prompt(ctx))
@@ -310,7 +315,7 @@ def draft_reply(conversation_id: int, author: dict, instructions: str = "") -> d
                  FROM conversations c JOIN clients cl ON cl.id = c.client_id
                  JOIN users u ON u.id = c.owner_user_id WHERE c.id = ?""", (conversation_id,)).fetchone()
         if not conv:
-            raise AnalysisError("Conversación no encontrada.")
+            raise AnalysisSubjectNotFound("Conversación no encontrada.")
         thread = rows(conn.execute(
             """SELECT * FROM (SELECT direction, sender, body, sent_at FROM messages WHERE conversation_id = ?
                                ORDER BY sent_at DESC, id DESC LIMIT 40) ORDER BY sent_at""", (conversation_id,)))

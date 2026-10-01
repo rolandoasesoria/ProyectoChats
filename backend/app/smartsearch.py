@@ -3,6 +3,7 @@ y Claude ordena los candidatos por lo bien que responden a la pregunta. No neces
 import json
 
 from . import agent, attachments, search
+from .errors import AppError
 
 MAX_CANDIDATES = 40
 
@@ -23,8 +24,8 @@ RANK_SCHEMA = {
 }
 
 
-class SmartSearchError(Exception):
-    pass
+class SmartSearchError(AppError):
+    """La búsqueda por significado no ha podido completarse."""
 
 
 def _structured(system: str, content: str, schema: dict) -> dict:
