@@ -595,25 +595,6 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 .timeline li.flash .bubble { outline: 2px solid var(--accent); animation: flash 2.5s ease; }
 @keyframes flash { 0%, 60% { background: var(--accent-soft); } }
 
-/* Importación */
-.dropzone {
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center;
-  padding: 36px 16px; border: 2px dashed var(--border); border-radius: 12px; cursor: pointer; margin-bottom: 12px;
-  transition: border-color .15s, background .15s;
-}
-.dropzone:hover, .dropzone.over { border-color: var(--accent); background: var(--accent-soft); }
-.dropzone.loading { opacity: .6; pointer-events: none; }
-.dropzone.loading strong::after { content: " · analizando…"; font-weight: normal; }
-.howto { font-size: 14px; margin-top: 8px; }
-.howto summary { cursor: pointer; color: var(--accent); }
-.howto li { margin: 6px 0; line-height: 1.45; }
-.import-summary { margin: 0; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-.participants { border: 1px solid var(--border); border-radius: 10px; padding: 8px 12px; margin: 0; max-height: 240px; overflow-y: auto; }
-.participants legend { font-size: 14px; padding: 0 4px; }
-.participant { display: flex !important; flex-direction: row !important; align-items: center; gap: 10px; padding: 6px 0; flex-wrap: wrap; }
-.participant > span:nth-child(2) { flex: 1; }
-.tag { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
-.import-result { font-size: 15px; line-height: 1.5; }
 [hidden] { display: none !important; }
 
 /* Tutorial de bienvenida */

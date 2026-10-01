@@ -8,6 +8,15 @@ function fileIcon(mime) {
   return "DOC";
 }
 
+function readAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",", 2)[1] || "");
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
 function formatSize(bytes) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
@@ -47,7 +56,7 @@ async function loadDocuments(clientId) {
         <a class="icon-link" href="${attachmentUrl(d.id, true)}" title="Descargar">⤓</a>
         ${canDelete ? `<button class="icon-link" data-delete-doc title="Borrar">×</button>` : ""}
       </li>`;
-  }).join("") : `<li class="muted small">Sin documentos. Los adjuntos de los correos y de los WhatsApp exportados con archivos aparecerán aquí.</li>`;
+  }).join("") : `<li class="muted small">Sin documentos. Los adjuntos que lleguen por correo, WhatsApp o Telegram aparecerán aquí.</li>`;
 }
 
 async function onDocumentsClick(e) {

@@ -76,7 +76,6 @@
         <div class="client-actions">
           <label class="check" title="Solo los clientes de los que eres responsable"><input type="checkbox" id="filter-mine"> Solo míos</label>
           <button id="new-client-btn" class="ghost small-btn" title="Crear un cliente a mano">＋ Nuevo</button>
-          <button id="import-btn" class="ghost small-btn" title="Importar chats exportados de WhatsApp, Telegram o email">⤓ Importar</button>
         </div>
         <ul id="client-list" class="client-list"></ul>
       </div>
@@ -427,67 +426,6 @@
     </section>
   </dialog>
 
-  <!-- Importar exportaciones de chats y correos -->
-  <dialog id="import-dialog" class="dialog wide">
-    <div class="dialog-head">
-      <h2>Importar conversaciones</h2>
-      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
-    </div>
-
-    <!-- Paso 1: elegir archivo -->
-    <section id="import-step-file">
-      <label class="dropzone" id="dropzone">
-        <input type="file" id="import-file" accept=".txt,.zip,.json,.eml,.mbox" hidden>
-        <strong>Arrastra aquí el archivo o pulsa para elegirlo</strong>
-        <span class="muted">WhatsApp (.txt o .zip con archivos) · Telegram (.json) · Email (.eml o .mbox) · máximo 25 MB (50 MB el .zip)</span>
-      </label>
-      <p class="form-error" id="import-error" role="alert" hidden></p>
-      <details class="howto">
-        <summary>¿Cómo exporto un chat?</summary>
-        <ul>
-          <li><strong>WhatsApp:</strong> abre el chat → ⋮ (o el nombre del contacto en iPhone) → Más → <em>Exportar chat</em>. <em>Sin archivos</em> genera un .txt; <em>Incluir archivos</em> genera un .zip: súbelo tal cual y las fotos y documentos quedarán enlazados a sus mensajes.</li>
-          <li><strong>Telegram:</strong> en Telegram Desktop, abre el chat → ⋮ → <em>Exportar historial del chat</em> → formato <em>JSON</em>. Sube el archivo <code>result.json</code>.</li>
-          <li><strong>Email:</strong> arrastra un correo desde Outlook o Thunderbird para guardarlo como .eml, o descarga el buzón completo en .mbox (Gmail: Google Takeout → Correo). Los adjuntos de los correos también se guardan.</li>
-        </ul>
-      </details>
-    </section>
-
-    <!-- Paso 2: revisar y elegir el cliente -->
-    <form id="import-step-review" class="form" hidden>
-      <p id="import-summary" class="import-summary"></p>
-      <fieldset class="participants">
-        <legend>¿Quién es el cliente?</legend>
-        <div id="import-participants"></div>
-      </fieldset>
-      <div class="form-grid">
-        <label>Guardar en
-          <select id="import-client"></select>
-        </label>
-        <label id="import-name-label">Nombre del cliente nuevo
-          <input id="import-name" maxlength="200">
-        </label>
-        <label id="import-handle-label">Identificador <span class="muted">(opcional)</span>
-          <input id="import-handle" maxlength="200">
-        </label>
-      </div>
-      <p class="muted small">Las conversaciones se guardan como tuyas. Si importas el mismo chat otra vez, solo se añaden los mensajes nuevos.</p>
-      <p class="form-error" id="import-error2" role="alert" hidden></p>
-      <div class="dialog-actions">
-        <button type="button" class="ghost" id="import-back">Elegir otro archivo</button>
-        <button type="submit" class="primary" id="import-submit">Importar</button>
-      </div>
-    </form>
-
-    <!-- Paso 3: resultado -->
-    <section id="import-step-done" hidden>
-      <p id="import-result" class="import-result"></p>
-      <div class="dialog-actions">
-        <button type="button" class="ghost" id="import-another">Importar otro</button>
-        <button type="button" class="primary" id="import-open">Ver cliente</button>
-      </div>
-    </section>
-  </dialog>
-
   <!-- Crear / editar cliente -->
   <dialog id="client-dialog" class="dialog">
     <form id="client-form" class="form">
@@ -526,7 +464,7 @@
 
     <section class="edit-only client-section">
       <h3>Identificadores</h3>
-      <p class="muted small">Cómo se identifica al cliente en cada canal. Sirven para asociar las importaciones al cliente correcto.</p>
+      <p class="muted small">Cómo se identifica al cliente en cada canal. Sirven para que los mensajes que llegan por cada canal vayan al cliente correcto.</p>
       <ul id="cf-identities" class="identity-list"></ul>
       <form id="identity-form" class="inline-form">
         <select id="id-channel">
@@ -665,7 +603,6 @@
   <script src="account.js"></script>
   <script src="dashboard.js"></script>
   <script src="clients.js"></script>
-  <script src="import.js"></script>
   <script src="profile.js"></script>
   <script src="inbox.js"></script>
   <script src="drafts.js"></script>

@@ -1,7 +1,6 @@
 // Ficha del cliente (resumen y datos clave), tareas y pestañas de los paneles.
 
 let team = [];              // miembros del equipo (para asignar tareas)
-let analysisPoll = null;    // sondeo mientras la IA analiza en segundo plano tras una importación
 
 /* ---------- Pestañas ---------- */
 
@@ -121,29 +120,6 @@ async function analyzeClient() {
     btn.disabled = false;
     btn.textContent = "✨ Actualizar con IA";
   }
-}
-
-// Tras importar, la IA analiza en segundo plano: se consulta cada pocos segundos hasta que termina.
-function watchBackgroundAnalysis(clientId, importedAt) {
-  clearInterval(analysisPoll);
-  let tries = 0;
-  $("#summary-meta").textContent = "✨ Analizando las conversaciones importadas…";
-  analysisPoll = setInterval(async () => {
-    tries += 1;
-    if (state.clientId !== clientId || tries > 24) {
-      clearInterval(analysisPoll);
-      if (state.clientId === clientId) loadProfile(clientId);
-      return;
-    }
-    const p = await api(`/api/clients/${clientId}/profile`).catch(() => null);
-    // Fechas UTC "AAAA-MM-DD HH:MM:SS" del servidor: se pueden comparar como texto.
-    if (p && p.analyzed_at && p.analyzed_at >= importedAt) {
-      clearInterval(analysisPoll);
-      renderProfile(p);
-      loadClientTasks(clientId);
-      refreshMyTasksCount();
-    }
-  }, 5000);
 }
 
 async function submitFact(e) {
@@ -382,7 +358,6 @@ async function showSourceMessage(messageId) {
 /* ---------- Al abrir un cliente ---------- */
 
 async function openClientDetail(clientId) {
-  clearInterval(analysisPoll);
   $("#task-assignee").innerHTML = assigneeOptions(currentUser.id);
   await Promise.all([loadProfile(clientId), loadClientTasks(clientId), loadNotes(clientId), loadDocuments(clientId)]);
 }

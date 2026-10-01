@@ -24,7 +24,6 @@ function paletteActions() {
     { label: "Ir a Tareas", hint: "g t", run: () => showSideTab("tasks") },
     { label: "Consulta general al asistente", run: () => selectClient(null) },
     { label: "Nuevo cliente", run: () => openClientDialog("create") },
-    { label: "Importar conversaciones", run: () => openImportDialog() },
     { label: "Panel de actividad", run: () => openDashboard() },
     { label: "Respuestas guardadas", run: () => openRepliesDialog() },
     { label: "Cambiar tema claro / oscuro", run: () => toggleTheme() },

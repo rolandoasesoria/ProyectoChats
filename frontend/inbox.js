@@ -235,6 +235,6 @@ function bindInboxEvents() {
     loadInbox();
   }));
   $("#whats-new-btn").addEventListener("click", summarizeWhatsNew);
-  // La bandeja se revisa cada minuto (p. ej. mensajes que entran por importaciones de otros compañeros).
+  // La bandeja se revisa cada minuto (mensajes que entran por las integraciones).
   setInterval(refreshInboxCount, 60000);
 }

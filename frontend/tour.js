@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 17;
+const TOUR_VERSION = 18;
 
 const TOUR_STEPS = [
   {
@@ -20,11 +20,6 @@ const TOUR_STEPS = [
     target: ".clients",
     title: "Clientes",
     text: "Busca por nombre, empresa, email o teléfono, y filtra por estado, etiqueta o responsable. El número azul indica mensajes nuevos. «Consulta general» pregunta sobre todos los clientes a la vez.",
-  },
-  {
-    target: "#import-btn",
-    title: "Importar",
-    text: "Sube un chat exportado de WhatsApp (.txt/.zip), Telegram (.json) o correo (.eml/.mbox). Si lo vuelves a importar, solo se añaden los mensajes nuevos.",
   },
   {
     target: ".detail",

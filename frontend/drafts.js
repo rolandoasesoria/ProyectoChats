@@ -4,7 +4,7 @@
 function fillDraftConversations(conversations, selectedId) {
   $("#draft-conversation").innerHTML = conversations.map((c) => {
     const last = c.last_at ? new Date(c.last_at).toLocaleDateString("es-ES", { day: "numeric", month: "short" }) : "";
-    const label = [CHANNEL_LABELS[c.channel] || c.channel, c.subject, c.is_mine ? "tuya" : `de ${c.owner}`, last && `último ${last}`]
+    const label = [IDENTITY_LABELS[c.channel] || c.channel, c.subject, c.is_mine ? "tuya" : `de ${c.owner}`, last && `último ${last}`]
       .filter(Boolean).join(" · ");
     return `<option value="${c.id}" ${c.id === selectedId ? "selected" : ""}>${escapeHtml(label)}</option>`;
   }).join("");
