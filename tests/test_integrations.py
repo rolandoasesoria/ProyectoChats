@@ -132,7 +132,8 @@ integrations.SMTP_SSL_CLASS = FakeSMTP
 integrations.SMTP_CLASS = FakeSMTP
 with get_conn() as conn:
     conv = conn.execute("SELECT id FROM conversations WHERE client_id = ? AND channel = 'email'", (clients["Pedro Sanz"]["id"],)).fetchone()[0]
-check("Ana puede enviar en esa conversación", Session("ana").get(f"/api/conversations/{conv}/sender")[1] == {"can_send": True, "via": "Buzón de Ana"})
+sender = Session("ana").get(f"/api/conversations/{conv}/sender")[1]
+check("Ana puede enviar en esa conversación", sender["can_send"] and sender["via"] == "Buzón de Ana", sender)
 check("Carlos no tiene integración de email", carlos.get(f"/api/conversations/{conv}/sender")[1]["can_send"] is False)
 res = integrations.send_reply(conv, {"id": 1, "name": "Ana Ruiz", "role": "admin"}, "Son 0,40 € por caja.")
 msg = next(m for m in sent if not isinstance(m, (tuple, str)))

@@ -44,7 +44,9 @@ async function api(path, options = {}) {
       if (typeof body.detail === "string") detail = body.detail;
       else if (Array.isArray(body.detail)) detail = "Datos no válidos (revisa la longitud del texto).";
     } catch { /* sin cuerpo JSON */ }
-    throw new Error(detail);
+    const error = new Error(detail);
+    error.status = res.status;
+    throw error;
   }
   return res.json();
 }

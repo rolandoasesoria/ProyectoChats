@@ -51,9 +51,14 @@ try:
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
     b.shot("04-inicio")
 
-    # Abrir Laura
+    # Abrir Laura (Carlos la tiene abierta y está respondiendo)
+    with get_conn() as conn:
+        conn.execute("INSERT INTO presence (user_id, client_id, composing, seen_at) VALUES (2, 1, 1, localtimestamp(0))")
     b.click('#client-list li[data-id="1"]')
     b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
+    b.wait("!document.querySelector('#presence-bar').hidden")
+    check("avisa de que un compañero está respondiendo al mismo cliente",
+          b.js("document.querySelector('#presence-bar').textContent") == "Carlos Pérez está respondiendo a este cliente")
     b.wait("document.querySelector('#summary-text').textContent.length > 0")
     check("ficha de Laura con estado", b.js("document.querySelector('#detail-status').textContent") == "Activo")
     b.shot("05-ficha")

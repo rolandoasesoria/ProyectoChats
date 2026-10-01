@@ -138,14 +138,19 @@ async function onIntegrationsClick(e) {
 
 /* ---------- Enviar desde el borrador ---------- */
 
+// Último mensaje de la conversación al empezar a escribir: si llega otro antes de enviar, se avisa.
+let draftBaseline = null;
+
 async function updateSendButton() {
   const btn = $("#draft-send");
   btn.hidden = true;
+  draftBaseline = null;
   const convId = $("#draft-conversation").value;
   if (!convId) return;
   try {
     const s = await api(`/api/conversations/${convId}/sender`);
     if ($("#draft-conversation").value !== convId) return;
+    draftBaseline = s.last_message_id;
     btn.hidden = !s.can_send;
     btn.textContent = `Enviar por ${s.via || ""}`.trim();
   } catch { /* sin envío */ }
@@ -160,7 +165,18 @@ async function sendDraft() {
   const btn = $("#draft-send");
   btn.disabled = true;
   try {
-    await api(`/api/conversations/${convId}/send`, { method: "POST", body: JSON.stringify({ text }) });
+    const send = (force) => api(`/api/conversations/${convId}/send`, {
+      method: "POST", body: JSON.stringify({ text, after_message_id: draftBaseline, force }),
+    });
+    try {
+      await send(false);
+    } catch (err) {
+      if (err.status !== 409) throw err;
+      if (!confirm(`${err.message}
+
+¿Enviar de todos modos?`)) return;
+      await send(true);
+    }
     const note = await scheduleFollowUp(convId);
     closeDraftPanel();
     $("#draft-sent-note").textContent = `Enviado.${note ? ` ${note}` : ""}`;

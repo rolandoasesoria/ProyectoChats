@@ -31,11 +31,14 @@ function openDraftPanel(conversationId = null) {
   $("#draft-instructions").value = "";
   $("#draft-panel").hidden = false;
   $("#draft-open").hidden = true;
+  heartbeat();
   $("#draft-instructions").focus();
 }
 
 function closeDraftPanel() {
+  const wasOpen = !$("#draft-panel").hidden;
   $("#draft-panel").hidden = true;
+  if (wasOpen) heartbeat();
   $("#reply-picker").hidden = true;
   $("#draft-open").hidden = false;
 }
@@ -79,6 +82,7 @@ async function scheduleFollowUp(conversationId) {
 
 async function copyDraft() {
   const text = $("#draft-text").value;
+  if (!(await confirmNoNews($("#draft-conversation").value))) return;
   try {
     await navigator.clipboard.writeText(text);
   } catch {
