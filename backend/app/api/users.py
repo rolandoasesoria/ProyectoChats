@@ -5,7 +5,6 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 
 from .. import audit, auth
-from ..db import get_conn
 from ..errors import InvalidInput
 from .deps import AdminUser, CurrentUser
 
@@ -54,5 +53,4 @@ def admin_update_user(user_id: int, req: UserUpdate, admin: AdminUser):
 @router.get("/api/team")
 def team(_: CurrentUser):
     """Miembros activos del equipo (para asignar tareas, menciones...)."""
-    with get_conn() as conn:
-        return [dict(r) for r in conn.execute("SELECT id, name FROM users WHERE active = 1 ORDER BY name")]
+    return auth.list_team()

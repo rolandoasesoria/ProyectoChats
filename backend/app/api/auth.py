@@ -5,8 +5,6 @@ from fastapi import APIRouter, Cookie, Request, Response
 from pydantic import BaseModel, Field
 
 from .. import auth
-from ..db import get_conn
-from ..errors import InvalidInput
 from .deps import CurrentUser
 
 router = APIRouter()
@@ -57,10 +55,5 @@ class PasswordChange(BaseModel):
 
 @router.post("/api/me/password")
 def change_password(req: PasswordChange, user: CurrentUser, pc_session: str | None = Cookie(None)):
-    with get_conn() as conn:
-        stored = conn.execute("SELECT password_hash FROM users WHERE id = ?", (user["id"],)).fetchone()
-    if not auth.verify_password(req.current_password, stored["password_hash"]):
-        raise InvalidInput("La contraseña actual no es correcta.")
-    # Cierra las demás sesiones abiertas del usuario, pero no la actual.
-    auth.update_user(user["id"], password=req.new_password, keep_token=pc_session)
+    auth.change_password(user["id"], req.current_password, req.new_password, keep_token=pc_session)
     return {"ok": True}
