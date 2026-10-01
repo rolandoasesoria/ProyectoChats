@@ -27,7 +27,7 @@ from email.utils import formataddr, make_msgid
 
 from fastapi import HTTPException
 
-from . import clients, importers, insights, search, secrets_store, settings
+from . import clients, emails, insights, search, secrets_store, settings
 from .db import get_conn, rows
 
 log = logging.getLogger(__name__)
@@ -252,7 +252,7 @@ def sync_email(integ: dict) -> int:
                 state[folder] = uid
                 if not raw:
                     continue
-                msg = importers._email_message(email.message_from_bytes(raw, policy=default_policy))
+                msg = emails.parse_message(email.message_from_bytes(raw, policy=default_policy))
                 if not msg or msg["bulk"]:
                     continue  # boletines, notificaciones automáticas...
                 if direction == "in":
