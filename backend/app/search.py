@@ -200,7 +200,7 @@ def timeline(client_id: int, user_id: int, scope: str = "mine",
             f"""
             SELECT * FROM (
                 SELECT m.id, m.direction, m.sender, m.body, m.sent_at,
-                       c.id AS conversation_id, c.channel, u.name AS owner
+                       c.id AS conversation_id, c.channel, c.owner_user_id AS owner_id, u.name AS owner
                   FROM messages m
                   JOIN conversations c ON c.id = m.conversation_id
                   JOIN users u ON u.id = c.owner_user_id

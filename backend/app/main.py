@@ -495,9 +495,11 @@ def client_detail(client_id: int, user: CurrentUser):
 @app.get("/api/clients/{client_id}/timeline")
 def client_timeline(client_id: int, user: CurrentUser, scope: Literal["mine", "team"] = "mine",
                     channel: str | None = None):
-    if scope == "team":
+    messages = search.timeline(client_id, user["id"], scope, channel)
+    # Solo cuenta como acceso al equipo si de verdad se muestran conversaciones de compañeros.
+    if scope == "team" and any(m["owner_id"] != user["id"] for m in messages):
         audit.log(user["id"], "team_messages", client_id, throttle=True)
-    return search.timeline(client_id, user["id"], scope, channel)
+    return messages
 
 
 @app.get("/api/search")

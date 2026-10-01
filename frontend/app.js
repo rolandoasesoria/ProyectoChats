@@ -125,7 +125,7 @@ async function loadTimeline() {
   }
   list.innerHTML = messages.map((m) => `
     <li class="${escapeHtml(m.channel)} ${m.direction}" data-id="${m.id}">
-      <div class="meta">${badge(m.channel)} ${escapeHtml(m.sender)} · ${formatDate(m.sent_at)}${m.owner !== currentUser.name ? ` · <span class="owner-tag" title="Conversación que lleva ${escapeHtml(m.owner)}">la lleva ${escapeHtml(m.owner)}</span>` : ""}</div>
+      <div class="meta">${badge(m.channel)} ${escapeHtml(m.sender)} · ${formatDate(m.sent_at)}${m.owner_id !== currentUser.id ? ` · <span class="owner-tag" title="Conversación que lleva ${escapeHtml(m.owner)}">la lleva ${escapeHtml(m.owner)}</span>` : ""}</div>
       ${escapeHtml(m.body)}${attachmentChips(m.attachments)}
     </li>`).join("");
   list.scrollTop = list.scrollHeight;
