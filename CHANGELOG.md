@@ -20,6 +20,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Respuestas guardadas para todo el equipo, con variables ({nombre}, {empresa}, {dato:CIF}…) y atajos: en el
   borrador se insertan con un botón o escribiendo /atajo. Con acciones (estado, etiqueta, marcar atendida)
   funcionan como macros.
+- Aviso de colisión: quién más tiene abierto el cliente o le está respondiendo, y aviso al enviar o copiar si
+  ha llegado algo nuevo a la conversación mientras escribías.
 - Protección de datos: buscar y ocultar IBAN, DNI/NIE y tarjetas en los mensajes de un cliente, y plazo de
   conservación de mensajes (Ajustes) con vista previa de lo que se borraría.
 - La IA detecta la prioridad (alta, media, baja) y el tono del cliente al analizarlo; se ve en la ficha y en
