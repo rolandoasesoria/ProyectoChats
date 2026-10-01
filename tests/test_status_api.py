@@ -1,7 +1,7 @@
 """Estado de los clientes: lo decide la IA o la regla de inactividad, y una persona puede cambiarlo a mano."""
 import sys
 
-from apitest import Session, check, results
+from apitest import Session, check, receive, results
 from app import clients
 from app.db import get_conn
 
@@ -36,14 +36,10 @@ check("respeta el estado puesto a mano (Laura) y no toca a quien tiene actividad
 check("con 0 días no hace nada", clients.mark_inactive(0) == 0)
 
 # Vuelve a escribir: pasa a Activo
-st, r = ana.post("/api/import", {"channel": "email", "handle": "jorge@talleresmartin.com", "client_id": 2,
-                                 "messages": [{"direction": "in", "sender": "Jorge", "body": "Hola de nuevo",
-                                               "sent_at": "2099-01-01T10:00:00"}]})
-check("llega un mensaje nuevo de Jorge", st == 200 and r["messages"] == 1, r)
-with get_conn() as conn:
-    conn.execute("UPDATE messages SET sent_at = localtimestamp(0) WHERE body = 'Hola de nuevo'")
-check("un inactivo que vuelve a escribir pasa a Activo", clients.reactivate(2, 90)
-      and carlos.get("/api/clients/2")[1]["status_reason"] == "Ha vuelto a escribir")
+r = receive("email", "jorge@talleresmartin.com", "Hola de nuevo", client_name="Jorge Martín")
+check("un inactivo que vuelve a escribir pasa a Activo al momento", r["client_id"] == 2
+      and carlos.get("/api/clients/2")[1]["status"] == "active"
+      and carlos.get("/api/clients/2")[1]["status_reason"] == "Ha vuelto a escribir", r)
 check("si no está inactivo no hace nada", not clients.reactivate(2, 90))
 
 check("ajuste de días de inactividad", ana.get("/api/settings")[1]["inactive_days"] == 90

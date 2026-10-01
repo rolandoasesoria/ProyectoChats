@@ -42,3 +42,21 @@ class Session:
 
     def delete(self, path):
         return self.call("DELETE", path)
+
+
+def receive(channel: str, handle: str, body: str, *, owner: int = 1, client_name: str | None = None,
+            client_id: int | None = None, direction: str = "in", sender: str | None = None,
+            sent_at: str | None = None, attachments=None) -> dict:
+    """Un mensaje que entra por una integración (WhatsApp, Telegram o email), por el mismo camino que los reales.
+    Con client_id se guarda en ese cliente aunque el identificador sea nuevo."""
+    from datetime import datetime
+
+    from app import integrations, search
+    message = {"direction": direction, "sender": sender or client_name or handle, "body": body,
+               "sent_at": sent_at or datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "attachments": attachments or []}
+    if client_id is not None:
+        return search.import_conversation({"owner_user_id": owner, "channel": channel, "handle": handle,
+                                           "client_id": client_id, "client_name": client_name, "messages": [message]})
+    return integrations.ingest({"kind": channel, "owner_user_id": owner}, handle=handle,
+                               client_name=client_name or handle, direction=direction, sender=message["sender"],
+                               body=body, sent_at=message["sent_at"], external_id=None, attachments=attachments)

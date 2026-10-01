@@ -1,7 +1,6 @@
-import base64
 import sys
 
-from apitest import Session, check, results
+from apitest import Session, check, receive, results
 
 ana, carlos = Session("ana"), Session("carlos")
 
@@ -48,9 +47,8 @@ st, d = ana.get("/api/clients/1/duplicates")
 check("y al revés", [x["id"] for x in d] == [dup], d)
 
 # Contenido del duplicado antes de unir
-chat = "10/09/26, 10:00 - Laura: Soy Laura otra vez, desde el móvil nuevo\n"
-ana.post("/api/import/file", {"filename": "c.txt", "data": base64.b64encode(chat.encode()).decode(),
-                              "client_key": "Laura", "client_id": dup, "handle": "+34 699 000 000"})
+receive("whatsapp", "+34 699 000 000", "Soy Laura otra vez, desde el móvil nuevo", client_id=dup, client_name="Laura",
+        sent_at="2026-09-10T10:00:00")
 ana.post(f"/api/clients/{dup}/facts", {"label": "Móvil nuevo", "value": "699 000 000"})
 ana.post(f"/api/clients/{dup}/tasks", {"title": "Actualizar teléfono"})
 ana.post(f"/api/clients/{dup}/notes", {"body": "Cambió de móvil"})

@@ -1,6 +1,6 @@
 import sys
 
-from apitest import Session, check, results
+from apitest import Session, check, receive, results
 
 ana, marta = Session("ana"), Session("marta")
 
@@ -28,13 +28,9 @@ st, clients = ana.get("/api/clients")
 check("tras visitar: 0 no leídos", next(c for c in clients if c["id"] == 1)["unread"] == 0)
 
 # Llega un mensaje nuevo de Laura por WhatsApp (conversación de Ana)
-chat = "06/08/26, 9:00 - Laura Gómez: Hola Ana, ¿al final podéis entregar el martes?\n"
-import base64  # noqa: E402
-
-st, res = ana.post("/api/import/file", {"filename": "c.txt", "data": base64.b64encode(chat.encode()).decode(),
-                                        "client_key": "Laura Gómez", "client_id": 1, "handle": "+34600111222"})
-check("importa el mensaje nuevo", res["messages"] == 1, res)
-check("no hay clave: no se lanza análisis", res["analysis_started"] is False, res)
+res = receive("whatsapp", "+34600111222", "Hola Ana, ¿al final podéis entregar el martes?", client_name="Laura Gómez",
+              sent_at="2026-08-06T09:00:00")
+check("entra el mensaje nuevo en la ficha de Laura", res["messages"] == 1 and res["client_id"] == 1, res)
 st, clients = ana.get("/api/clients")
 check("no leídos: 1", next(c for c in clients if c["id"] == 1)["unread"] == 1)
 check("para Marta (nunca lo abrió) sigue sin contador",

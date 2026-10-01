@@ -5,12 +5,11 @@ import io
 import os
 import sys
 import urllib.request
-import zipfile
 from pathlib import Path
 from types import SimpleNamespace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from apitest import BASE, Session, check, results  # noqa: E402
+from apitest import BASE, Session, check, receive, results  # noqa: E402
 
 
 def make_pdf(text: str) -> bytes:
@@ -74,30 +73,25 @@ eml = (b"From: Jorge Martin <jorge@talleresmartin.com>\nTo: ana@miempresa.com\nS
        b"--XX\nContent-Type: text/plain; charset=utf-8\n\nTe adjunto el presupuesto firmado.\n"
        b"--XX\nContent-Type: application/pdf; name=\"presupuesto.pdf\"\nContent-Disposition: attachment; filename=\"presupuesto.pdf\"\n"
        b"Content-Transfer-Encoding: base64\n\n" + base64.encodebytes(make_pdf("Presupuesto etiquetas vinilo 0,12 EUR unidad")) + b"--XX--\n")
-st, res = ana.post("/api/import/file", {"filename": "p.eml", "data": b64(eml), "client_key": "jorge@talleresmartin.com", "client_id": 2})
-check("importar .eml con adjunto", res["messages"] == 1 and res["attachments"] == 1, res)
+import email as email_lib  # noqa: E402
+from email.policy import default as default_policy  # noqa: E402
+
+from app import emails  # noqa: E402
+
+m = emails.parse_message(email_lib.message_from_bytes(eml, policy=default_policy))
+res = receive("email", m["key"], m["body"], client_name=m["name"], sent_at=m["sent_at"], attachments=m["attachments"])
+check("correo con adjunto (integración de email)", res["messages"] == 1 and res["attachments"] == 1 and res["client_id"] == 2, res)
 tl = ana.get("/api/clients/2/timeline?scope=mine")[1]
 msg = next(m for m in tl if "presupuesto firmado" in m["body"])
 check("el adjunto aparece bajo su mensaje", [a["filename"] for a in msg["attachments"]] == ["presupuesto.pdf"], msg)
 
-# WhatsApp con archivos (.zip)
-zbuf = io.BytesIO()
-with zipfile.ZipFile(zbuf, "w") as z:
-    z.writestr("Chat de WhatsApp con Sofía Navarro.txt",
-               "03/10/26, 9:15 - Sofía Navarro: Te mando foto del modelo\n"
-               "03/10/26, 9:16 - Sofía Navarro: IMG-20261003-WA0001.jpg (archivo adjunto)\n"
-               "03/10/26, 9:17 - Marta López: ¡Recibido!\n")
-    z.writestr("IMG-20261003-WA0001.jpg", PNG)
-st, prev = ana.post("/api/import/preview", {"filename": "Chat de WhatsApp con Sofía Navarro.zip", "data": b64(zbuf.getvalue())})
-check("vista previa del .zip", st == 200 and prev["total"] == 3 and prev["title"] == "Sofía Navarro", prev)
-st, res = ana.post("/api/import/file", {"filename": "Chat de WhatsApp con Sofía Navarro.zip", "data": b64(zbuf.getvalue()),
-                                        "client_key": "Sofía Navarro", "client_id": 3})
-check("importar .zip: 3 mensajes y 1 foto", (res["messages"], res["attachments"]) == (3, 1), res)
-tl = ana.get("/api/clients/3/timeline?scope=mine")[1]
+# Foto que llega por Telegram
+res = receive("telegram", "@sofianavarro", "📎 modelo.png", client_name="Sofía Navarro",
+              attachments=[{"filename": "modelo.png", "mime": "image/png", "data": PNG}])
+check("foto por Telegram: va a Sofía con su adjunto", (res["client_id"], res["messages"], res["attachments"]) == (3, 1, 1), res)
+tl = ana.get("/api/clients/3/timeline?scope=team")[1]
 photo_msg = next(m for m in tl if m["attachments"])
-check("la marca del adjunto se sustituye por 📎", photo_msg["body"] == "📎 IMG-20261003-WA0001.jpg", photo_msg["body"])
-st, bad = ana.post("/api/import/preview", {"filename": "x.zip", "data": b64(b"no es un zip")})
-check("zip dañado = 400", st == 400, bad)
+check("la foto aparece bajo su mensaje", [a["filename"] for a in photo_msg["attachments"]] == ["modelo.png"], photo_msg)
 
 # Búsqueda del asistente en documentos (mismo proceso, misma base de datos)
 from app import agent, attachments  # noqa: E402

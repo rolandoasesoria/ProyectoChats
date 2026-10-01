@@ -42,7 +42,7 @@ try:
         b.click('.tour-card [data-tour="next"]')
         if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 13, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 12, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
@@ -271,11 +271,8 @@ try:
     b.wait("document.querySelector('#detail-status').classList.contains('auto') && document.querySelector('#status-note').hidden")
     check("«Que lo decida la IA» quita el estado manual", True)
 
-    # Importar (diálogo)
-    b.click("#import-btn")
-    b.wait("document.querySelector('#import-dialog').open")
-    b.shot("11-importar")
-    b.js("document.querySelector('#import-dialog').close()")
+    # Ya no hay importación de chats: los mensajes llegan por las integraciones
+    check("sin botón ni diálogo de importar", b.js("!document.querySelector('#import-btn') && !document.querySelector('#import-dialog')"))
 
     # Menú, avisos, tema oscuro, Chispa
     b.click("#bell")
