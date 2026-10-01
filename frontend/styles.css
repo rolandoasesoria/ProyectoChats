@@ -279,6 +279,14 @@ body.login-page { background: var(--bg); align-items: center; justify-content: c
 .wait { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .wait.late { color: var(--danger-text); font-weight: 600; }
 button.link.small { font-size: 12px; }
+.inbox-group { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 10px 2px 4px; }
+.inbox-item.follow-up { border-left: 2px solid var(--accent); padding-left: 8px; }
+.inbox-bottom .small-select { padding: 1px 4px; font-size: 12px; margin-left: 4px; color: var(--muted); }
+.inbox-snoozed { padding: 10px 2px; font-size: 13px; color: var(--muted); }
+.inbox-snoozed summary { cursor: pointer; }
+.inbox-snoozed .inbox-list { margin-top: 6px; color: var(--text); }
+.inbox-item.snoozed { opacity: .8; }
+.followup-check { white-space: normal; flex-wrap: wrap; flex-basis: 100%; }
 
 /* No leídos en la lista de clientes */
 .unread {

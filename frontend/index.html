@@ -198,6 +198,7 @@
           </form>
           <div id="msg-results" class="msg-results" hidden></div>
           <button class="ghost small-btn draft-open" id="draft-open">Redactar respuesta</button>
+          <p class="muted small" id="draft-sent-note" hidden></p>
           <div class="draft-panel" id="draft-panel" hidden>
             <label>Responder en
               <select id="draft-conversation"></select>
@@ -238,6 +239,15 @@
               </select>
               <button class="link small" id="draft-undo" hidden>Deshacer</button>
               <span class="muted small">Revísalo antes de enviarlo.</span>
+              <label class="check followup-check">Al enviarla o copiarla, avísame si no contesta en
+                <select id="draft-followup" class="small-select">
+                  <option value="">— no avisar —</option>
+                  <option value="1">1 día</option>
+                  <option value="3">3 días</option>
+                  <option value="7">1 semana</option>
+                  <option value="14">2 semanas</option>
+                </select>
+              </label>
             </div>
           </div>
           <div class="timeline-controls">
