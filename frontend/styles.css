@@ -235,7 +235,7 @@ body.login-page { background: var(--bg); align-items: center; justify-content: c
   background: var(--bg); color: var(--muted); font-variant-numeric: tabular-nums;
 }
 .count.alert { background: var(--danger-bg); color: var(--danger-text); }
-.side-pane { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; }
+.side-pane { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 72px; }
 /* Solo la lista se desplaza: los controles de arriba (selectores, buscador, filtros) nunca se encogen. */
 .side-pane > :not(ul) { flex-shrink: 0; }
 .tab-pane { flex: 1; min-height: 0; overflow-y: auto; padding-top: 12px; display: flex; flex-direction: column; }
@@ -366,7 +366,7 @@ button.link.small { font-size: 12px; }
 .reply-body { white-space: pre-wrap; color: var(--muted); font-size: 13px; }
 .form textarea { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; resize: vertical; }
 
-/* Pestañas del panel derecho: cuatro en poco espacio */
+/* Pestañas de la ficha del cliente */
 .detail-tabs button { padding: 8px 7px; font-size: 13px; gap: 4px; }
 
 /* Notas internas */
@@ -600,7 +600,7 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 /* Layout principal */
 .layout {
   flex: 1; min-height: 0;
-  display: grid; grid-template-columns: 290px 1fr 380px;
+  display: grid; grid-template-columns: 290px 1fr 400px;  /* clientes · ficha del cliente · asistente */
 }
 .panel {
   background: var(--panel);
@@ -674,7 +674,8 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 .chat-form button:disabled { opacity: .5; cursor: default; }
 
 /* Ficha del cliente */
-.detail { padding: 16px 18px; border-left: 1px solid var(--border); }
+.detail { padding: 16px 24px; }
+.chat { border-left: 1px solid var(--border); }
 .detail-empty { margin: auto; text-align: center; }
 .detail-body { display: flex; flex-direction: column; min-height: 0; flex: 1; }
 .detail-body[hidden] { display: none; }
@@ -706,7 +707,8 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 }
 
 /* Mascota de ayuda */
-.help { position: fixed; right: 20px; bottom: 20px; z-index: 50; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+/* Abajo a la izquierda: a la derecha taparía el botón de enviar del asistente. */
+.help { position: fixed; left: 20px; bottom: 20px; z-index: 50; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .mascot {
   width: 52px; height: 52px; border: 1px solid var(--border); border-radius: 50%; padding: 5px; cursor: pointer;
   background: var(--panel); box-shadow: 0 4px 12px var(--shadow);
@@ -735,7 +737,7 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 
 @media (max-width: 1100px) {
   .layout { grid-template-columns: 220px 1fr; }
-  .detail { display: none; }
+  .chat { display: none; }
 }
 @media (max-width: 720px) {
   .layout { grid-template-columns: 1fr; }
