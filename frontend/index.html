@@ -506,10 +506,15 @@
         </label>
         <label class="edit-only">Responsable <select id="cf-assignee"></select></label>
       </div>
-      <label class="edit-only">Etiquetas <span class="muted">(separadas por comas)</span>
-        <input id="cf-tags" list="tag-suggestions" maxlength="500" placeholder="mayorista, VIP, paga tarde">
-        <datalist id="tag-suggestions"></datalist>
-      </label>
+      <div class="edit-only tag-field">
+        <label for="tag-input">Etiquetas</label>
+        <div class="tag-editor" id="tag-editor">
+          <span id="tag-editor-chips" class="tag-editor-chips"></span>
+          <input id="tag-input" maxlength="40" autocomplete="off" placeholder="Elige o escribe una etiqueta…"
+                 role="combobox" aria-expanded="false" aria-controls="tag-options">
+          <ul id="tag-options" class="menu tag-options" role="listbox" hidden></ul>
+        </div>
+      </div>
       <p class="form-error" id="cf-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="ghost" data-close>Cancelar</button>
