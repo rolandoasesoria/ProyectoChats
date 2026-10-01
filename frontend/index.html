@@ -40,6 +40,7 @@
         <div class="menu" id="user-menu" role="menu" hidden>
           <div class="menu-head"><strong id="menu-name"></strong><span class="muted" id="menu-role"></span></div>
           <button role="menuitem" id="menu-tour">Ver tutorial</button>
+          <button role="menuitem" id="menu-replies">Respuestas guardadas</button>
           <button role="menuitem" id="menu-password">Cambiar contraseña</button>
           <button role="menuitem" id="menu-admin" hidden>Administración</button>
           <button role="menuitem" id="menu-logout" class="danger">Cerrar sesión</button>
@@ -206,10 +207,22 @@
             <div class="draft-actions">
               <button class="primary small-btn" id="draft-generate">✨ Generar borrador</button>
               <button class="link" id="draft-write" title="Escribir la respuesta sin IA">o escribirla yo</button>
+              <span class="reply-picker-wrap">
+                <button class="link" id="reply-open" title="Insertar una respuesta guardada (también escribiendo / en el texto)">Respuestas guardadas</button>
+                <div class="menu reply-picker" id="reply-picker" hidden>
+                  <input id="reply-filter" type="search" placeholder="Buscar respuesta…" autocomplete="off">
+                  <ul id="reply-options" class="reply-options" role="listbox"></ul>
+                  <button class="link small" id="reply-manage">Gestionar respuestas guardadas…</button>
+                </div>
+              </span>
               <span class="spacer"></span>
               <button class="link" id="draft-close">Cerrar</button>
             </div>
-            <textarea id="draft-text" rows="8" hidden></textarea>
+            <div class="mention-wrap">
+              <textarea id="draft-text" rows="8" hidden placeholder="Escribe / para insertar una respuesta guardada"></textarea>
+              <ul id="reply-suggest" class="mention-list reply-options" role="listbox" hidden></ul>
+            </div>
+            <p class="muted small" id="draft-applied" hidden></p>
             <div class="draft-actions" id="draft-result-actions" hidden>
               <button class="primary small-btn" id="draft-send" hidden>Enviar</button>
               <button class="ghost small-btn" id="draft-copy">Copiar</button>
@@ -484,6 +497,47 @@
     </section>
   </dialog>
 
+  <!-- Respuestas guardadas y macros -->
+  <dialog id="replies-dialog" class="dialog wide">
+    <div class="dialog-head">
+      <h2>Respuestas guardadas</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <p class="muted small">Textos que el equipo usa a menudo. En el borrador se insertan con «Respuestas guardadas» o escribiendo
+      /atajo. Variables: <code>{nombre}</code>, <code>{cliente}</code>, <code>{empresa}</code>, <code>{yo}</code> y
+      <code>{dato:CIF}</code> (cualquier dato clave de la ficha). Si además cambia el estado, añade una etiqueta o marca la
+      conversación como atendida, es una <strong>macro</strong>: eso se aplica al usarla.</p>
+    <ul id="replies-list" class="replies-list"></ul>
+    <form id="reply-form" class="form user-form">
+      <h3 id="rf-title-h">Nueva respuesta</h3>
+      <div class="form-grid">
+        <label>Título <input id="rf-title" maxlength="100" required placeholder="Pedir datos de facturación"></label>
+        <label>Atajo <input id="rf-shortcut" maxlength="31" placeholder="facturacion (opcional)"></label>
+      </div>
+      <label>Texto
+        <textarea id="rf-body" rows="4" maxlength="5000" required placeholder="Hola {nombre}, …"></textarea>
+      </label>
+      <div class="form-grid">
+        <label>Al usarla, cambiar estado a
+          <select id="rf-status">
+            <option value="">No cambiar</option>
+            <option value="lead">Potencial</option>
+            <option value="active">Activo</option>
+            <option value="issue">Incidencia</option>
+            <option value="inactive">Inactivo</option>
+          </select>
+        </label>
+        <label>Añadir etiqueta <input id="rf-tag" maxlength="40" placeholder="presupuesto enviado"></label>
+      </div>
+      <label class="check"><input type="checkbox" id="rf-done"> Marcar la conversación como atendida</label>
+      <p class="form-error" id="rf-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="rf-cancel" hidden>Cancelar edición</button>
+        <button type="submit" class="primary" id="rf-submit">Guardar respuesta</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Panel de actividad -->
   <dialog id="dashboard-dialog" class="dialog wide dashboard">
     <div class="dialog-head">
@@ -529,6 +583,7 @@
   <script src="profile.js"></script>
   <script src="inbox.js"></script>
   <script src="drafts.js"></script>
+  <script src="replies.js"></script>
   <script src="notes.js"></script>
   <script src="documents.js"></script>
   <script src="search.js"></script>
