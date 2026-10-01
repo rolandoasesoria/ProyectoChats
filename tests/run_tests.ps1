@@ -25,18 +25,25 @@ $env:DATA_DIR = $tmp
 
 # Base de datos de pruebas (TEST_DATABASE_URL de backend/.env). Se vacía antes de cada archivo, así que
 # nunca debe ser la base de datos real: su nombre tiene que contener "test".
-$testUrl = (Get-Content (Join-Path $backend ".env") -ErrorAction SilentlyContinue |
-  Where-Object { $_ -match "^TEST_DATABASE_URL=" } | Select-Object -First 1) -replace "^TEST_DATABASE_URL=", ""
-if (-not $testUrl -or ($testUrl -split "/")[-1] -notmatch "test") {
+function Variable([string]$nombre) {
+  (Get-Content (Join-Path $backend ".env") -ErrorAction SilentlyContinue |
+    Where-Object { $_ -match "^$nombre=" } | Select-Object -First 1) -replace "^$nombre=", ""
+}
+$testUrl = Variable "TEST_DATABASE_URL"
+$testAdminUrl = Variable "TEST_DATABASE_ADMIN_URL"
+if (-not $testUrl -or ($testUrl -split "/")[-1] -notmatch "test" -or ($testAdminUrl -and ($testAdminUrl -split "/")[-1] -notmatch "test")) {
   Write-Output "Falta TEST_DATABASE_URL (una base de datos cuyo nombre contenga 'test') en backend/.env."
   Write-Output "Ejecuta: powershell -ExecutionPolicy Bypass -File scripts/postgres.ps1 instalar"
   exit 1
 }
 $env:DATABASE_URL = $testUrl
 $env:TEST_DATABASE_URL = $testUrl
+# Vaciar y migrar con el usuario dueño; la app de pruebas trabaja, como la real, con el usuario de solo datos.
+$env:DATABASE_ADMIN_URL = $testAdminUrl
+$env:TEST_DATABASE_ADMIN_URL = $testAdminUrl
 
 # Sin servidor: lógica pura, con respuestas de Claude simuladas.
-$unitarias = @("check_js.py", "test_emails.py", "test_insights.py", "test_agent_tools.py")
+$unitarias = @("check_js.py", "test_emails.py", "test_insights.py", "test_agent_tools.py", "test_db_security.py")
 # Con servidor de pruebas.
 $api = @("test_auth_api.py", "test_profile_api.py", "test_inbox_api.py", "test_notes_api.py",
          "test_clients_api.py", "test_privacy_api.py", "test_dashboard_api.py", "test_documents_api.py",
