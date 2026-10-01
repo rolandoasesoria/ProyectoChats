@@ -305,6 +305,23 @@ button.link.small { font-size: 12px; }
 .draft-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .primary.small-btn { padding: 5px 12px; }
 
+/* Respuestas guardadas: selector en el borrador y gestión */
+.reply-picker-wrap { position: relative; }
+.reply-picker { left: 0; right: auto; width: 300px; max-width: calc(100vw - 32px); gap: 4px; }
+.reply-picker input { width: 100%; }
+.reply-options { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; }
+.reply-option { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+.reply-option:hover, .reply-option.active { background: var(--accent-soft); }
+.reply-option-head { display: flex; justify-content: space-between; gap: 8px; }
+.reply-empty { padding: 6px 8px; }
+.macro-tag { font-size: 11px; color: var(--accent); }
+#reply-suggest { left: 8px; right: 8px; top: auto; bottom: calc(100% - 8px); }
+.replies-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; max-height: 40vh; overflow-y: auto; }
+.reply-row { padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+.reply-row-head { display: flex; align-items: center; gap: 8px; }
+.reply-body { white-space: pre-wrap; color: var(--muted); font-size: 13px; }
+.form textarea { background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; resize: vertical; }
+
 /* Pestañas del panel derecho: cuatro en poco espacio */
 .detail-tabs button { padding: 8px 7px; font-size: 13px; gap: 4px; }
 

@@ -22,6 +22,8 @@ function openDraftPanel(conversationId = null) {
   $("#draft-text").hidden = true;
   $("#draft-text").value = "";
   $("#draft-result-actions").hidden = true;
+  $("#draft-applied").hidden = true;
+  $("#reply-picker").hidden = true;
   $("#draft-instructions").value = "";
   $("#draft-panel").hidden = false;
   $("#draft-open").hidden = true;
@@ -30,6 +32,7 @@ function openDraftPanel(conversationId = null) {
 
 function closeDraftPanel() {
   $("#draft-panel").hidden = true;
+  $("#reply-picker").hidden = true;
   $("#draft-open").hidden = false;
 }
 

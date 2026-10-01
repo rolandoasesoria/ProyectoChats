@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 14;
+const TOUR_VERSION = 15;
 
 const TOUR_STEPS = [
   {
@@ -34,7 +34,7 @@ const TOUR_STEPS = [
   {
     target: ".detail",
     title: "Ficha del cliente",
-    text: "«Ficha»: resumen, datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta». Con ✎ editas estado, responsable y etiquetas.",
+    text: "«Ficha»: resumen, datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /). Con ✎ editas estado, responsable y etiquetas.",
   },
   {
     target: "#side-inbox-tab",

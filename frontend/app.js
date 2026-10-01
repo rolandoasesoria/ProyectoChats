@@ -389,6 +389,7 @@ function bindEvents() {
   bindProfileEvents();
   bindInboxEvents();
   bindDraftEvents();
+  bindReplyEvents();
   bindNotesEvents();
   bindClientEvents();
   bindDashboardEvents();
