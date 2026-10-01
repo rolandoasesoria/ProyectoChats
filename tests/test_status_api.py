@@ -14,6 +14,13 @@ check("cambiarlo a mano lo marca como manual y guarda quién", st == 200 and c["
       and c["status_source"] == "manual" and c["status_updated_by"] == "Carlos Pérez" and c["status_updated_at"], c)
 st, c = carlos.patch("/api/clients/1", {"company": "Otra S.L."})
 check("cambiar otros datos no toca el origen del estado", c["status_source"] == "manual")
+st, c = carlos.patch("/api/clients/1", {"status_auto": True})
+check("«que lo decida la IA» lo vuelve automático sin cambiar el estado", c["status"] == "lead" and c["status_source"] == "auto")
+carlos.patch("/api/clients/1", {"status": "lead"})  # vuelve a fijarse a mano para lo siguiente
+c = carlos.get("/api/clients/1")[1]
+check("fijar el mismo estado no lo marca como manual", c["status_source"] == "auto", c)
+carlos.patch("/api/clients/1", {"status": "active"})
+carlos.patch("/api/clients/1", {"status": "lead"})
 
 # Regla de inactividad (sin IA)
 with get_conn() as conn:
