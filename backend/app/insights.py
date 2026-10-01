@@ -9,7 +9,7 @@ import threading
 from collections import defaultdict
 from datetime import date
 
-from . import agent, attachments
+from . import agent, attachments, clients, notes
 from .db import get_conn, rows
 
 log = logging.getLogger(__name__)
@@ -40,6 +40,14 @@ No crees tareas de cosas ya resueltas en la conversación.
 4. completed_task_ids: ids de "Tareas existentes" abiertas que la conversación demuestra ya cumplidas.
 5. priority: urgencia de lo que el cliente espera ahora del equipo. "alta": incidencia, queja, plazo inminente, pedido o pago bloqueado, o un cliente que insiste sin respuesta; "media": peticiones normales pendientes (presupuestos, dudas); "baja": nada pendiente o solo agradecimientos. priority_reason: el motivo en una frase corta ("Pedido con cajas defectuosas, espera la reposición").
 6. mood: tono del cliente en sus últimos mensajes: "contento", "neutral" o "molesto".
+7. status: en qué punto está la relación con el cliente ahora mismo:
+   - "lead" (potencial): todavía no ha comprado; solo consultas, muestras o presupuestos sin aceptar.
+   - "active" (activo): ha comprado o tiene pedidos o trabajo en curso, y no hay ningún problema abierto.
+   - "issue" (incidencia): hay un problema sin resolver: queja, producto defectuoso, retraso, error en una factura,
+     pago pendiente o reclamado. Cuando se resuelve, vuelve a "active" (o a "lead").
+   - "inactive" (inactivo): la relación ha terminado (lo dice el cliente) o lleva más de 3 meses sin actividad
+     respecto a la fecha de hoy.
+   status_reason: el motivo en una frase corta ("Reclama 3 cajas defectuosas del último pedido").
 
 Si no hay nada para un apartado, devuelve una lista vacía."""
 
@@ -63,8 +71,11 @@ SCHEMA = {
         "priority": {"type": "string", "enum": ["alta", "media", "baja"]},
         "priority_reason": {"type": "string"},
         "mood": {"type": "string", "enum": ["contento", "neutral", "molesto"]},
+        "status": {"type": "string", "enum": ["lead", "active", "issue", "inactive"]},
+        "status_reason": {"type": "string"},
     },
-    "required": ["summary", "facts", "new_tasks", "completed_task_ids", "priority", "priority_reason", "mood"],
+    "required": ["summary", "facts", "new_tasks", "completed_task_ids", "priority", "priority_reason", "mood",
+                 "status", "status_reason"],
     "additionalProperties": False,
 }
 
@@ -206,7 +217,51 @@ def analyze_client(client_id: int) -> dict:
                 (client_id, result["summary"].strip(), max(by_id), result.get("priority"), result.get("mood"),
                  (result.get("priority_reason") or "").strip() or None),
             )
-        return {"facts": len(facts), "new_tasks": len(new_tasks), "completed_tasks": len(completed)}
+            status_changed = None
+            if result.get("status"):
+                reason = (result.get("status_reason") or "").strip()
+                previous = clients.set_auto_status(conn, client_id, result["status"], reason)
+                if previous:
+                    status_changed = result["status"]
+                    _notify_status(conn, client_id, result["status"], reason)
+        return {"facts": len(facts), "new_tasks": len(new_tasks), "completed_tasks": len(completed),
+                "status": status_changed}
+
+
+def _notify_status(conn, client_id: int, status: str, reason: str) -> None:
+    """Si la IA marca una incidencia, avisa al responsable del cliente."""
+    if status != "issue":
+        return
+    row = conn.execute("SELECT name, assignee_user_id FROM clients WHERE id = ?", (client_id,)).fetchone()
+    if row and row["assignee_user_id"]:
+        notes.notify(conn, [row["assignee_user_id"]], "status_issue",
+                     f"La IA ha marcado a {row['name']} como Incidencia" + (f": {reason}" if reason else ""), client_id, None)
+
+
+# Análisis automático cuando entran mensajes nuevos (integraciones). Se espera un poco para analizar una sola vez
+# aunque lleguen varios mensajes seguidos.
+AUTO_ANALYSIS_DELAY = 120
+_scheduled: dict[int, threading.Timer] = {}
+_scheduled_lock = threading.Lock()
+
+
+def schedule_analysis(client_id: int, delay: float = AUTO_ANALYSIS_DELAY) -> bool:
+    """Programa el análisis del cliente (si hay clave de API y no está ya programado)."""
+    if not agent.credentials_configured():
+        return False
+    with _scheduled_lock:
+        if client_id in _scheduled:
+            return False
+
+        def run():
+            with _scheduled_lock:
+                _scheduled.pop(client_id, None)
+            analyze_in_background(client_id)
+        timer = threading.Timer(delay, run)
+        timer.daemon = True
+        _scheduled[client_id] = timer
+        timer.start()
+    return True
 
 
 def analyze_in_background(client_id: int) -> None:
