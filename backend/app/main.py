@@ -18,8 +18,8 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Red
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import (agent, attachments, audit, auth, chats, clients, followups, importers, insights, integrations, metrics,
-               notes, presence, privacy, replies, search, settings, smartsearch)
+from . import (agent, attachments, audit, auth, chats, clients, followups, insights, integrations, metrics, notes,
+               presence, privacy, replies, search, settings, smartsearch)
 from .db import get_conn, init_db, rows
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -751,104 +751,12 @@ def smart_search_endpoint(req: SmartSearchRequest, user: CurrentUser):
             raise HTTPException(400, str(exc))
 
 
-class ImportMessage(BaseModel):
-    direction: Literal["in", "out"]
-    sender: str
-    body: str
-    sent_at: str
+# ---------------------------------------------------------------- Documentos y adjuntos
 
-
-class ImportPayload(BaseModel):
-    channel: str
-    handle: str
-    client_name: str | None = None
-    client_id: int | None = None
-    subject: str | None = None
-    messages: list[ImportMessage]
-
-
-@app.post("/api/import")
-def import_conversation(payload: ImportPayload, user: CurrentUser):
-    """Punto de entrada para integraciones (email, WhatsApp, Telegram...) o importaciones manuales."""
-    data = payload.model_dump()
-    data["owner_user_id"] = user["id"]
-    return search.import_conversation(data)
-
-
-class ImportFile(BaseModel):
+class FileUpload(BaseModel):
     filename: str = Field(max_length=255)
     data: str  # contenido del archivo en base64
 
-
-def _decode_upload(req: ImportFile) -> dict:
-    try:
-        raw = base64.b64decode(req.data, validate=True)
-    except (binascii.Error, ValueError):
-        raise HTTPException(400, "No se pudo leer el archivo.")
-    return importers.parse(req.filename, raw)
-
-
-def _client_for_identity(channel: str, handle: str, name: str) -> dict | None:
-    """Cliente existente que parece ser este participante: por identificador y, si no, por nombre."""
-    with get_conn() as conn:
-        row = conn.execute(
-            """SELECT cl.id, cl.name FROM client_identities ci JOIN clients cl ON cl.id = ci.client_id
-                WHERE ci.channel = ? AND lower(ci.handle) = lower(?)""", (channel, handle)).fetchone()
-        if not row and name:
-            row = conn.execute("SELECT id, name FROM clients WHERE lower(name) = lower(?)", (name,)).fetchone()
-    return dict(row) if row else None
-
-
-@app.post("/api/import/preview")
-def import_preview(req: ImportFile, _: CurrentUser):
-    """Analiza el archivo sin guardar nada: formato, fechas y participantes (y si ya son clientes)."""
-    parsed = _decode_upload(req)
-    participants = [
-        {**p, "client": _client_for_identity(parsed["channel"], p["key"], p["name"])}
-        for p in parsed["participants"]
-    ]
-    return {k: parsed[k] for k in ("format", "channel", "title", "first", "last")} | {
-        "total": len(parsed["messages"]), "participants": participants}
-
-
-class ImportFileCommit(ImportFile):
-    client_key: str                        # participante que es el cliente
-    client_id: int | None = None           # cliente existente al que asociarlo...
-    client_name: str | None = Field(None, max_length=200)  # ...o nombre del cliente nuevo
-    handle: str | None = Field(None, max_length=200)       # teléfono/email/@usuario (opcional)
-
-
-@app.post("/api/import/file")
-def import_file(req: ImportFileCommit, user: CurrentUser):
-    parsed = _decode_upload(req)
-    conversations = importers.build_conversations(parsed, req.client_key)
-    if req.client_id is not None:
-        _client_or_404(req.client_id)
-    handle = (req.handle or "").strip() or req.client_key
-    client_id, imported, duplicates, files = req.client_id, 0, 0, 0
-    for conv in conversations:
-        result = search.import_conversation({
-            "owner_user_id": user["id"], "channel": parsed["channel"], "handle": handle,
-            "client_id": client_id, "client_name": (req.client_name or "").strip() or req.client_key,
-            "subject": conv["subject"], "messages": conv["messages"],
-        })
-        client_id = result["client_id"]  # las siguientes conversaciones van al mismo cliente
-        imported += result["messages"]
-        duplicates += result["duplicates"]
-        files += result["attachments"]
-    with get_conn() as conn:
-        imported_at = conn.execute("SELECT localtimestamp(0)").fetchone()[0]  # mismo formato que analyzed_at
-    if imported:
-        clients.reactivate(client_id, settings.get("inactive_days"))
-    analysis_started = bool(imported) and agent.credentials_configured()
-    if analysis_started:
-        insights.analyze_in_background(client_id)  # ficha y tareas al día sin hacer esperar
-    return {"client_id": client_id, "conversations": len(conversations),
-            "messages": imported, "duplicates": duplicates, "attachments": files,
-            "analysis_started": analysis_started, "imported_at": imported_at}
-
-
-# ---------------------------------------------------------------- Documentos y adjuntos
 
 @app.get("/api/clients/{client_id}/documents")
 def list_documents(client_id: int, _: CurrentUser):
@@ -857,7 +765,7 @@ def list_documents(client_id: int, _: CurrentUser):
 
 
 @app.post("/api/clients/{client_id}/documents")
-def upload_document(client_id: int, req: ImportFile, user: CurrentUser):
+def upload_document(client_id: int, req: FileUpload, user: CurrentUser):
     """Sube un documento a la ficha del cliente (presupuesto firmado, factura, foto...)."""
     _client_or_404(client_id)
     try:

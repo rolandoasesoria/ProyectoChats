@@ -265,13 +265,13 @@ def schedule_analysis(client_id: int, delay: float = AUTO_ANALYSIS_DELAY) -> boo
 
 
 def analyze_in_background(client_id: int) -> None:
-    """Tras una importación: analiza sin hacer esperar al usuario. Si no hay clave de API, no hace nada."""
+    """Analiza sin hacer esperar a nadie (cuando entran mensajes). Si no hay clave de API, no hace nada."""
     def run():
         try:
             analyze_client(client_id)
         except agent.MissingCredentialsError:
             pass
-        except Exception:  # noqa: BLE001 - un fallo aquí no debe afectar a la importación
+        except Exception:  # noqa: BLE001 - un fallo aquí no debe afectar a la entrada de mensajes
             log.exception("Fallo al analizar el cliente %s en segundo plano", client_id)
     threading.Thread(target=run, daemon=True).start()
 

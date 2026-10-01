@@ -317,7 +317,7 @@ def message_context(message_id: int, user_id: int, scope: str = "mine",
 
 
 def import_conversation(payload: dict) -> dict:
-    """Importa una conversación. Crea el cliente/identidad si no existen.
+    """Guarda mensajes de una conversación (los que traen las integraciones). Crea el cliente/identidad si no existen.
 
     payload = {
       "owner_user_id": 1,
@@ -345,7 +345,7 @@ def import_conversation(payload: dict) -> dict:
                 "INSERT INTO client_identities (client_id, channel, handle) VALUES (?, ?, ?)",
                 (client_id, payload["channel"], payload["handle"]),
             )
-        # Reimportar es seguro: se reutiliza la conversación existente (mismo cliente, dueño, canal y asunto)
+        # Recibir el mismo mensaje dos veces es seguro: se reutiliza la conversación existente (mismo cliente, dueño, canal y asunto)
         # y se saltan los mensajes que ya estaban (misma fecha y mismo texto).
         existing = conn.execute(
             """SELECT id FROM conversations
