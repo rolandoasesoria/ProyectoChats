@@ -101,6 +101,15 @@ try:
     # Mensajes y borrador
     b.click('.detail-tabs [data-tab="messages"]')
     b.wait("document.querySelectorAll('#timeline li').length > 0")
+    total = b.js("document.querySelectorAll('#timeline li').length")
+    check("por defecto se ve el historial completo, con quién lleva cada conversación",
+          b.js("document.querySelectorAll('#timeline .owner-tag').length") > 0)
+    b.click("#only-mine")
+    b.wait(f"document.querySelectorAll('#timeline li').length < {total}")
+    check("«Solo mis conversaciones» oculta las de los compañeros",
+          b.js("document.querySelectorAll('#timeline .owner-tag').length") == 0)
+    b.click("#only-mine")
+    b.wait(f"document.querySelectorAll('#timeline li').length === {total}")
     b.fill("#msg-search", "direccion")
     b.js("document.querySelector('#msg-search-form').requestSubmit()")
     b.wait("document.querySelector('#msg-results mark')")
@@ -119,6 +128,17 @@ try:
     b.click('.side-tabs [data-side="inbox"]')
     b.wait("document.querySelectorAll('#inbox-list .inbox-item').length > 0")
     check("bandeja sin responder con elementos", b.js("document.querySelectorAll('#inbox-list .inbox-item').length") == 2)
+    b.wait("document.querySelector('#inbox-count-team').textContent !== ''")
+    check("el selector muestra cuántas hay en cada lado", b.js(
+        "document.querySelector('#inbox-count-mine').textContent + '/' + document.querySelector('#inbox-count-team').textContent") == "2/5")
+    b.click('#inbox-scope [data-inbox-scope="team"]')
+    b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 5")
+    check("con «Todo el equipo» el selector sigue visible",
+          b.js("document.querySelector('#inbox-scope').getBoundingClientRect().height") > 20)
+    check("cada conversación dice quién la lleva", "La lleva Carlos Pérez" in b.js("document.querySelector('#inbox-list').textContent"))
+    b.shot("09b-bandeja-equipo")
+    b.click('#inbox-scope [data-inbox-scope="mine"]')
+    b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 2")
     b.shot("09-bandeja")
     b.click("#inbox-list .inbox-item strong")
     b.wait("document.querySelector('#timeline li.flash')")
