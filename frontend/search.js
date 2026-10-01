@@ -38,7 +38,7 @@ async function keywordSearch(e) {
     const results = await api(`/api/search?${params}`);
     renderResults(results.length
       ? `<ul class="results">${results.map((r) => resultItem(r, { text: highlight(r.snippet) })).join("")}</ul>`
-      : `<p class="muted small">Nada con esas palabras. Prueba «✨ Por significado» o cambia a «Equipo».</p>`);
+      : `<p class="muted small">Nada con esas palabras. Prueba «✨ Por significado» o desmarca «Solo mis conversaciones».</p>`);
     $("#msg-results-title").textContent = `${results.length} resultado${results.length === 1 ? "" : "s"} ${scopeLabel()}`;
   } catch (err) {
     alert(err.message);
