@@ -131,6 +131,31 @@ button.link:hover { text-decoration: underline; }
 #theme-toggle .icon-sun, #theme-toggle.is-dark .icon-moon { display: none; }
 #theme-toggle.is-dark .icon-sun { display: block; }
 
+/* Paleta de comandos */
+.palette-btn {
+  display: flex; align-items: center; gap: 8px; width: min(360px, 40vw); margin: 0 16px; padding: 5px 8px 5px 10px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); cursor: pointer; font-size: 13px;
+}
+.palette-btn:hover { color: var(--text); }
+.palette-btn svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2; flex-shrink: 0; }
+.palette-btn span { flex: 1; text-align: left; }
+kbd {
+  font: 11px/1 ui-monospace, Consolas, monospace; padding: 2px 5px; border: 1px solid var(--border);
+  border-bottom-width: 2px; border-radius: 4px; background: var(--panel); color: var(--muted); white-space: nowrap;
+}
+.dialog.palette { width: min(560px, calc(100vw - 32px)); padding: 0; margin-top: 12vh; overflow: hidden; }
+.palette #palette-input { width: 100%; border: none; border-bottom: 1px solid var(--border); border-radius: 0; padding: 14px 16px; font-size: 15px; background: var(--panel); }
+.palette #palette-input:focus-visible { box-shadow: none; }
+.palette-list { list-style: none; margin: 0; padding: 6px; max-height: 50vh; overflow-y: auto; }
+.palette-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; cursor: pointer; font-size: 14px; }
+.palette-item.active { background: var(--accent-soft); }
+.palette-kind { font-size: 11px; color: var(--muted); width: 52px; flex-shrink: 0; }
+.palette-label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.palette-empty { padding: 10px; }
+.palette-foot { margin: 0; padding: 8px 14px; border-top: 1px solid var(--border); }
+.shortcuts-table td:first-child { width: 120px; }
+@media (max-width: 720px) { .palette-btn span, .palette-btn kbd { display: none; } .palette-btn { width: auto; } }
+
 /* Barra superior: acciones y menú de usuario */
 .topbar-actions { display: flex; align-items: center; gap: 4px; }
 .user-menu { position: relative; }
