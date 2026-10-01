@@ -140,6 +140,10 @@ try:
     check("una macro avisa de lo que ha aplicado y actualiza la ficha",
           "Potencial" in b.js("document.querySelector('#draft-applied').textContent")
           and b.js("document.querySelector('#detail-status').textContent") == "Potencial")
+    b.js("document.querySelector('#draft-followup').value = '3'")
+    b.click("#draft-copy")
+    b.wait("document.querySelector('#draft-applied').textContent.includes('Te avisaré')")
+    check("al copiar programa el aviso de seguimiento", True)
     b.click("#draft-close")
     b.click("#user-menu-btn")
     b.click("#menu-replies")
@@ -167,6 +171,15 @@ try:
     b.shot("09b-bandeja-equipo")
     b.click('#inbox-scope [data-inbox-scope="mine"]')
     b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 2")
+    b.js("{ const s = document.querySelector('#inbox-list [data-snooze]'); s.value = 'tomorrow'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
+    b.wait("document.querySelector('.inbox-snoozed summary')?.textContent === 'Pospuestas (1)'")
+    check("posponer la quita de la bandeja y la deja en «Pospuestas»",
+          b.js("document.querySelectorAll('#inbox-list > .inbox-item').length") == 1 and b.js("document.querySelector('#inbox-count').textContent") == "1")
+    b.js("document.querySelector('.inbox-snoozed details').open = true")
+    b.shot("09c-pospuestas")
+    b.click(".inbox-snoozed [data-unsnooze]")
+    b.wait("document.querySelectorAll('#inbox-list > .inbox-item').length === 2 && !document.querySelector('.inbox-snoozed')")
+    check("«Volver ahora» la devuelve", True)
     b.shot("09-bandeja")
     b.click("#inbox-list .inbox-item strong")
     b.wait("document.querySelector('#timeline li.flash')")
@@ -258,7 +271,7 @@ try:
     b.click("#draft-write")
     check("escribir sin IA abre el cuadro", b.js("!document.querySelector('#draft-text').hidden"))
     b.fill("#draft-text", "hola, te paso el presu")
-    b.js("const s = document.querySelector('#draft-rewrite'); s.value = 'fix'; s.dispatchEvent(new Event('change'))")
+    b.js("{ const s = document.querySelector('#draft-rewrite'); s.value = 'fix'; s.dispatchEvent(new Event('change')); }")
     b.wait("!document.querySelector('#draft-rewrite').disabled && document.querySelector('#draft-rewrite').value === ''")
     check("retocar sin clave de IA avisa y deja el texto como estaba",
           "ANTHROPIC_API_KEY" in b.dialogs[-1] and b.js("document.querySelector('#draft-text').value") == "hola, te paso el presu"

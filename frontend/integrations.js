@@ -161,7 +161,10 @@ async function sendDraft() {
   btn.disabled = true;
   try {
     await api(`/api/conversations/${convId}/send`, { method: "POST", body: JSON.stringify({ text }) });
+    const note = await scheduleFollowUp(convId);
     closeDraftPanel();
+    $("#draft-sent-note").textContent = `Enviado.${note ? ` ${note}` : ""}`;
+    $("#draft-sent-note").hidden = false;
     await loadTimeline();
     refreshInboxCount();
   } catch (err) {

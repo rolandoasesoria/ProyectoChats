@@ -6,6 +6,7 @@ import json
 import os
 import re
 from contextlib import contextmanager
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Literal
 from urllib.parse import urlsplit
@@ -17,8 +18,8 @@ from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse, Red
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
-from . import (agent, attachments, audit, auth, chats, clients, importers, insights, integrations, metrics, notes,
-               replies, search, smartsearch)
+from . import (agent, attachments, audit, auth, chats, clients, followups, importers, insights, integrations, metrics,
+               notes, replies, search, smartsearch)
 from .db import get_conn, init_db
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -535,11 +536,56 @@ def inbox_counts(user: CurrentUser):
 
 
 @app.get("/api/inbox")
-def inbox(user: CurrentUser, scope: Literal["mine", "team"] = "mine"):
-    """Bandeja "Sin responder": conversaciones cuyo último mensaje es del cliente."""
+def inbox(user: CurrentUser, scope: Literal["mine", "team"] = "mine", snoozed: bool = False):
+    """Bandeja "Sin responder": conversaciones cuyo último mensaje es del cliente (o las pospuestas)."""
     if scope == "team":
         audit.log(user["id"], "team_inbox", throttle=True)
-    return search.unanswered(user["id"], scope)
+    return search.unanswered(user["id"], scope, snoozed)
+
+
+class SnoozeRequest(BaseModel):
+    until: datetime
+    message_id: int
+
+
+@app.post("/api/conversations/{conversation_id}/snooze")
+def snooze(conversation_id: int, req: SnoozeRequest, _: CurrentUser):
+    """Pospone la conversación: vuelve a la bandeja en esa fecha, o antes si el cliente escribe."""
+    until = req.until.astimezone(timezone.utc).replace(tzinfo=None) if req.until.tzinfo else req.until
+    if until <= datetime.now(timezone.utc).replace(tzinfo=None):
+        raise HTTPException(400, "La fecha tiene que ser futura.")
+    if not search.snooze(conversation_id, until.isoformat(timespec="seconds"), req.message_id):
+        raise HTTPException(404, "Conversación no encontrada")
+    return {"ok": True}
+
+
+@app.delete("/api/conversations/{conversation_id}/snooze")
+def unsnooze(conversation_id: int, _: CurrentUser):
+    if not search.snooze(conversation_id, None):
+        raise HTTPException(404, "Conversación no encontrada")
+    return {"ok": True}
+
+
+class FollowUpRequest(BaseModel):
+    days: int = Field(ge=1, le=60)
+
+
+@app.post("/api/conversations/{conversation_id}/follow-up")
+def create_follow_up(conversation_id: int, req: FollowUpRequest, user: CurrentUser):
+    """«Avísame si no contesta en X días»."""
+    return followups.create(conversation_id, user["id"], req.days)
+
+
+@app.get("/api/follow-ups")
+def due_follow_ups(user: CurrentUser):
+    """Seguimientos vencidos: clientes que no han contestado en el plazo."""
+    return followups.due(user["id"])
+
+
+@app.delete("/api/follow-ups/{follow_up_id}")
+def delete_follow_up(follow_up_id: int, user: CurrentUser):
+    followups.delete(follow_up_id, user["id"])
+    return {"ok": True}
 
 
 class DismissRequest(BaseModel):

@@ -24,6 +24,8 @@ function openDraftPanel(conversationId = null) {
   $("#draft-result-actions").hidden = true;
   $("#draft-applied").hidden = true;
   $("#draft-undo").hidden = true;
+  $("#draft-followup").value = "";
+  $("#draft-sent-note").hidden = true;
   draftBeforeRewrite = null;
   $("#reply-picker").hidden = true;
   $("#draft-instructions").value = "";
@@ -62,6 +64,19 @@ async function generateDraft() {
   }
 }
 
+// «Avísame si no contesta»: se programa al enviar o copiar la respuesta.
+async function scheduleFollowUp(conversationId) {
+  const days = Number($("#draft-followup").value);
+  if (!days) return "";
+  try {
+    const f = await api(`/api/conversations/${conversationId}/follow-up`, { method: "POST", body: JSON.stringify({ days }) });
+    $("#draft-followup").value = "";
+    return `Te avisaré el ${new Date(`${f.due_at}Z`).toLocaleDateString("es-ES", { weekday: "long", day: "numeric", month: "long" })} si no contesta.`;
+  } catch (err) {
+    return `No se pudo programar el aviso: ${err.message}`;
+  }
+}
+
 async function copyDraft() {
   const text = $("#draft-text").value;
   try {
@@ -69,6 +84,11 @@ async function copyDraft() {
   } catch {
     $("#draft-text").select();
     document.execCommand("copy");
+  }
+  const note = await scheduleFollowUp($("#draft-conversation").value);
+  if (note) {
+    $("#draft-applied").textContent = note;
+    $("#draft-applied").hidden = false;
   }
   const btn = $("#draft-copy");
   btn.textContent = "✓ Copiado";

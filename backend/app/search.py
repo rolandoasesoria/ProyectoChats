@@ -89,12 +89,14 @@ def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, s
     return result
 
 
-def unanswered(user_id: int, scope: str = "mine") -> list[dict]:
+def unanswered(user_id: int, scope: str = "mine", snoozed: bool = False) -> list[dict]:
     """Conversaciones cuyo último mensaje es del cliente (esperan respuesta), la más antigua primero.
 
-    Se excluyen las marcadas como atendidas, salvo que el cliente haya escrito algo después.
+    Se excluyen las marcadas como atendidas y las pospuestas, salvo que el cliente haya escrito algo después.
+    Con snoozed=True devuelve justo las pospuestas.
     """
     scope_sql, scope_args = _scope_clause(scope, user_id)
+    is_snoozed = "(c.snoozed_until > localtimestamp AND c.snoozed_message_id >= last.id)"
     with get_conn() as conn:
         return rows(conn.execute(
             f"""
@@ -105,14 +107,16 @@ def unanswered(user_id: int, scope: str = "mine") -> list[dict]:
             )
             SELECT c.id AS conversation_id, c.channel, c.subject, cl.id AS client_id, cl.name AS client,
                    u.name AS owner, c.owner_user_id = ? AS is_mine,
-                   last.id AS message_id, last.sender, last.body, last.sent_at
+                   last.id AS message_id, last.sender, last.body, last.sent_at,
+                   CASE WHEN {is_snoozed} THEN c.snoozed_until END AS snoozed_until
               FROM conversations c
               JOIN last ON last.conversation_id = c.id AND last.rn = 1
               JOIN clients cl ON cl.id = c.client_id
               JOIN users u ON u.id = c.owner_user_id
              WHERE last.direction = 'in'
-               AND (c.dismissed_message_id IS NULL OR c.dismissed_message_id < last.id) {scope_sql}
-             ORDER BY last.sent_at ASC
+               AND (c.dismissed_message_id IS NULL OR c.dismissed_message_id < last.id)
+               AND {"" if snoozed else "NOT "}coalesce({is_snoozed}, false) {scope_sql}
+             ORDER BY {"c.snoozed_until" if snoozed else "last.sent_at"} ASC
             """,
             [user_id, *scope_args],
         ))
@@ -122,6 +126,14 @@ def dismiss_unanswered(conversation_id: int, message_id: int) -> bool:
     with get_conn() as conn:
         cur = conn.execute("UPDATE conversations SET dismissed_message_id = ? WHERE id = ?",
                            (message_id, conversation_id))
+    return cur.rowcount > 0
+
+
+def snooze(conversation_id: int, until: str | None, message_id: int | None = None) -> bool:
+    """Pospone la conversación hasta `until` (UTC). Si el cliente escribe después de `message_id`, vuelve antes."""
+    with get_conn() as conn:
+        cur = conn.execute("UPDATE conversations SET snoozed_until = ?, snoozed_message_id = ? WHERE id = ?",
+                           (until, message_id if until else None, conversation_id))
     return cur.rowcount > 0
 
 

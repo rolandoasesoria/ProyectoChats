@@ -3,13 +3,17 @@
 let inboxScope = "mine";
 const WAIT_ALERT_HOURS = 24; // a partir de aquí la espera se marca en rojo
 
-function waitLabel(sentAt) {
+// Tiempo transcurrido desde un mensaje (hora local): «40 min», «5 h», «3 días».
+function elapsed(sentAt) {
   const hours = (Date.now() - new Date(sentAt)) / 3600000;
-  let text;
-  if (hours < 1) text = `${Math.max(1, Math.round(hours * 60))} min`;
-  else if (hours < 48) text = `${Math.round(hours)} h`;
-  else text = `${Math.round(hours / 24)} días`;
-  return `<span class="wait ${hours >= WAIT_ALERT_HOURS ? "late" : ""}" title="Esperando respuesta desde ${formatDate(sentAt)}">${text}</span>`;
+  if (hours < 1) return `${Math.max(1, Math.round(hours * 60))} min`;
+  if (hours < 48) return `${Math.round(hours)} h`;
+  return `${Math.round(hours / 24)} días`;
+}
+
+function waitLabel(sentAt) {
+  const late = (Date.now() - new Date(sentAt)) / 3600000 >= WAIT_ALERT_HOURS;
+  return `<span class="wait ${late ? "late" : ""}" title="Esperando respuesta desde ${formatDate(sentAt)}">${elapsed(sentAt)}</span>`;
 }
 
 // Número de conversaciones en cada lado del selector «Mías · Todo el equipo».
@@ -19,10 +23,65 @@ async function loadInboxCounts() {
   $("#inbox-count-team").textContent = c.team;
 }
 
+// Fecha de «Posponer…» (hora local del navegador).
+function snoozeDate(option) {
+  const d = new Date();
+  if (option === "3h") return new Date(d.getTime() + 3 * 3600000);
+  const at9 = (days) => { const x = new Date(d); x.setDate(x.getDate() + days); x.setHours(9, 0, 0, 0); return x; };
+  if (option === "tomorrow") return at9(1);
+  if (option === "monday") return at9(((8 - d.getDay()) % 7) || 7);
+  if (option === "week") return at9(7);
+  return null;
+}
+
+const SNOOZE_SELECT = `<select class="small-select" data-snooze title="Quitarla de la bandeja hasta…">
+  <option value="">Posponer…</option><option value="3h">3 horas</option><option value="tomorrow">Mañana a las 9</option>
+  <option value="monday">El lunes a las 9</option><option value="week">En una semana</option></select>`;
+
+function followUpItem(f) {
+  return `
+    <li class="inbox-item follow-up" data-client="${f.client_id}" data-message="${f.message_id}" data-conversation="${f.conversation_id}" data-follow-up="${f.id}">
+      <div class="inbox-top">
+        <strong>${escapeHtml(f.client)}</strong>
+        <span class="wait late" title="Le escribiste el ${formatDate(f.sent_at)}">sin contestar · ${elapsed(f.sent_at)}</span>
+      </div>
+      <div class="inbox-snippet">${badge(f.channel)} Tú: ${escapeHtml(f.body.length > 120 ? `${f.body.slice(0, 120)}…` : f.body)}</div>
+      <div class="inbox-bottom">
+        <span class="muted small">Seguimiento</span>
+        <span>
+          <button class="link small" data-reply title="Escribirle de nuevo">Escribir</button>
+          <button class="link small" data-follow-up-done title="Quitar el aviso">✓ Hecho</button>
+        </span>
+      </div>
+    </li>`;
+}
+
 async function loadInbox() {
-  const [items] = await Promise.all([api(`/api/inbox?scope=${inboxScope}`), loadInboxCounts()]);
-  if (inboxScope === "mine") setInboxCount(items);
-  $("#inbox-list").innerHTML = items.length ? items.map((i) => `
+  const scope = inboxScope;
+  const [items, followUps, snoozed] = await Promise.all([
+    api(`/api/inbox?scope=${scope}`),
+    scope === "mine" ? api("/api/follow-ups") : Promise.resolve([]),
+    api(`/api/inbox?scope=${scope}&snoozed=true`),
+    loadInboxCounts(),
+  ]);
+  if (scope !== inboxScope) return;
+  if (scope === "mine") setInboxCount(items, followUps);
+  const followHtml = followUps.length
+    ? `<li class="inbox-group">Seguimientos: no han contestado</li>${followUps.map(followUpItem).join("")}
+       ${items.length ? `<li class="inbox-group">Esperan respuesta</li>` : ""}`
+    : "";
+  const snoozedHtml = snoozed.length ? `
+    <li class="inbox-snoozed"><details>
+      <summary>Pospuestas (${snoozed.length})</summary>
+      <ul class="inbox-list">${snoozed.map((i) => `
+        <li class="inbox-item snoozed" data-client="${i.client_id}" data-message="${i.message_id}" data-conversation="${i.conversation_id}">
+          <div class="inbox-top"><strong>${escapeHtml(i.client)}</strong>
+            <span class="wait" title="Vuelve a la bandeja entonces, o antes si el cliente escribe">hasta ${formatDate(i.snoozed_until + "Z")}</span></div>
+          <div class="inbox-snippet">${badge(i.channel)} ${escapeHtml(i.body.length > 100 ? `${i.body.slice(0, 100)}…` : i.body)}</div>
+          <div class="inbox-bottom"><span></span><button class="link small" data-unsnooze>Volver ahora</button></div>
+        </li>`).join("")}</ul>
+    </details></li>` : "";
+  $("#inbox-list").innerHTML = followHtml + (items.length ? items.map((i) => `
     <li class="inbox-item" data-client="${i.client_id}" data-message="${i.message_id}" data-conversation="${i.conversation_id}">
       <div class="inbox-top">
         <strong>${escapeHtml(i.client)}</strong>
@@ -34,31 +93,44 @@ async function loadInbox() {
         <span>
           <button class="link small" data-reply title="Redactar la respuesta con IA">Responder</button>
           <button class="link small" data-dismiss title="Quitar de la bandeja: no necesita respuesta">✓ Atendido</button>
+          ${SNOOZE_SELECT}
         </span>
       </div>
     </li>`).join("")
-    : `<li class="muted small empty-tasks">${inboxScope === "mine" ? "Nadie espera tu respuesta." : "Nadie espera respuesta del equipo."}</li>`;
+    : followUps.length ? "" : `<li class="muted small empty-tasks">${scope === "mine" ? "Nadie espera tu respuesta." : "Nadie espera respuesta del equipo."}</li>`) + snoozedHtml;
 }
 
-function setInboxCount(items) {
-  const late = items.filter((i) => (Date.now() - new Date(i.sent_at)) / 3600000 >= WAIT_ALERT_HOURS).length;
+function setInboxCount(items, followUps = []) {
+  const late = items.filter((i) => (Date.now() - new Date(i.sent_at)) / 3600000 >= WAIT_ALERT_HOURS).length + followUps.length;
+  const total = items.length + followUps.length;
   const count = $("#inbox-count");
-  count.textContent = items.length;
-  count.hidden = !items.length;
+  count.textContent = total;
+  count.hidden = !total;
   count.classList.toggle("alert", late > 0);
-  count.title = late ? `${late} esperando más de ${WAIT_ALERT_HOURS} h` : "";
+  count.title = [late && `${late} esperando más de ${WAIT_ALERT_HOURS} h o sin contestar`].filter(Boolean).join("");
 }
 
 async function refreshInboxCount() {
   try {
-    setInboxCount(await api("/api/inbox?scope=mine"));
+    const [items, followUps] = await Promise.all([api("/api/inbox?scope=mine"), api("/api/follow-ups")]);
+    setInboxCount(items, followUps);
     if (!$("#side-inbox").hidden) loadInbox();
   } catch { /* no crítico */ }
 }
 
 async function onInboxClick(e) {
   const li = e.target.closest(".inbox-item");
-  if (!li) return;
+  if (!li || e.target.closest("[data-snooze], summary")) return;
+  if (e.target.closest("[data-follow-up-done]") || e.target.closest("[data-unsnooze]")) {
+    try {
+      await api(li.dataset.followUp ? `/api/follow-ups/${li.dataset.followUp}` : `/api/conversations/${li.dataset.conversation}/snooze`,
+        { method: "DELETE" });
+      await Promise.all([loadInbox(), refreshInboxCount()]);
+    } catch (err) {
+      alert(err.message);
+    }
+    return;
+  }
   if (e.target.closest("[data-dismiss]")) {
     try {
       await api(`/api/conversations/${li.dataset.conversation}/dismiss`, {
@@ -119,8 +191,25 @@ async function summarizeWhatsNew() {
   }
 }
 
+async function onInboxSnooze(e) {
+  const select = e.target.closest("[data-snooze]");
+  const until = select && snoozeDate(select.value);
+  if (!until) return;
+  const li = select.closest(".inbox-item");
+  try {
+    await api(`/api/conversations/${li.dataset.conversation}/snooze`, {
+      method: "POST", body: JSON.stringify({ until: until.toISOString(), message_id: Number(li.dataset.message) }),
+    });
+    await Promise.all([loadInbox(), refreshInboxCount()]);
+  } catch (err) {
+    alert(err.message);
+    select.value = "";
+  }
+}
+
 function bindInboxEvents() {
   $("#inbox-list").addEventListener("click", onInboxClick);
+  $("#inbox-list").addEventListener("change", onInboxSnooze);
   document.querySelectorAll("#inbox-scope [data-inbox-scope]").forEach((b) => b.addEventListener("click", () => {
     inboxScope = b.dataset.inboxScope;
     document.querySelectorAll("#inbox-scope [data-inbox-scope]").forEach((x) => x.classList.toggle("active", x === b));
