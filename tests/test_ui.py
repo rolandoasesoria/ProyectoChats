@@ -30,9 +30,9 @@ try:
     steps = b.js("document.querySelector('.tour-progress').textContent.split('/')[1].trim()")
     for i in range(int(steps) - 1):
         b.click('.tour-card [data-tour="next"]')
-        if i in (1, 5, 8):
+        if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) >= 12, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 12, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
