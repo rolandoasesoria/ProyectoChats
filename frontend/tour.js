@@ -39,7 +39,7 @@ const TOUR_STEPS = [
   {
     target: "#side-inbox-tab",
     title: "Sin responder",
-    text: "Quién espera respuesta, de más a menos tiempo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta y «Posponer» la aparta hasta más tarde. Arriba verás también a quien no te ha contestado, si lo pediste al responder.",
+    text: "Quién espera respuesta, de más a menos tiempo; avisa cuando está a punto de vencer el plazo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta y «Posponer» la aparta hasta más tarde. Arriba verás también a quien no te ha contestado, si lo pediste al responder.",
   },
   {
     target: "#side-tasks-tab",
@@ -54,7 +54,7 @@ const TOUR_STEPS = [
   {
     target: "#dashboard-btn",
     title: "Panel",
-    text: "Mensajes, tiempo de respuesta, tareas y clientes por estado en el periodo que elijas.",
+    text: "Mensajes, tiempo de respuesta y cuántas se responden en plazo, tareas y clientes por estado en el periodo que elijas.",
   },
   {
     target: "#bell",
@@ -69,7 +69,7 @@ const TOUR_STEPS = [
   {
     target: "#user-menu-btn",
     title: "Administración",
-    text: "En este menú gestionas cuentas, conectas canales en «Integraciones» y consultas el «Registro de accesos». Desde ✎ en cada cliente puedes exportar o borrar sus datos.",
+    text: "En este menú gestionas cuentas, conectas canales en «Integraciones» y consultas el «Registro de accesos». En «Ajustes» fijas el plazo de respuesta. Desde ✎ en cada cliente puedes exportar o borrar sus datos.",
     when: () => currentUser?.role === "admin",
   },
   {
