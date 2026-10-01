@@ -47,6 +47,11 @@ const TOUR_STEPS = [
     text: "Tus tareas de todos los clientes. El número se pone en rojo si alguna vence hoy o ya ha vencido.",
   },
   {
+    target: "#palette-btn",
+    title: "Buscar o ir a… (Ctrl+K)",
+    text: "Abre cualquier cliente o acción escribiendo. Con ? ves los atajos de teclado: j/k para cambiar de cliente, r para responder…",
+  },
+  {
     target: "#dashboard-btn",
     title: "Panel",
     text: "Mensajes, tiempo de respuesta, tareas y clientes por estado en el periodo que elijas.",
