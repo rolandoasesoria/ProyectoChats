@@ -249,7 +249,11 @@ body.login-page { align-items: center; justify-content: center; padding: 16px; }
 .side-tabs button { padding: 8px 6px; font-size: 13px; gap: 4px; white-space: nowrap; }
 
 /* Bandeja "Sin responder" */
-#inbox-scope { align-self: flex-start; }
+#inbox-scope { align-self: stretch; }
+.scope-switch { display: flex; }
+.scope-switch button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; padding: 6px 8px; }
+.scope-switch button.active .count { background: rgba(255, 255, 255, .25); color: #fff; }
+.count:empty { display: none; }
 .inbox-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .inbox-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
 .inbox-item:hover { background: var(--bg); }

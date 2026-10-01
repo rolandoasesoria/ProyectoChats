@@ -458,6 +458,12 @@ def draft(conversation_id: int, req: DraftRequest, user: CurrentUser):
             raise HTTPException(404 if "no encontrada" in str(exc) else 400, str(exc))
 
 
+@app.get("/api/inbox/counts")
+def inbox_counts(user: CurrentUser):
+    """Cuántas conversaciones esperan respuesta: mías y de todo el equipo (solo números, sin contenido)."""
+    return {"mine": len(search.unanswered(user["id"], "mine")), "team": len(search.unanswered(user["id"], "team"))}
+
+
 @app.get("/api/inbox")
 def inbox(user: CurrentUser, scope: Literal["mine", "team"] = "mine"):
     """Bandeja "Sin responder": conversaciones cuyo último mensaje es del cliente."""
