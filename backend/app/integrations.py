@@ -11,6 +11,7 @@ import hmac
 import imaplib
 import json
 import logging
+import os
 import re
 import secrets
 import smtplib
@@ -58,8 +59,9 @@ FIELDS = {
     ],
 }
 KIND_CHANNEL = {"email": "email", "telegram": "telegram", "whatsapp": "whatsapp"}
-TELEGRAM_API = "https://api.telegram.org"
-GRAPH_API = "https://graph.facebook.com/v21.0"
+# Sustituibles por variables de entorno (las pruebas los apuntan a un puerto cerrado para no salir a internet).
+TELEGRAM_API = os.getenv("TELEGRAM_API", "https://api.telegram.org")
+GRAPH_API = os.getenv("GRAPH_API", "https://graph.facebook.com/v21.0")
 MAX_DOWNLOAD = 20 * 1024 * 1024
 
 # Puntos de conexión sustituibles en las pruebas.

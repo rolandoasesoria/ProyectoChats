@@ -19,6 +19,8 @@ $env:PYTHONIOENCODING = "utf-8"
 $env:PORT = "8001"
 $env:DISABLE_SYNC = "true"
 $env:DISABLE_AI = "true"   # aunque backend/.env tenga clave, las pruebas no llaman a la API de Claude
+$env:TELEGRAM_API = "http://127.0.0.1:9"   # puerto cerrado: probar una cuenta nunca sale a internet
+$env:GRAPH_API = "http://127.0.0.1:9"
 $env:DATA_DIR = $tmp
 
 # Base de datos de pruebas (TEST_DATABASE_URL de backend/.env). Se vacía antes de cada archivo, así que
