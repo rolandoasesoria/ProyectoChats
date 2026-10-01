@@ -25,11 +25,11 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 from email.utils import formataddr, make_msgid
 
-
 from . import clients, emails, insights, search, secrets_store, settings
 from .config import config
-from .db import get_conn, rows
+from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
+from .repositories import integrations as repo
 
 log = logging.getLogger(__name__)
 
@@ -126,11 +126,7 @@ def _clean_config(kind: str, data: dict, old: dict | None = None) -> dict:
 def list_integrations(owner_user_id: int | None = None) -> list[dict]:
     """Todas las integraciones (administración) o solo las de una persona (sus cuentas)."""
     with get_conn() as conn:
-        found = rows(conn.execute(
-            """SELECT i.id, i.kind, i.name, i.owner_user_id, u.name AS owner, i.config, i.enabled,
-                      i.last_sync_at, i.last_error, i.created_at
-                 FROM integrations i JOIN users u ON u.id = i.owner_user_id
-                WHERE ?::bigint IS NULL OR i.owner_user_id = ? ORDER BY i.id""", (owner_user_id, owner_user_id)))
+        found = repo.list_all(conn, owner_user_id)
     for i in found:
         i["config"] = _mask(i["kind"], secrets_store.decrypt(i["config"]))
     return found
@@ -138,10 +134,9 @@ def list_integrations(owner_user_id: int | None = None) -> list[dict]:
 
 def get(integration_id: int) -> dict:
     with get_conn() as conn:
-        row = conn.execute("SELECT * FROM integrations WHERE id = ?", (integration_id,)).fetchone()
-    if not row:
+        data = repo.get(conn, integration_id)
+    if not data:
         raise NotFound("Integración no encontrada")
-    data = dict(row)
     data["config"] = secrets_store.decrypt(data["config"])
     data["state"] = json.loads(data["state"])
     return data
@@ -150,41 +145,35 @@ def get(integration_id: int) -> dict:
 def create(kind: str, name: str, owner_user_id: int, config: dict) -> int:
     cfg = _clean_config(kind, config)
     with get_conn() as conn:
-        return conn.execute("INSERT INTO integrations (kind, name, owner_user_id, config) VALUES (?, ?, ?, ?) RETURNING id",
-                            (kind, name.strip() or kind, owner_user_id, secrets_store.encrypt(cfg))).lastrowid
+        return repo.insert(conn, kind, name.strip() or kind, owner_user_id, secrets_store.encrypt(cfg))
 
 
 def update(integration_id: int, name: str | None, owner_user_id: int | None, enabled: bool | None,
            config: dict | None) -> None:
     current = get(integration_id)
-    sets, args = [], []
+    fields = {}
     if name is not None:
-        sets.append("name = ?")
-        args.append(name.strip() or current["kind"])
+        fields["name"] = name.strip() or current["kind"]
     if owner_user_id is not None:
-        sets.append("owner_user_id = ?")
-        args.append(owner_user_id)
+        fields["owner_user_id"] = owner_user_id
     if enabled is not None:
-        sets.append("enabled = ?")
-        args.append(int(enabled))
+        fields["enabled"] = int(enabled)
     if config is not None:
-        sets.append("config = ?")
-        args.append(secrets_store.encrypt(_clean_config(current["kind"], config, current["config"])))
-    if sets:
+        fields["config"] = secrets_store.encrypt(_clean_config(current["kind"], config, current["config"]))
+    if fields:
         with get_conn() as conn:
-            conn.execute(f"UPDATE integrations SET {', '.join(sets)} WHERE id = ?", [*args, integration_id])
+            repo.update(conn, integration_id, fields)
 
 
 def delete(integration_id: int) -> None:
     get(integration_id)
     with get_conn() as conn:
-        conn.execute("DELETE FROM integrations WHERE id = ?", (integration_id,))
+        repo.delete(conn, integration_id)
 
 
 def _save_state(integration_id: int, state: dict, error: str | None = None) -> None:
     with get_conn() as conn:
-        conn.execute("UPDATE integrations SET state = ?, last_sync_at = localtimestamp(0), last_error = ? WHERE id = ?",
-                     (json.dumps(state), error, integration_id))
+        repo.save_state(conn, integration_id, json.dumps(state), error)
 
 
 # ---------------------------------------------------------------- Guardar mensajes recibidos o enviados
@@ -199,9 +188,10 @@ def _existing_handle(channel: str, handle: str) -> str:
         return handle
     tail = _digits(handle)[-9:]
     with get_conn() as conn:
-        for r in conn.execute("SELECT handle FROM client_identities WHERE channel IN ('whatsapp', 'phone')"):
-            if tail and _digits(r["handle"])[-9:] == tail:
-                return r["handle"]
+        known = repo.phone_handles(conn)
+    for existing in known:
+        if tail and _digits(existing)[-9:] == tail:
+            return existing
     return handle
 
 
@@ -446,14 +436,11 @@ def check_connection(integration_id: int) -> dict:
 def sender_for(conversation_id: int, user: dict) -> dict | None:
     """Integración con la que el usuario puede responder en esta conversación (o None)."""
     with get_conn() as conn:
-        conv = conn.execute("SELECT channel, client_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
+        conv = repo.conversation(conn, conversation_id)
         if not conv:
             return None
-        found = conn.execute(
-            """SELECT id FROM integrations WHERE kind = ? AND enabled = 1 AND (owner_user_id = ? OR ? = 'admin')
-                ORDER BY owner_user_id = ? DESC, id LIMIT 1""",
-            (conv["channel"], user["id"], user["role"], user["id"])).fetchone()
-    return get(found["id"]) if found else None
+        found_id = repo.find_sender_id(conn, conv["channel"], user["id"], user["role"])
+    return get(found_id) if found_id else None
 
 
 def send_reply(conversation_id: int, user: dict, text: str) -> dict:
@@ -461,19 +448,14 @@ def send_reply(conversation_id: int, user: dict, text: str) -> dict:
     if not integ:
         raise InvalidInput("No tienes una integración activa de este canal para enviar mensajes.")
     with get_conn() as conn:
-        conv = conn.execute(
-            "SELECT id, channel, subject, client_id, owner_user_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()
-        idents = [r["handle"] for r in conn.execute(
-            "SELECT handle FROM client_identities WHERE client_id = ? AND channel = ? ORDER BY id",
-            (conv["client_id"], conv["channel"]))]
-        last_in = conn.execute(
-            """SELECT external_id FROM messages WHERE conversation_id = ? AND direction = 'in'
-                AND external_id IS NOT NULL ORDER BY sent_at DESC, id DESC LIMIT 1""", (conversation_id,)).fetchone()
+        conv = repo.conversation(conn, conversation_id)
+        idents = repo.client_handles(conn, conv["client_id"], conv["channel"])
+        in_reply_to = repo.last_incoming_external_id(conn, conversation_id)
     if not idents:
         raise InvalidInput("El cliente no tiene identificador en este canal.")
     try:
         if conv["channel"] == "email":
-            ext = send_email(integ, idents[0], text, conv["subject"], last_in["external_id"] if last_in else None)
+            ext = send_email(integ, idents[0], text, conv["subject"], in_reply_to)
         elif conv["channel"] == "telegram":
             handle = next((h for h in idents if h.startswith("user")), idents[0])
             ext = send_telegram(integ, handle, text)
@@ -483,9 +465,7 @@ def send_reply(conversation_id: int, user: dict, text: str) -> dict:
         raise ExternalServiceError(f"No se pudo enviar: {exc}")
     # El mensaje enviado se guarda en la conversación (como enviado por quien lo escribió).
     with get_conn() as conn:
-        message_id = conn.execute(
-            """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id)
-               VALUES (?, 'out', ?, ?, ?, ?) RETURNING id""", (conversation_id, user["name"], text, _now_local(), ext)).lastrowid
+        message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext)
     return {"message_id": message_id, "via": integ["name"]}
 
 
@@ -506,8 +486,7 @@ def _due(integ_row: dict) -> bool:
 
 def run_due_syncs() -> None:
     with get_conn() as conn:
-        due = [dict(r) for r in conn.execute(
-            "SELECT id, kind, config, last_sync_at FROM integrations WHERE enabled = 1 AND kind IN ('email', 'telegram')")]
+        due = repo.list_syncable(conn)
     for integ_row in due:
         if _due(integ_row) and not _locks[integ_row["id"]].locked():
             try:

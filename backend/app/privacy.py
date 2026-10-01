@@ -13,7 +13,8 @@ import threading
 import time
 
 from . import attachments, clients, settings
-from .db import get_conn, rows
+from .db import get_conn
+from .repositories import privacy as repo
 
 log = logging.getLogger(__name__)
 
@@ -57,10 +58,7 @@ def redact_text(text: str, only: str | None = None) -> tuple[str, list[str]]:
 def sensitive_messages(client_id: int) -> list[dict]:
     """Mensajes del cliente con datos sensibles, con lo que se ha encontrado en cada uno."""
     with get_conn() as conn:
-        msgs = rows(conn.execute(
-            """SELECT m.id, m.body, m.sent_at, m.sender, c.channel FROM messages m
-                 JOIN conversations c ON c.id = m.conversation_id WHERE c.client_id = ? ORDER BY m.sent_at""",
-            (client_id,)))
+        msgs = repo.client_messages(conn, client_id)
     result = []
     for m in msgs:
         found = find(m["body"])
@@ -71,26 +69,20 @@ def sensitive_messages(client_id: int) -> list[dict]:
 
 def redact_message(message_id: int, only: str | None = None) -> dict | None:
     with get_conn() as conn:
-        row = conn.execute(
-            """SELECT m.body, c.client_id FROM messages m JOIN conversations c ON c.id = m.conversation_id
-                WHERE m.id = ?""", (message_id,)).fetchone()
+        row = repo.message_with_client(conn, message_id)
         if not row:
             return None
         body, kinds = redact_text(row["body"], only)
         if kinds:
-            conn.execute("UPDATE messages SET body = ? WHERE id = ?", (body, message_id))
+            repo.set_message_body(conn, message_id, body)
     return {"body": body, "hidden": kinds, "client_id": row["client_id"]}
 
 
 # ---------------------------------------------------------------- Retención
 
-def _old_messages_sql(months: int) -> str:
-    return f"sent_at < localtimestamp - interval '{int(months)} months'"
-
-
 def retention_preview(months: int) -> dict:
     with get_conn() as conn:
-        n = conn.execute(f"SELECT count(*) FROM messages WHERE {_old_messages_sql(months)}").fetchone()[0]
+        n = repo.count_old_messages(conn, int(months))
     return {"months": months, "messages": n}
 
 
@@ -100,13 +92,12 @@ def apply_retention(months: int | None = None) -> dict:
     if not months:
         return {"months": 0, "messages": 0, "conversations": 0}
     with get_conn() as conn:
-        old = f"SELECT id FROM messages WHERE {_old_messages_sql(months)}"
-        files = [r["path"] for r in conn.execute(f"SELECT path FROM attachments WHERE message_id IN ({old})")]
-        conn.execute(f"DELETE FROM attachments WHERE message_id IN ({old})")
-        deleted = conn.execute(f"DELETE FROM messages WHERE {_old_messages_sql(months)}").rowcount
-        convs = conn.execute(
-            "DELETE FROM conversations c WHERE NOT EXISTS (SELECT 1 FROM messages m WHERE m.conversation_id = c.id)"
-        ).rowcount
+        # Primero los adjuntos de los mensajes antiguos (para borrar también sus archivos), luego los mensajes
+        # y, al final, las conversaciones que se han quedado vacías.
+        files = repo.old_attachment_paths(conn, int(months))
+        repo.delete_old_attachments(conn, int(months))
+        deleted = repo.delete_old_messages(conn, int(months))
+        convs = repo.delete_empty_conversations(conn)
     for path in files:
         (attachments.STORAGE / path).unlink(missing_ok=True)
     return {"months": months, "messages": deleted, "conversations": convs}

@@ -7,8 +7,7 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .. import attachments
-from ..db import get_conn
-from ..errors import Forbidden, InvalidInput, NotFound
+from ..errors import InvalidInput, NotFound
 from .deps import CurrentUser, claude_errors, client_or_404
 
 router = APIRouter()
@@ -33,8 +32,7 @@ def upload_document(client_id: int, req: FileUpload, user: CurrentUser):
         data = base64.b64decode(req.data, validate=True)
     except (binascii.Error, ValueError):
         raise InvalidInput("No se pudo leer el archivo.")
-    with get_conn() as conn:
-        att_id = attachments.save(conn, client_id, req.filename, data, uploaded_by=user["id"])
+    att_id = attachments.upload(client_id, req.filename, data, user["id"])
     return attachments.get(att_id) | {"path": None, "extracted_text": None}
 
 
@@ -74,11 +72,5 @@ def read_attachment(attachment_id: int, _: CurrentUser):
 
 @router.delete("/api/attachments/{attachment_id}")
 def delete_attachment(attachment_id: int, user: CurrentUser):
-    with get_conn() as conn:
-        row = conn.execute("SELECT uploaded_by, message_id FROM attachments WHERE id = ?", (attachment_id,)).fetchone()
-    if not row:
-        raise NotFound("Documento no encontrado")
-    if row["uploaded_by"] != user["id"] and user["role"] != "admin":
-        raise Forbidden("Solo quien lo subió (o un administrador) puede borrarlo.")
-    attachments.delete(attachment_id)
+    attachments.delete_as(attachment_id, user)
     return {"ok": True}

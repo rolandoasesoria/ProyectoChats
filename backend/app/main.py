@@ -13,14 +13,38 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import integrations, privacy
-from .api import (assistants, auth, clients, dashboard, documents, drafts, inbox, messaging, notes, profile,
-                  replies, search, settings, tasks, users)
+from .api import (
+    assistants,
+    auth,
+    clients,
+    dashboard,
+    documents,
+    drafts,
+    inbox,
+    messaging,
+    notes,
+    profile,
+    replies,
+    search,
+    settings,
+    tasks,
+    users,
+)
 from .api import integrations as integrations_api
 from .api import privacy as privacy_api
 from .config import config
 from .db import init_db
-from .errors import (AppError, Conflict, ExternalServiceError, Forbidden, InvalidInput, NotAuthenticated, NotFound,
-                     ServiceUnavailable, TooManyAttempts)
+from .errors import (
+    AppError,
+    Conflict,
+    ExternalServiceError,
+    Forbidden,
+    InvalidInput,
+    NotAuthenticated,
+    NotFound,
+    ServiceUnavailable,
+    TooManyAttempts,
+)
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
