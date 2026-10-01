@@ -2,18 +2,11 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, integrations, presence
-from ..db import get_conn, rows
+from .. import audit, integrations, presence, search
 from ..errors import Conflict
 from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
-
-
-def _last_message_id(conversation_id: int) -> int:
-    with get_conn() as conn:
-        return conn.execute("SELECT coalesce(max(id), 0) FROM messages WHERE conversation_id = ?",
-                            (conversation_id,)).fetchone()[0]
 
 
 @router.get("/api/conversations/{conversation_id}/sender")
@@ -22,7 +15,7 @@ def conversation_sender(conversation_id: int, user: CurrentUser):
     avisar después si llega otro (del cliente o de un compañero) mientras se escribe la respuesta."""
     integ = integrations.sender_for(conversation_id, user)
     return {"can_send": bool(integ), "via": integ["name"] if integ else None,
-            "last_message_id": _last_message_id(conversation_id)}
+            "last_message_id": search.last_message_id(conversation_id)}
 
 
 class SendRequest(BaseModel):
@@ -34,17 +27,12 @@ class SendRequest(BaseModel):
 @router.post("/api/conversations/{conversation_id}/send")
 def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
     if req.after_message_id is not None and not req.force:
-        with get_conn() as conn:
-            newer = rows(conn.execute(
-                """SELECT direction, sender FROM messages WHERE conversation_id = ? AND id > ? ORDER BY id""",
-                (conversation_id, req.after_message_id)))
+        newer = search.newer_messages(conversation_id, req.after_message_id)
         if newer:
             who = "un compañero ha respondido" if any(m["direction"] == "out" for m in newer) else "el cliente ha escrito"
             raise Conflict(f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
     result = integrations.send_reply(conversation_id, user, req.text.strip())
-    with get_conn() as conn:
-        client_id = conn.execute("SELECT client_id FROM conversations WHERE id = ?", (conversation_id,)).fetchone()[0]
-    audit.log(user["id"], "message_sent", client_id, detail=f"por {result['via']}")
+    audit.log(user["id"], "message_sent", search.conversation_client_id(conversation_id), detail=f"por {result['via']}")
     return result
 
 

@@ -5,8 +5,7 @@ from typing import Annotated
 import anthropic
 from fastapi import Depends
 
-from .. import agent, auth
-from ..db import get_conn
+from .. import agent, auth, clients
 from ..errors import ExternalServiceError, NotFound, ServiceUnavailable, TooManyAttempts
 
 CurrentUser = Annotated[dict, Depends(auth.current_user)]
@@ -39,8 +38,7 @@ def claude_errors():
 def client_or_404(client_id: int | None) -> dict | None:
     if client_id is None:
         return None
-    with get_conn() as conn:
-        row = conn.execute("SELECT id, name FROM clients WHERE id = ?", (client_id,)).fetchone()
-    if not row:
+    client = clients.get_basic(client_id)
+    if not client:
         raise NotFound("Cliente no encontrado")
-    return dict(row)
+    return client

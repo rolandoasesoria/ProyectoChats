@@ -4,8 +4,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, clients, insights, notes, search
-from ..db import get_conn
+from .. import audit, clients, insights, search
 from ..errors import NotFound
 from .deps import CurrentUser, claude_errors, client_or_404
 
@@ -52,9 +51,7 @@ def update_client(client_id: int, req: ClientUpdate, user: CurrentUser):
     clients.update_client(client_id, fields, user["id"])
     new_assignee = fields.get("assignee_user_id")
     if new_assignee and new_assignee != before["assignee_user_id"]:
-        with get_conn() as conn:
-            notes.notify(conn, [new_assignee], "client_assigned",
-                         f"{user['name']} te ha hecho responsable de {before['name']}", client_id, user["id"])
+        clients.notify_assigned(client_id, before["name"], new_assignee, user)
     return search.client_overview(client_id, user["id"])
 
 
