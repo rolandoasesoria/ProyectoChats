@@ -231,6 +231,15 @@ CREATE TABLE IF NOT EXISTS follow_ups (
 );
 CREATE INDEX IF NOT EXISTS idx_follow_ups_user ON follow_ups (user_id, due_at);
 
+-- Dónde está cada persona ahora mismo: qué cliente tiene abierto y si está redactando una respuesta
+-- (para avisar a los compañeros y no responder dos veces). Caduca si no se renueva en unos segundos.
+CREATE TABLE IF NOT EXISTS presence (
+    user_id    BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+    client_id  BIGINT REFERENCES clients(id) ON DELETE CASCADE,
+    composing  SMALLINT NOT NULL DEFAULT 0,
+    seen_at    TIMESTAMP NOT NULL
+);
+
 -- Ajustes de la app que cambia un administrador (p. ej. sla_hours: plazo de respuesta).
 CREATE TABLE IF NOT EXISTS app_settings (
     key    TEXT PRIMARY KEY,
