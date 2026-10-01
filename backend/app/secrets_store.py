@@ -5,20 +5,19 @@ data/secret.key. Sin esa clave no se pueden descifrar las integraciones: haz cop
 junto con la base de datos (y no la subas a un repositorio).
 """
 import json
-import os
 
 from cryptography.fernet import Fernet, InvalidToken
 
-from .db import DATA_DIR
+from .config import config
 
-KEY_FILE = DATA_DIR / "secret.key"
+KEY_FILE = config.data_dir / "secret.key"
 _fernet: Fernet | None = None
 
 
 def _get() -> Fernet:
     global _fernet
     if _fernet is None:
-        key = os.getenv("SECRET_KEY", "").strip()
+        key = config.security.secret_key
         if not key:
             if KEY_FILE.exists():
                 key = KEY_FILE.read_text().strip()

@@ -5,27 +5,27 @@
 """
 import hashlib
 import hmac
-import os
 import secrets
 from datetime import datetime, timedelta, timezone
 
 from fastapi import Cookie, HTTPException
 
+from .config import config
 from .db import get_conn, rows
 
 COOKIE_NAME = "pc_session"
 SESSION_DAYS = 30
 # La cookie se marca como Secure automáticamente si la petición llega por HTTPS;
 # COOKIE_SECURE=true la fuerza siempre (recomendado en producción).
-COOKIE_SECURE = os.getenv("COOKIE_SECURE", "false").lower() == "true"
+COOKIE_SECURE = config.security.cookie_secure
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128  # evita que una contraseña enorme se use para saturar el servidor
 
 # Protección contra fuerza bruta: en una ventana de LOCK_MINUTES, como mucho
 # MAX_FAILS_PER_USER fallos por usuario y MAX_FAILS_PER_IP fallos por dirección IP.
-LOCK_MINUTES = int(os.getenv("LOGIN_LOCK_MINUTES", "15"))
-MAX_FAILS_PER_USER = int(os.getenv("LOGIN_MAX_FAILS_PER_USER", "5"))
-MAX_FAILS_PER_IP = int(os.getenv("LOGIN_MAX_FAILS_PER_IP", "20"))
+LOCK_MINUTES = config.security.login_lock_minutes
+MAX_FAILS_PER_USER = config.security.login_max_fails_per_user
+MAX_FAILS_PER_IP = config.security.login_max_fails_per_ip
 
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1}
 USER_FIELDS = "id, name, email, username, role, active, theme, tour_version"

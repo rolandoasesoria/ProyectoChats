@@ -6,25 +6,24 @@ Lee la configuración de backend/.env:
   FORWARDED_ALLOW_IPS              IPs de proxys de confianza (p. ej. Caddy) cuyas cabeceras
                                    X-Forwarded-* se aceptan; por defecto solo 127.0.0.1
 """
-import os
-
 import uvicorn
+
+from .config import config
 
 
 def main() -> None:
-    certfile = os.getenv("SSL_CERTFILE") or None
-    keyfile = os.getenv("SSL_KEYFILE") or None
-    if bool(certfile) != bool(keyfile):
+    server = config.server
+    if bool(server.ssl_certfile) != bool(server.ssl_keyfile):
         raise SystemExit("Para HTTPS hacen falta SSL_CERTFILE y SSL_KEYFILE a la vez.")
     uvicorn.run(
         "app.main:app",
-        host=os.getenv("HOST", "127.0.0.1"),
-        port=int(os.getenv("PORT", "8000")),
-        ssl_certfile=certfile,
-        ssl_keyfile=keyfile,
+        host=server.host,
+        port=server.port,
+        ssl_certfile=server.ssl_certfile,
+        ssl_keyfile=server.ssl_keyfile,
         # Detrás de un proxy HTTPS: usar la IP real del cliente y el esquema https que indica el proxy.
         proxy_headers=True,
-        forwarded_allow_ips=os.getenv("FORWARDED_ALLOW_IPS", "127.0.0.1"),
+        forwarded_allow_ips=server.forwarded_allow_ips,
         server_header=False,
     )
 

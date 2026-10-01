@@ -3,7 +3,6 @@ import base64
 import binascii
 import hmac
 import json
-import os
 import re
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -20,15 +19,16 @@ from pydantic import BaseModel, Field
 
 from . import (agent, attachments, audit, auth, chats, clients, followups, insights, integrations, metrics, notes,
                presence, privacy, replies, search, settings, smartsearch)
+from .config import config
 from .db import get_conn, init_db, rows
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
 # FORCE_HTTPS=true: redirige HTTP a HTTPS y activa HSTS. Detrás de un proxy (Caddy, Nginx)
 # arranca con `python -m app.serve`, que confía en las cabeceras X-Forwarded-* del proxy.
-FORCE_HTTPS = os.getenv("FORCE_HTTPS", "false").lower() == "true"
+FORCE_HTTPS = config.security.force_https
 # La documentación interactiva de la API (/docs) solo se publica si se pide expresamente.
-ENABLE_DOCS = os.getenv("ENABLE_DOCS", "false").lower() == "true"
+ENABLE_DOCS = config.security.enable_docs
 
 app = FastAPI(
     title="ProyectoChats",
@@ -38,7 +38,7 @@ app = FastAPI(
 )
 init_db()
 # Sincronización periódica de los buzones y bots conectados (DISABLE_SYNC=true la desactiva, p. ej. en pruebas).
-if os.getenv("DISABLE_SYNC", "false").lower() != "true":
+if not config.integrations.sync_disabled:
     integrations.start_scheduler()
     privacy.start_daily_jobs()  # retención de mensajes y clientes inactivos, una vez al día
 

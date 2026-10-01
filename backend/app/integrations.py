@@ -11,7 +11,6 @@ import hmac
 import imaplib
 import json
 import logging
-import os
 import re
 import secrets
 import smtplib
@@ -29,6 +28,7 @@ from email.utils import formataddr, make_msgid
 from fastapi import HTTPException
 
 from . import clients, emails, insights, search, secrets_store, settings
+from .config import config
 from .db import get_conn, rows
 
 log = logging.getLogger(__name__)
@@ -60,8 +60,8 @@ FIELDS = {
 }
 KIND_CHANNEL = {"email": "email", "telegram": "telegram", "whatsapp": "whatsapp"}
 # Sustituibles por variables de entorno (las pruebas los apuntan a un puerto cerrado para no salir a internet).
-TELEGRAM_API = os.getenv("TELEGRAM_API", "https://api.telegram.org")
-GRAPH_API = os.getenv("GRAPH_API", "https://graph.facebook.com/v21.0")
+TELEGRAM_API = config.integrations.telegram_api
+GRAPH_API = config.integrations.graph_api
 MAX_DOWNLOAD = 20 * 1024 * 1024
 
 # Puntos de conexión sustituibles en las pruebas.

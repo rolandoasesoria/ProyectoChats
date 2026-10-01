@@ -8,9 +8,10 @@ import uuid
 from fastapi import HTTPException
 
 from . import agent
-from .db import DATA_DIR, TS_CONFIG, get_conn, rows
+from .config import config
+from .db import TS_CONFIG, get_conn, rows
 
-STORAGE = DATA_DIR / "attachments"
+STORAGE = config.data_dir / "attachments"
 MAX_BYTES = 20 * 1024 * 1024
 MAX_TEXT = 100_000          # texto extraído que se guarda por archivo
 AI_IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
