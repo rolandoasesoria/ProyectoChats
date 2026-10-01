@@ -79,6 +79,10 @@ async def security(request: Request, call_next):
         response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
     if request.url.path.startswith("/api/"):
         response.headers["Cache-Control"] = "no-store"
+    else:
+        # HTML, JS y CSS: el navegador puede guardarlos, pero debe preguntar siempre si han cambiado (responde
+        # 304 si no). Sin esto, tras una actualización podía mezclar archivos viejos y nuevos y la app fallaba.
+        response.headers["Cache-Control"] = "no-cache"
     return response
 
 CurrentUser = Annotated[dict, Depends(auth.current_user)]
