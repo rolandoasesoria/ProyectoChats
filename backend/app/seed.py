@@ -66,6 +66,19 @@ CONVERSATIONS = [
 ]
 
 
+# Respuestas guardadas de ejemplo: (título, atajo, texto, estado, etiqueta, marcar atendida).
+REPLIES = [
+    ("Pedimos los datos de facturación", "facturacion",
+     "Hola {nombre}, para preparar la factura necesitamos la razón social, el CIF y la dirección fiscal. ¡Gracias!\n{yo}",
+     None, None, False),
+    ("Presupuesto enviado", "presupuesto",
+     "Hola {nombre}, te acabo de enviar el presupuesto. Cualquier duda me dices.\n{yo}", "lead", "presupuesto enviado", False),
+    ("Confirmar dirección de envío", "envio",
+     "Hola {nombre}, ¿confirmas que el envío va a {dato:Dirección de envío}?", None, None, False),
+    ("Gracias, queda anotado", "gracias", "¡Gracias, {nombre}! Queda anotado.", None, None, True),
+]
+
+
 def seed(reset: bool = False, basico: bool = False) -> None:
     if reset:
         reset_db()
@@ -96,6 +109,9 @@ def seed(reset: bool = False, basico: bool = False) -> None:
     with get_conn() as conn:
         conn.execute("UPDATE clients SET company = 'Floristería Gómez S.L.' WHERE name = 'Laura Gómez'")
         conn.execute("UPDATE clients SET company = 'Talleres Martín' WHERE name = 'Jorge Martín'")
+        conn.executemany(
+            """INSERT INTO saved_replies (title, shortcut, body, set_status, add_tag, mark_done, created_by)
+               VALUES (?, ?, ?, ?, ?, ?, 1)""", [(*r[:5], int(r[5])) for r in REPLIES])
     if not basico:
         t = demo_data.generar()
         print(f"Datos de prueba: {t['clientes']} clientes más, {t['conversaciones']} conversaciones, "
