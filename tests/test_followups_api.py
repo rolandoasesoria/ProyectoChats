@@ -3,6 +3,7 @@ import sys
 from datetime import datetime, timedelta, timezone
 
 from apitest import Session, check, results
+
 from app.db import get_conn
 
 ana, carlos = Session("ana"), Session("carlos")

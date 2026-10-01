@@ -1,10 +1,10 @@
 """Recorrido de la interfaz en Edge: login, tutorial, cliente, pestañas, notas, tareas, diálogos, tema, Chispa."""
 import sys
-from pathlib import Path
 
 from apitest import check, results
-from app.db import get_conn
 from browser import Browser
+
+from app.db import get_conn
 
 # Jorge Martín (cliente 2) con un análisis de la IA que lo marca como urgente y molesto.
 with get_conn() as conn:

@@ -1,0 +1,12 @@
+# Comprobación de estilo y errores del código Python (desde backend/: python -m ruff check . ../tests)
+line-length = 120
+target-version = "py312"
+
+[lint]
+# F: errores (nombres sin definir, imports sin usar...); E/W: estilo PEP 8; I: orden de los imports.
+select = ["F", "E", "W", "I"]
+# Hay líneas largas con SQL y textos en español que se leen mejor sin partir.
+ignore = ["E501"]
+
+[lint.isort]
+known-first-party = ["app"]

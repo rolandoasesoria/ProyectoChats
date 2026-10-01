@@ -1,6 +1,4 @@
 """Borradores: prompt y contexto con una respuesta simulada de Claude; y la API sin clave."""
-import json
-import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -8,10 +6,10 @@ from types import SimpleNamespace
 SCRATCH = Path(__file__).resolve().parent / ".tmp"
 SCRATCH.mkdir(exist_ok=True)
 import testdb  # noqa: F401,E402  (base de datos de pruebas; antes que la app)
+from apitest import Session, check, results  # noqa: E402
 
 from app import agent, insights, seed  # noqa: E402
 from app.db import get_conn  # noqa: E402
-from apitest import Session, check, results  # noqa: E402
 
 seed.seed(reset=True, basico=True)
 calls = []

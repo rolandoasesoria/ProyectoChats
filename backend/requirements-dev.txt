@@ -2,3 +2,4 @@
 -r requirements.txt
 quickjs>=1.19     # comprobar la sintaxis del JavaScript del frontend sin Node
 websockets>=12    # controlar Edge/Chrome en las pruebas de interfaz (ya viene con uvicorn[standard])
+ruff>=0.6         # comprobación de estilo y errores (configuración en ruff.toml)

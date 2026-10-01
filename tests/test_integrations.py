@@ -1,14 +1,14 @@
 """Integraciones con servidores simulados: IMAP/SMTP falsos, API de Telegram simulada y webhook de WhatsApp firmado."""
-import base64
 import hashlib
 import hmac
 import json
 import sys
-from pathlib import Path
 import urllib.request
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 from apitest import BASE, Session, check, results  # noqa: E402
+
 from app import integrations  # noqa: E402
 from app.db import get_conn  # noqa: E402
 

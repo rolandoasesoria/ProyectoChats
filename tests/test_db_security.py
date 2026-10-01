@@ -4,10 +4,10 @@ import tempfile
 from dataclasses import replace
 from pathlib import Path
 
-import testdb  # noqa: F401  (configura la base de datos de pruebas)
 import psycopg
-
+import testdb  # noqa: F401  (configura la base de datos de pruebas)
 from apitest import check, results
+
 from app.config import ConfigError, config
 from app.db import get_conn, migrations, safe_url
 from app.db.connection import connection_kwargs

@@ -2,6 +2,7 @@
 import sys
 
 from apitest import Session, check, results
+
 from app.db import get_conn
 
 ana, carlos, marta = Session("ana"), Session("carlos"), Session("marta")
