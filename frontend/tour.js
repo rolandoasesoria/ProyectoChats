@@ -39,7 +39,7 @@ const TOUR_STEPS = [
   {
     target: "#side-inbox-tab",
     title: "Sin responder",
-    text: "Quién espera respuesta, de más a menos tiempo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta.",
+    text: "Quién espera respuesta, de más a menos tiempo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta y «Posponer» la aparta hasta más tarde. Arriba verás también a quien no te ha contestado, si lo pediste al responder.",
   },
   {
     target: "#side-tasks-tab",
