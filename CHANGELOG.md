@@ -55,6 +55,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Tras actualizar la app, recargar con F5 podía mezclar archivos viejos y nuevos y dejar la lista de clientes
+  vacía: ahora el navegador comprueba siempre si hay versión nueva de la interfaz.
 - La lista de clientes mostraba como mucho 50.
 - En la pestaña «Tareas» de la columna izquierda las casillas se estiraban y el texto quedaba fuera de la vista.
 - En «Sin responder», al elegir «Equipo» el selector desaparecía.
