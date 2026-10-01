@@ -83,7 +83,8 @@ conversaciones de esa persona, que puede responder desde el borrador con **📤 
 - Contraseñas y tokens se guardan **cifrados** (Fernet). La clave es `SECRET_KEY` en `.env` o, si no existe,
   `backend/data/secret.key` (se genera sola). **Haz copia de seguridad de esa clave junto con la base de datos.**
 - La sincronización corre en segundo plano dentro del servidor; `DISABLE_SYNC=true` la desactiva.
-- Si un canal no está conectado, sus chats se pueden seguir trayendo con **Importar**.
+- Es la única vía de entrada de mensajes: la app no importa chats exportados, trabaja con las conversaciones
+  reales y en tiempo real.
 
 ## Protección de datos
 
@@ -107,12 +108,9 @@ En local (`localhost`) se puede seguir usando HTTP para desarrollar.
 
 ## Interfaz
 
-- **Importar conversaciones** (botón *Importar* en la columna de clientes): exportaciones de WhatsApp (.txt),
-  Telegram (.json de Telegram Desktop) y email (.eml / .mbox). Se elige qué participante es el cliente;
-  reimportar el mismo chat solo añade los mensajes nuevos. Lógica en `backend/app/importers.py`.
 - **Ficha del cliente con IA** (`backend/app/insights.py`): una sola llamada a Claude con salida estructurada
   extrae el resumen del estado, los datos clave (cada uno enlazado a su mensaje de origen) y los compromisos
-  pendientes como tareas con fecha y responsable. Se lanza con *Actualizar con IA* o sola tras importar.
+  pendientes como tareas con fecha y responsable. Se lanza con *Actualizar con IA* o sola cuando entran mensajes nuevos.
   Lo editado por personas nunca lo sobrescribe la IA; lo descartado no se vuelve a proponer.
 - **Tareas** por cliente y **Mis tareas** (todas las mías, agrupadas por vencimiento).
 - **Sin responder**: bandeja de conversaciones cuyo último mensaje es del cliente, por tiempo de espera;
@@ -173,7 +171,6 @@ frontend (navegador) ──HTTP──▶ FastAPI ──▶ PostgreSQL (clientes,
 | GET | `/api/clients/{id}` | Ficha: identidades y conversaciones |
 | GET | `/api/clients/{id}/timeline?scope=mine\|team&channel=` | Mensajes unificados en orden cronológico |
 | GET | `/api/search?q=&scope=&client_id=` | Búsqueda directa de texto |
-| POST | `/api/import` | Importar una conversación (base para integraciones) |
 | POST | `/api/chat` | Hablar con el agente (una conversación por cliente, `client_id`) |
 | POST | `/api/help` | Hablar con Chispa, la mascota de ayuda sobre el uso de la app |
 | GET | `/api/conversations/{agent\|help}?client_id=` | Conversación guardada para mostrarla |

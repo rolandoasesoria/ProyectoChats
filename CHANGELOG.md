@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Cambiado
+- Se quita la importación de chats exportados (botón «Importar»): los mensajes entran solo por las
+  integraciones, en tiempo real. La lectura de correos pasa a `backend/app/emails.py`.
 - Pestaña «Mensajes» al estilo de un chat: burbujas del cliente a la izquierda y del equipo a la derecha,
   separadores por día, mensajes seguidos agrupados y la caja de respuesta debajo de la conversación.
 - La ficha del cliente y sus mensajes pasan al centro y el asistente a la columna derecha; Chispa se mueve
