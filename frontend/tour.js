@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 15;
+const TOUR_VERSION = 16;
 
 const TOUR_STEPS = [
   {
@@ -27,14 +27,14 @@ const TOUR_STEPS = [
     text: "Sube un chat exportado de WhatsApp (.txt/.zip), Telegram (.json) o correo (.eml/.mbox). Si lo vuelves a importar, solo se añaden los mensajes nuevos.",
   },
   {
-    target: ".chat",
-    title: "Asistente",
-    text: "Pregunta cualquier dato: «¿qué CIF nos dio?». Cada cliente tiene su propia conversación. Busca en las tuyas; si quieres que mire las de tus compañeros, pídeselo.",
-  },
-  {
     target: ".detail",
     title: "Ficha del cliente",
     text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. Con ✎ editas estado, responsable y etiquetas. Si un compañero está respondiendo al mismo cliente, te lo avisaré aquí.",
+  },
+  {
+    target: ".chat",
+    title: "Asistente",
+    text: "Pregunta cualquier dato: «¿qué CIF nos dio?». Cada cliente tiene su propia conversación. Busca en las tuyas; si quieres que mire las de tus compañeros, pídeselo.",
   },
   {
     target: "#side-inbox-tab",

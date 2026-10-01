@@ -18,6 +18,7 @@ New-Item -ItemType Directory -Force $tmp | Out-Null
 $env:PYTHONIOENCODING = "utf-8"
 $env:PORT = "8001"
 $env:DISABLE_SYNC = "true"
+$env:DISABLE_AI = "true"   # aunque backend/.env tenga clave, las pruebas no llaman a la API de Claude
 $env:DATA_DIR = $tmp
 
 # Base de datos de pruebas (TEST_DATABASE_URL de backend/.env). Se vacía antes de cada archivo, así que

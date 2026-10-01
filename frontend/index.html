@@ -92,23 +92,6 @@
       </div>
     </aside>
 
-    <!-- Chat con el agente -->
-    <section class="panel chat">
-      <div class="chat-head">
-        <div>
-          <h1>Asistente</h1>
-          <p id="chat-context" class="muted">Sin cliente seleccionado · pregunta por cualquier cliente</p>
-        </div>
-        <button id="new-chat" class="ghost">Nueva conversación</button>
-      </div>
-      <!-- Un hilo (.thread) por cliente; solo el activo es visible -->
-      <div id="chat-log" class="chat-log"></div>
-      <form id="chat-form" class="chat-form">
-        <textarea id="chat-input" rows="1" maxlength="4000" placeholder="Escribe tu pregunta…" required></textarea>
-        <button type="submit" id="send-btn">Enviar</button>
-      </form>
-    </section>
-
     <!-- Ficha y línea de tiempo del cliente -->
     <aside class="panel detail" id="detail">
       <div class="detail-empty muted">Selecciona un cliente para ver todas sus conversaciones unificadas.</div>
@@ -266,6 +249,23 @@
         </section>
       </div>
     </aside>
+    <!-- Chat con el agente -->
+    <section class="panel chat">
+      <div class="chat-head">
+        <div>
+          <h1>Asistente</h1>
+          <p id="chat-context" class="muted">Sin cliente seleccionado · pregunta por cualquier cliente</p>
+        </div>
+        <button id="new-chat" class="ghost">Nueva conversación</button>
+      </div>
+      <!-- Un hilo (.thread) por cliente; solo el activo es visible -->
+      <div id="chat-log" class="chat-log"></div>
+      <form id="chat-form" class="chat-form">
+        <textarea id="chat-input" rows="1" maxlength="4000" placeholder="Escribe tu pregunta…" required></textarea>
+        <button type="submit" id="send-btn">Enviar</button>
+      </form>
+    </section>
+
   </main>
 
   <!-- Mascota de ayuda -->

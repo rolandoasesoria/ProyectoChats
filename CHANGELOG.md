@@ -6,11 +6,14 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Cambiado
+- La ficha del cliente y sus mensajes pasan al centro y el asistente a la columna derecha; Chispa se mueve
+  abajo a la izquierda para no tapar el botón de enviar.
 - **La base de datos pasa de SQLite a PostgreSQL**: pool de conexiones, esquema con tipos propios e índices GIN.
   `scripts/postgres.ps1` instala PostgreSQL portable para desarrollo (sin permisos de administrador).
 - Búsqueda de texto en español: sin tildes y por raíz de palabra («entregas» encuentra «entrega» y «entreguen»).
   La búsqueda de clientes ya no distingue mayúsculas ni tildes.
 - Las pruebas usan su propia base de datos (`TEST_DATABASE_URL`) y se niegan a vaciar una que no sea de pruebas.
+- Las pruebas nunca llaman a la API de Claude aunque `backend/.env` tenga clave (`DISABLE_AI=true`).
 - Aspecto más sobrio y minimalista: paneles a sangre separados por líneas, colores neutros, etiquetas de canal
   con un punto de color, controles más finos y Chispa más discreta. Solo queda el emoji ✨ para marcar lo que
   hace la IA.
