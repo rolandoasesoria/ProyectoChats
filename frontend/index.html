@@ -44,6 +44,7 @@
         <div class="menu" id="user-menu" role="menu" hidden>
           <div class="menu-head"><strong id="menu-name"></strong><span class="muted" id="menu-role"></span></div>
           <button role="menuitem" id="menu-tour">Ver tutorial</button>
+          <button role="menuitem" id="menu-accounts">Mis cuentas</button>
           <button role="menuitem" id="menu-replies">Respuestas guardadas</button>
           <button role="menuitem" id="menu-password">Cambiar contraseña</button>
           <button role="menuitem" id="menu-admin" hidden>Administración</button>
@@ -332,7 +333,6 @@
     </div>
     <div class="tabs admin-tabs" role="tablist">
       <button role="tab" data-admin-tab="users" class="active">Usuarios</button>
-      <button role="tab" data-admin-tab="integrations">Integraciones</button>
       <button role="tab" data-admin-tab="audit">Registro de accesos</button>
       <button role="tab" data-admin-tab="settings">Ajustes</button>
     </div>
@@ -360,32 +360,6 @@
         <button type="submit" class="primary" id="uf-submit">Crear cuenta</button>
       </div>
     </form>
-    </section>
-    <section id="admin-integrations" class="admin-pane" hidden>
-      <p class="muted small">Conecta los canales para que los mensajes entren solos y se pueda responder desde la app.
-        Los mensajes de cada integración quedan como conversaciones de su responsable. Contraseñas y tokens se guardan cifrados.</p>
-      <ul id="integrations-list" class="integrations-list"></ul>
-      <form id="integration-form" class="form integration-form">
-        <h3 id="if-title">Nueva integración</h3>
-        <div class="form-grid">
-          <label>Tipo
-            <select id="if-kind">
-              <option value="email">Email (IMAP/SMTP)</option>
-              <option value="telegram">Telegram (bot)</option>
-              <option value="whatsapp">WhatsApp Business (Cloud API)</option>
-            </select>
-          </label>
-          <label>Nombre <input id="if-name" maxlength="100" required placeholder="Buzón de ventas"></label>
-          <label>Responsable de las conversaciones <select id="if-owner"></select></label>
-        </div>
-        <p class="muted small" id="if-help"></p>
-        <div class="form-grid" id="if-fields"></div>
-        <p class="form-error" id="if-error" role="alert" hidden></p>
-        <div class="dialog-actions">
-          <button type="button" class="ghost" id="if-cancel" hidden>Cancelar edición</button>
-          <button type="submit" class="primary" id="if-submit">Conectar</button>
-        </div>
-      </form>
     </section>
     <section id="admin-settings" class="admin-pane" hidden>
       <form id="settings-form" class="form">
@@ -502,6 +476,52 @@
         <button class="ghost small-btn danger" type="button" id="merge-btn">Unir</button>
       </div>
     </section>
+  </dialog>
+
+  <!-- Cuentas conectadas: correo, Telegram y WhatsApp de cada persona -->
+  <dialog id="accounts-dialog" class="dialog wide">
+    <div class="dialog-head">
+      <h2>Mis cuentas</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <p class="muted small">Conecta tu correo, tu bot de Telegram o tu número de WhatsApp Business. Los mensajes entran solos
+      como conversaciones tuyas y puedes responder desde la app. Las contraseñas y tokens se guardan cifrados.</p>
+    <div class="segmented accounts-scope" role="group" aria-label="Qué cuentas mostrar" id="accounts-scope" hidden>
+      <button data-accounts-scope="mine" class="active">Mías</button>
+      <button data-accounts-scope="team">Todo el equipo</button>
+    </div>
+    <ul id="integrations-list" class="integrations-list"></ul>
+    <form id="integration-form" class="form integration-form">
+      <h3 id="if-title">Conectar una cuenta</h3>
+      <div class="form-grid">
+        <label>Tipo
+          <select id="if-kind">
+            <option value="email">Correo (Gmail, Outlook, el de tu empresa…)</option>
+            <option value="telegram">Telegram (bot)</option>
+            <option value="whatsapp">WhatsApp Business</option>
+          </select>
+        </label>
+        <label id="if-provider-label">Proveedor
+          <select id="if-provider">
+            <option value="gmail">Gmail / Google Workspace</option>
+            <option value="outlook">Outlook / Microsoft 365</option>
+            <option value="yahoo">Yahoo</option>
+            <option value="icloud">iCloud</option>
+            <option value="other">Otro (servidor de mi empresa)</option>
+          </select>
+        </label>
+        <label>Nombre <input id="if-name" maxlength="100" required placeholder="Mi correo de trabajo"></label>
+        <label id="if-owner-label" hidden>Responsable de las conversaciones <select id="if-owner"></select></label>
+      </div>
+      <p class="muted small" id="if-help"></p>
+      <div class="form-grid" id="if-fields"></div>
+      <p class="form-error" id="if-error" role="alert" hidden></p>
+      <p class="muted small" id="if-result" role="status" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" id="if-cancel" hidden>Cancelar edición</button>
+        <button type="submit" class="primary" id="if-submit">Conectar y probar</button>
+      </div>
+    </form>
   </dialog>
 
   <!-- Paleta de comandos (Ctrl+K) -->

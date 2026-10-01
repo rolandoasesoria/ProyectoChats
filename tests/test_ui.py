@@ -331,17 +331,27 @@ try:
     check("la retención avisa de cuántos mensajes borraría", True)
     b.shot("14b-ajustes")
 
-    # Integraciones: alta de un bot de Telegram desde el formulario
-    b.click('[data-admin-tab="integrations"]')
-    b.wait("document.querySelectorAll('#if-fields input').length > 0")
+    b.js("document.querySelector('#admin-dialog').close()")
+
+    # Mis cuentas: el correo trae los servidores del proveedor y se conecta un bot de Telegram
+    b.click("#user-menu-btn")
+    b.click("#menu-accounts")
+    b.wait("document.querySelector('#accounts-dialog').open && document.querySelectorAll('#if-fields input').length > 0")
+    check("el correo se rellena según el proveedor (Gmail)",
+          b.js("document.querySelector('#if-fields input[name=\"imap_host\"]').value") == "imap.gmail.com")
+    b.js("document.querySelector('#if-provider').value = 'outlook'; document.querySelector('#if-provider').dispatchEvent(new Event('change'))")
+    check("y cambia al elegir otro (Outlook)",
+          b.js("document.querySelector('#if-fields input[name=\"smtp_host\"]').value") == "smtp.office365.com")
     b.js("document.querySelector('#if-kind').value = 'telegram'; document.querySelector('#if-kind').dispatchEvent(new Event('change'))")
     b.fill("#if-name", "Bot de pruebas")
     b.fill('#if-fields input[name="bot_token"]', "123:ABC")
     b.js("document.querySelector('#integration-form').requestSubmit()")
-    b.wait("document.querySelector('#integrations-list').textContent.includes('Bot de pruebas')")
-    check("alta de integración desde la interfaz", "Pendiente de la primera sincronización" in b.js("document.querySelector('#integrations-list').textContent"))
+    b.wait("document.querySelector('#integrations-list').textContent.includes('Bot de pruebas') && !document.querySelector('#if-result').hidden")
+    check("conectar una cuenta propia la prueba y avisa si no conecta",
+          "no conecta" in b.js("document.querySelector('#if-result').textContent")
+          and "No conecta" in b.js("document.querySelector('#integrations-list').textContent"))
     b.shot("17-integraciones")
-    b.js("document.querySelector('#admin-dialog').close()")
+    b.js("document.querySelector('#accounts-dialog').close()")
 
     # Con la integración de Telegram, el borrador de Laura (Telegram) permite enviar
     b.click('#client-list li[data-id="1"]')

@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 18;
+const TOUR_VERSION = 19;
 
 const TOUR_STEPS = [
   {
@@ -59,12 +59,12 @@ const TOUR_STEPS = [
   {
     target: "#user-menu-btn",
     title: "Tu cuenta",
-    text: "Contraseña, este tutorial y cerrar sesión. El botón de al lado cambia entre tema claro y oscuro.",
+    text: "En «Mis cuentas» conectas tu correo, tu bot de Telegram o tu WhatsApp Business para que tus mensajes entren solos. También: respuestas guardadas, contraseña, este tutorial y cerrar sesión. El botón de al lado cambia el tema.",
   },
   {
     target: "#user-menu-btn",
     title: "Administración",
-    text: "En este menú gestionas cuentas, conectas canales en «Integraciones» y consultas el «Registro de accesos». En «Ajustes» fijas el plazo de respuesta. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
+    text: "En este menú gestionas los usuarios y consultas el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
     when: () => currentUser?.role === "admin",
   },
   {

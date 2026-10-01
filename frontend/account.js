@@ -94,7 +94,6 @@ function showAdminTab(tab) {
     $(`#admin-${b.dataset.adminTab}`).hidden = b.dataset.adminTab !== tab;
   });
   if (tab === "audit") loadAudit();
-  if (tab === "integrations") loadIntegrations();
   if (tab === "settings") loadSettingsForm();
 }
 

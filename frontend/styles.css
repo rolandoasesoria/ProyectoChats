@@ -505,6 +505,10 @@ dialog:not(.is-admin) .admin-only { display: none !important; }
 .webhook-info { display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; align-items: center; }
 .webhook-info code { font-size: 12px; background: var(--bg); padding: 3px 6px; border-radius: 4px; word-break: break-all; user-select: all; }
 .integration-form { border-top: 1px solid var(--border); padding-top: 12px; }
+.accounts-scope { margin-bottom: 10px; }
+.if-advanced { grid-column: 1 / -1; font-size: 14px; }
+.if-advanced summary { cursor: pointer; color: var(--accent); margin-bottom: 8px; }
+.error-text { color: var(--danger-text); }
 
 /* Buscador de mensajes */
 .msg-search { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
