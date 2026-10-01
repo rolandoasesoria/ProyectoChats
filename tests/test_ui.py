@@ -258,6 +258,7 @@ try:
               const bars = document.querySelectorAll('#dash-weekly .viz-hit'); const target = bars[bars.length - 3];
               const r = target.getBoundingClientRect();
               target.dispatchEvent(new PointerEvent('pointermove', {clientX: r.left + r.width / 2, clientY: r.top + 60, bubbles: true})); })()""")
+    check("panel: % respondido en plazo", "Respondidas en plazo (24 h)" in b.js("document.querySelector('#dash-tiles').textContent"))
     check("panel: aviso al pasar el ratón", b.js("!document.querySelector('#viz-tooltip').hidden"))
     b.shot("15-panel-oscuro")
     b.click("#theme-toggle")
@@ -272,6 +273,14 @@ try:
     b.wait("document.querySelectorAll('#users-tbody tr').length === 3")
     b.shot("14-admin")
     check("administración de usuarios", True)
+
+    # Ajustes: plazo de respuesta
+    b.click('[data-admin-tab="settings"]')
+    b.wait("document.querySelector('#set-sla').value === '24'")
+    b.fill("#set-sla", "2")
+    b.js("document.querySelector('#settings-form').requestSubmit()")
+    b.wait("!document.querySelector('#set-saved').hidden")
+    check("cambiar el plazo de respuesta", b.js("slaHours") == 2)
 
     # Integraciones: alta de un bot de Telegram desde el formulario
     b.click('[data-admin-tab="integrations"]')
