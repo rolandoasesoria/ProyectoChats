@@ -69,7 +69,7 @@ const TOUR_STEPS = [
   {
     target: "#user-menu-btn",
     title: "Administración",
-    text: "En este menú gestionas cuentas, conectas canales en «Integraciones» y consultas el «Registro de accesos». En «Ajustes» fijas el plazo de respuesta. Desde ✎ en cada cliente puedes exportar o borrar sus datos.",
+    text: "En este menú gestionas cuentas, conectas canales en «Integraciones» y consultas el «Registro de accesos». En «Ajustes» fijas el plazo de respuesta. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
     when: () => currentUser?.role === "admin",
   },
   {

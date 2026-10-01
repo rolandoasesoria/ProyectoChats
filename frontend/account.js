@@ -103,7 +103,36 @@ function showAdminTab(tab) {
 async function loadSettingsForm() {
   $("#set-error").hidden = true;
   $("#set-saved").hidden = true;
-  $("#set-sla").value = (await api("/api/settings")).sla_hours;
+  const s = await api("/api/settings");
+  $("#set-sla").value = s.sla_hours;
+  $("#set-retention").value = s.retention_months;
+  $("#retention-apply").hidden = !s.retention_months;
+  updateRetentionPreview();
+}
+
+// Cuántos mensajes se borrarían con el plazo escrito (antes de guardarlo).
+async function updateRetentionPreview() {
+  const months = Number($("#set-retention").value);
+  const out = $("#retention-preview");
+  out.textContent = "";
+  if (!months) return;
+  try {
+    const p = await api(`/api/admin/retention?months=${months}`);
+    if (Number($("#set-retention").value) === months) {
+      out.textContent = p.messages ? `Con ${months} meses se borrarían ${p.messages} mensajes.` : `Con ${months} meses no se borraría ningún mensaje.`;
+    }
+  } catch { /* valor fuera de rango: lo avisará al guardar */ }
+}
+
+async function applyRetention() {
+  if (!confirm("¿Borrar ya los mensajes más antiguos que el plazo guardado? No se puede deshacer.")) return;
+  try {
+    const r = await api("/api/admin/retention/apply", { method: "POST" });
+    alert(r.messages ? `Borrados ${r.messages} mensajes y ${r.conversations} conversaciones vacías.` : "No había mensajes tan antiguos.");
+    updateRetentionPreview();
+  } catch (err) {
+    alert(err.message);
+  }
 }
 
 async function submitSettings(e) {
@@ -111,9 +140,11 @@ async function submitSettings(e) {
   $("#set-error").hidden = true;
   try {
     const res = await api("/api/admin/settings", {
-      method: "PATCH", body: JSON.stringify({ sla_hours: Number($("#set-sla").value) }),
+      method: "PATCH",
+      body: JSON.stringify({ sla_hours: Number($("#set-sla").value), retention_months: Number($("#set-retention").value) }),
     });
     slaHours = res.sla_hours;
+    $("#retention-apply").hidden = !res.retention_months;
     $("#set-saved").hidden = false;
     refreshInboxCount();
   } catch (err) {
@@ -248,6 +279,8 @@ function bindAccountEvents() {
     b.addEventListener("click", () => showAdminTab(b.dataset.adminTab)));
   ["#audit-user", "#audit-action"].forEach((sel) => $(sel).addEventListener("change", loadAudit));
   $("#settings-form").addEventListener("submit", submitSettings);
+  $("#set-retention").addEventListener("input", updateRetentionPreview);
+  $("#retention-apply").addEventListener("click", applyRetention);
   $("#password-form").addEventListener("submit", submitPassword);
   $("#user-form").addEventListener("submit", submitUserForm);
   $("#uf-cancel").addEventListener("click", () => { $("#uf-role").disabled = false; resetUserForm(); });

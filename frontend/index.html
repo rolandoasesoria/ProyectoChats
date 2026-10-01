@@ -388,9 +388,15 @@
         </label>
         <p class="muted small">Tiempo máximo para contestar a un cliente. En «Sin responder» se avisa cuando queda poco
           («vence en…») y se marca en rojo al pasarse; el panel muestra qué porcentaje se responde a tiempo.</p>
+        <label>Conservar los mensajes (meses)
+          <input id="set-retention" type="number" min="0" max="120" required>
+        </label>
+        <p class="muted small">Pasado ese plazo, los mensajes (y sus adjuntos) se borran solos cada día. 0 = conservarlos
+          siempre. <span id="retention-preview"></span></p>
         <p class="form-error" id="set-error" role="alert" hidden></p>
         <div class="dialog-actions">
           <span class="muted small" id="set-saved" hidden>Guardado.</span>
+          <button type="button" class="ghost danger" id="retention-apply" hidden>Borrar ya los mensajes antiguos</button>
           <button type="submit" class="primary">Guardar ajustes</button>
         </div>
       </form>
@@ -526,6 +532,11 @@
         <button class="ghost small-btn" type="button" id="export-client-btn">⤓ Descargar todos sus datos</button>
         <button class="ghost small-btn danger" type="button" id="delete-client-btn">Borrar cliente y todos sus datos</button>
       </div>
+      <div class="draft-actions">
+        <button class="ghost small-btn" type="button" id="sensitive-btn"
+                title="Buscar IBAN, DNI/NIE y números de tarjeta en sus mensajes">Buscar datos sensibles</button>
+      </div>
+      <ul id="sensitive-list" class="sensitive-list" hidden></ul>
     </section>
 
     <section class="edit-only client-section danger-zone">

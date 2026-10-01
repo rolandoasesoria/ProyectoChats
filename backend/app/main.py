@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import (agent, attachments, audit, auth, chats, clients, followups, importers, insights, integrations, metrics,
-               notes, replies, search, settings, smartsearch)
+               notes, privacy, replies, search, settings, smartsearch)
 from .db import get_conn, init_db
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -40,6 +40,7 @@ init_db()
 # Sincronización periódica de los buzones y bots conectados (DISABLE_SYNC=true la desactiva, p. ej. en pruebas).
 if os.getenv("DISABLE_SYNC", "false").lower() != "true":
     integrations.start_scheduler()
+    privacy.start_retention_job()  # borra los mensajes antiguos si hay un plazo de retención fijado
 
 SECURITY_HEADERS = {
     # Solo se ejecutan scripts y estilos servidos por la propia app; la página no se puede incrustar en otra web.
@@ -198,6 +199,7 @@ def get_settings(_: CurrentUser):
 
 class SettingsUpdate(BaseModel):
     sla_hours: int | None = Field(None, ge=1, le=168)
+    retention_months: int | None = Field(None, ge=0, le=120)
 
 
 @app.patch("/api/admin/settings")
@@ -332,6 +334,47 @@ def export_client(client_id: int, admin: AdminUser):
         raise HTTPException(404, "Cliente no encontrado")
     audit.log(admin["id"], "client_export", client_id)
     return JSONResponse(data, headers={"Content-Disposition": f'attachment; filename="cliente-{client_id}.json"'})
+
+
+@app.get("/api/clients/{client_id}/sensitive")
+def sensitive_messages(client_id: int, _: AdminUser):
+    """Mensajes del cliente con IBAN, DNI/NIE o números de tarjeta, para ocultarlos."""
+    _client_or_404(client_id)
+    return privacy.sensitive_messages(client_id)
+
+
+class RedactRequest(BaseModel):
+    text: str | None = Field(None, min_length=3, max_length=200)  # sin texto: todos los datos sensibles del mensaje
+
+
+@app.post("/api/messages/{message_id}/redact")
+def redact_message(message_id: int, req: RedactRequest, admin: AdminUser):
+    """Oculta datos sensibles de un mensaje. No se puede deshacer: el texto original no se guarda."""
+    result = privacy.redact_message(message_id, req.text)
+    if result is None:
+        raise HTTPException(404, "Mensaje no encontrado")
+    if result["hidden"]:
+        audit.log(admin["id"], "message_redact", result["client_id"],
+                  detail=f"mensaje {message_id}: {', '.join(result['hidden'])}")
+    return {"body": result["body"], "hidden": result["hidden"]}
+
+
+@app.get("/api/admin/retention")
+def retention_preview(_: AdminUser, months: int):
+    """Cuántos mensajes se borrarían con ese plazo (sin borrar nada)."""
+    if not 1 <= months <= 120:
+        raise HTTPException(422, "Plazo no válido: de 1 a 120 meses.")
+    return privacy.retention_preview(months)
+
+
+@app.post("/api/admin/retention/apply")
+def retention_apply(admin: AdminUser):
+    """Aplica ya el plazo de retención guardado en Ajustes."""
+    result = privacy.apply_retention()
+    if result["messages"]:
+        audit.log(admin["id"], "retention_apply",
+                  detail=f"{result['messages']} mensajes de más de {result['months']} meses")
+    return result
 
 
 @app.delete("/api/clients/{client_id}")

@@ -111,6 +111,7 @@ async function openClientDialog(mode) {
     $("#cf-assignee").innerHTML = assigneeOptions(c.assignee_user_id);
     $("#cf-tags").value = c.tags.join(", ");
     renderIdentities(c.identities);
+    $("#sensitive-list").hidden = true;
     const all = await api("/api/clients");
     $("#merge-target").innerHTML = `<option value="">Elige el cliente con el que unir…</option>` +
       all.filter((x) => x.id !== c.id).map((x) => `<option value="${x.id}">${escapeHtml(x.name)}${x.company ? ` (${escapeHtml(x.company)})` : ""}</option>`).join("");
@@ -120,6 +121,31 @@ async function openClientDialog(mode) {
 }
 
 /* ---------- Protección de datos (administradores) ---------- */
+
+async function loadSensitive() {
+  const list = $("#sensitive-list");
+  const items = await api(`/api/clients/${state.clientId}/sensitive`);
+  list.innerHTML = items.length ? items.map((m) => `
+    <li data-message="${m.id}">
+      <div class="muted small">${badge(m.channel)} ${escapeHtml(m.sender)} · ${formatDate(m.sent_at)} ·
+        ${m.found.map((f) => `<strong>${escapeHtml(f.kind)}</strong>`).join(", ")}</div>
+      <div class="sensitive-body">${escapeHtml(m.body)}</div>
+      <button class="ghost small-btn" type="button" data-redact>Ocultar</button>
+    </li>`).join("") : `<li class="muted small">No se han encontrado IBAN, DNI/NIE ni números de tarjeta.</li>`;
+  list.hidden = false;
+}
+
+async function onSensitiveClick(e) {
+  const li = e.target.closest("li[data-message]");
+  if (!li || !e.target.closest("[data-redact]")) return;
+  if (!confirm("Se sustituirán por «[… oculto]». El dato original no se podrá recuperar. ¿Continuar?")) return;
+  try {
+    await api(`/api/messages/${li.dataset.message}/redact`, { method: "POST", body: JSON.stringify({}) });
+    await Promise.all([loadSensitive(), loadTimeline()]);
+  } catch (err) {
+    alert(err.message);
+  }
+}
 
 async function exportClient() {
   const c = state.clientData;
@@ -236,6 +262,8 @@ function bindClientEvents() {
   $("#duplicates").addEventListener("click", onDuplicatesClick);
   $("#export-client-btn").addEventListener("click", exportClient);
   $("#delete-client-btn").addEventListener("click", deleteClient);
+  $("#sensitive-btn").addEventListener("click", () => loadSensitive().catch((err) => alert(err.message)));
+  $("#sensitive-list").addEventListener("click", onSensitiveClick);
   $("#merge-btn").addEventListener("click", () => {
     const target = Number($("#merge-target").value);
     if (!target) return;

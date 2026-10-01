@@ -205,7 +205,7 @@ revisión; si algo falla se muestra el error. Desactivar una integración la pau
 - Enviar desde la app: en el borrador de respuesta, si tienes una integración activa del canal de esa conversación, \
 aparece "Enviar por …" (pide confirmación); el mensaje enviado queda en la conversación. En email se responde \
 en el mismo hilo. "o escribirla yo" abre el cuadro para escribir sin IA. Si no hay integración, se copia con "Copiar".
-- Protección de datos (solo administradores), en ✎ Editar cliente: "Descargar todos sus datos" genera un archivo \
+- Protección de datos (solo administradores), en ✎ Editar cliente: "Buscar datos sensibles" lista los mensajes del cliente con IBAN, DNI/NIE o números de tarjeta; "Ocultar" los sustituye por "[IBAN oculto]" (no se puede deshacer y queda en el registro de accesos; el CIF de empresa no se toca). En Administración > Ajustes, "Conservar los mensajes (meses)" borra cada día los mensajes más antiguos que ese plazo (0 = conservarlos siempre); al escribirlo dice cuántos se borrarían, y "Borrar ya los mensajes antiguos" lo aplica al momento. "Descargar todos sus datos" genera un archivo \
 JSON con todo lo guardado del cliente (derecho de acceso); "Borrar cliente y todos sus datos" lo elimina por completo \
 (derecho de supresión), pidiendo escribir su nombre para confirmar. No se puede deshacer y queda en el registro.
 - Columna izquierda: lista de clientes con los canales por los que se ha hablado con cada uno. \

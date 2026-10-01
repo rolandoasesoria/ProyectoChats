@@ -15,6 +15,8 @@ ACTIONS = {
     "integration_change": "Cambió una integración de canal",
     "message_sent": "Envió un mensaje al cliente desde la app",
     "settings_change": "Cambió los ajustes del equipo",
+    "message_redact": "Ocultó datos sensibles de un mensaje",
+    "retention_apply": "Borró mensajes antiguos (retención)",
 }
 THROTTLE_MINUTES = 10  # las consultas repetidas en poco tiempo cuentan como un solo acceso
 

@@ -4,6 +4,7 @@ from .db import get_conn
 # clave: (valor por defecto, mínimo, máximo)
 DEFAULTS = {
     "sla_hours": (24, 1, 168),  # plazo para responder a un cliente; a partir de aquí cuenta como «fuera de plazo»
+    "retention_months": (0, 0, 120),  # borrar los mensajes de más de N meses (0 = conservarlos siempre)
 }
 
 
