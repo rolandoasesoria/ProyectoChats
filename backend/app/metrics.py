@@ -2,7 +2,7 @@
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
-from . import search
+from . import search, settings
 from .db import get_conn, rows
 
 CHANNELS = ("email", "telegram", "whatsapp")  # orden fijo de apilado (y de color) en los gráficos
@@ -38,6 +38,11 @@ def response_times(since: str, conn) -> list[dict]:
     return result
 
 
+def _within(values: list[float], limit: float) -> int | None:
+    """Porcentaje de respuestas dentro del plazo (None si no hay respuestas)."""
+    return round(100 * sum(1 for v in values if v <= limit) / len(values)) if values else None
+
+
 def _median(values: list[float]) -> float | None:
     if not values:
         return None
@@ -66,6 +71,7 @@ def dashboard(days: int, include_people: bool) -> dict:
         responsible = {r["assignee_user_id"]: r["n"] for r in conn.execute(
             "SELECT assignee_user_id, count(*) AS n FROM clients WHERE assignee_user_id IS NOT NULL GROUP BY assignee_user_id")}
         times = response_times(since, conn)
+    sla = settings.get("sla_hours")
 
     # Mensajes recibidos por semana y canal (semanas completas del periodo, aunque estén vacías).
     weeks: dict[str, dict[str, int]] = {}
@@ -86,6 +92,8 @@ def dashboard(days: int, include_people: bool) -> dict:
             "sent": sent,
             "active_clients": active_clients,
             "median_response_hours": _median([t["hours"] for t in times]),
+            "within_sla_pct": _within([t["hours"] for t in times], sla),
+            "sla_hours": sla,
             "open_tasks": len(tasks),
             "overdue_tasks": sum(1 for t in tasks if t["due_date"] and t["due_date"] < today_s),
         },
@@ -103,6 +111,7 @@ def dashboard(days: int, include_people: bool) -> dict:
         result["people"] = [{
             "name": u["name"],
             "median_response_hours": _median(per_user_times[u["id"]]),
+            "within_sla_pct": _within(per_user_times[u["id"]], sla),
             "responses": len(per_user_times[u["id"]]),
             "waiting": waiting[u["name"]],
             "open_tasks": sum(1 for t in tasks if t["assignee_user_id"] == u["id"]),
