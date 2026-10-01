@@ -85,6 +85,8 @@ async function selectClient(id) {
   showThread(id);
   closeDraftPanel();
   closeResults();
+  $("#presence-bar").hidden = true;
+  heartbeat();
 
   if (id === null) {
     $("#chat-context").textContent = "Consulta general · puede buscar en todos los clientes";
@@ -391,6 +393,7 @@ function bindEvents() {
   bindDraftEvents();
   bindReplyEvents();
   bindPaletteEvents();
+  bindPresenceEvents();
   bindNotesEvents();
   bindClientEvents();
   bindDashboardEvents();
