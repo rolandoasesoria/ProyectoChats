@@ -15,10 +15,6 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ### Añadido
 - Datos de prueba abundantes (`python -m app.seed --reset`): ~85 clientes, 6 personas, ~1.500 mensajes de los
   últimos seis meses, presupuestos en PDF, tareas, notas con menciones y clientes duplicados para practicar.
-
-### Corregido
-- La lista de clientes mostraba como mucho 50.
-- En la pestaña «Tareas» de la columna izquierda las casillas se estiraban y el texto quedaba fuera de la vista.
 - Guía de control de versiones: un cambio lógico por commit, Conventional Commits en español, ramas por
   funcionalidad y versionado semántico.
 - Hooks de git (`.githooks/`): formato del mensaje, bloqueo de secretos y datos, aviso y límite de tamaño.
@@ -26,6 +22,16 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Plantilla de mensaje de commit (`.gitmessage`) y fines de línea uniformes (`.gitattributes`).
 - Pruebas dentro del repositorio (`tests/`), con `tests/run_tests.ps1` y dependencias en
   `backend/requirements-dev.txt`.
+- Bandeja «Sin responder»: «Mías · Todo el equipo» con el número de cada lado, y cada conversación
+  dice quién la lleva.
+
+### Corregido
+- La lista de clientes mostraba como mucho 50.
+- En la pestaña «Tareas» de la columna izquierda las casillas se estiraban y el texto quedaba fuera de la vista.
+- En «Sin responder», al elegir «Equipo» el selector desaparecía.
+- Pestaña «Mensajes»: el selector «Mías/Equipo», confuso junto al de la bandeja, se sustituye por el historial
+  completo (con «la lleva…» en lo de los compañeros) y la casilla «Solo mis conversaciones». Ver el historial
+  completo solo se anota en el registro de accesos si contiene conversaciones de otras personas.
 
 ## [0.2.0] - 2026-09-29
 
