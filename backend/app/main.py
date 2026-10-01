@@ -40,7 +40,7 @@ init_db()
 # Sincronización periódica de los buzones y bots conectados (DISABLE_SYNC=true la desactiva, p. ej. en pruebas).
 if os.getenv("DISABLE_SYNC", "false").lower() != "true":
     integrations.start_scheduler()
-    privacy.start_retention_job()  # borra los mensajes antiguos si hay un plazo de retención fijado
+    privacy.start_daily_jobs()  # retención de mensajes y clientes inactivos, una vez al día
 
 SECURITY_HEADERS = {
     # Solo se ejecutan scripts y estilos servidos por la propia app; la página no se puede incrustar en otra web.
@@ -200,6 +200,7 @@ def get_settings(_: CurrentUser):
 class SettingsUpdate(BaseModel):
     sla_hours: int | None = Field(None, ge=1, le=168)
     retention_months: int | None = Field(None, ge=0, le=120)
+    inactive_days: int | None = Field(None, ge=0, le=730)
 
 
 @app.patch("/api/admin/settings")
@@ -456,7 +457,7 @@ def update_client(client_id: int, req: ClientUpdate, user: CurrentUser):
     fields = {k: getattr(req, k) for k in req.model_fields_set}
     if "company" in fields:
         fields["company"] = (fields["company"] or "").strip() or None
-    clients.update_client(client_id, fields)
+    clients.update_client(client_id, fields, user["id"])
     new_assignee = fields.get("assignee_user_id")
     if new_assignee and new_assignee != before["assignee_user_id"]:
         with get_conn() as conn:
@@ -830,6 +831,8 @@ def import_file(req: ImportFileCommit, user: CurrentUser):
         files += result["attachments"]
     with get_conn() as conn:
         imported_at = conn.execute("SELECT localtimestamp(0)").fetchone()[0]  # mismo formato que analyzed_at
+    if imported:
+        clients.reactivate(client_id, settings.get("inactive_days"))
     analysis_started = bool(imported) and agent.credentials_configured()
     if analysis_started:
         insights.analyze_in_background(client_id)  # ficha y tareas al día sin hacer esperar

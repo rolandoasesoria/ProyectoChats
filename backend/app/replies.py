@@ -130,7 +130,7 @@ def use(reply_id: int, client_id: int, conversation_id: int | None, user: dict) 
         tags = [r["tag"] for r in conn.execute("SELECT tag FROM client_tags WHERE client_id = ?", (client_id,))]
     applied = []
     if reply["set_status"]:
-        clients.update_client(client_id, {"status": reply["set_status"]})
+        clients.update_client(client_id, {"status": reply["set_status"]}, user["id"])
         applied.append(f"estado: {STATUSES[reply['set_status']]}")
     if reply["add_tag"] and reply["add_tag"].lower() not in {t.lower() for t in tags}:
         clients.set_tags(client_id, [*tags, reply["add_tag"]])
