@@ -125,12 +125,46 @@ async function loadTimeline() {
       : "Sin mensajes."}</li>`;
     return;
   }
-  list.innerHTML = messages.map((m) => `
-    <li class="${escapeHtml(m.channel)} ${m.direction}" data-id="${m.id}">
-      <div class="meta">${badge(m.channel)} ${escapeHtml(m.sender)} · ${formatDate(m.sent_at)}${m.owner_id !== currentUser.id ? ` · <span class="owner-tag" title="Conversación que lleva ${escapeHtml(m.owner)}">la lleva ${escapeHtml(m.owner)}</span>` : ""}</div>
-      ${escapeHtml(m.body)}${attachmentChips(m.attachments)}
-    </li>`).join("");
+  list.innerHTML = timelineHtml(messages);
   list.scrollTop = list.scrollHeight;
+}
+
+// Conversación al estilo de un chat: el cliente a la izquierda, el equipo a la derecha, un separador por día y
+// los mensajes seguidos de la misma persona agrupados (sin repetir el nombre).
+const GROUP_MINUTES = 10;
+
+function dayLabel(date) {
+  const today = new Date();
+  const yesterday = new Date(today);
+  yesterday.setDate(today.getDate() - 1);
+  if (date.toDateString() === today.toDateString()) return "Hoy";
+  if (date.toDateString() === yesterday.toDateString()) return "Ayer";
+  return date.toLocaleDateString("es-ES", {
+    weekday: "long", day: "numeric", month: "long",
+    ...(date.getFullYear() !== today.getFullYear() ? { year: "numeric" } : {}),
+  });
+}
+
+function timelineHtml(messages) {
+  let prev = null;
+  return messages.map((m) => {
+    const at = new Date(m.sent_at);
+    const newDay = !prev || new Date(prev.sent_at).toDateString() !== at.toDateString();
+    const grouped = !newDay && prev.sender === m.sender && prev.direction === m.direction && prev.channel === m.channel
+      && (at - new Date(prev.sent_at)) / 60000 <= GROUP_MINUTES;
+    prev = m;
+    const owner = m.owner_id !== currentUser.id
+      ? ` · <span class="owner-tag" title="Conversación que lleva ${escapeHtml(m.owner)}">la lleva ${escapeHtml(m.owner)}</span>` : "";
+    const time = at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    return `${newDay ? `<li class="day-sep"><span>${escapeHtml(dayLabel(at))}</span></li>` : ""}
+    <li class="msg-row ${m.direction} ${escapeHtml(m.channel)}${grouped ? " grouped" : ""}" data-id="${m.id}">
+      <div class="bubble" title="${escapeHtml(formatDate(m.sent_at))}">
+        ${grouped ? "" : `<div class="bubble-sender">${escapeHtml(m.sender)}</div>`}
+        <div class="bubble-text">${escapeHtml(m.body)}</div>${attachmentChips(m.attachments)}
+        <div class="bubble-meta"><span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}</div>
+      </div>
+    </li>`;
+  }).join("");
 }
 
 /* ---------- Asistente: un hilo por cliente, guardado en el servidor ---------- */

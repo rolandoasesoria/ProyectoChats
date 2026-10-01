@@ -190,59 +190,6 @@
                     title="La IA entiende la pregunta aunque el mensaje use otras palabras (p. ej. «¿cuándo le viene bien que llevemos el pedido?»)">✨ Por significado</button>
           </form>
           <div id="msg-results" class="msg-results" hidden></div>
-          <button class="ghost small-btn draft-open" id="draft-open">Redactar respuesta</button>
-          <p class="muted small" id="draft-sent-note" hidden></p>
-          <div class="draft-panel" id="draft-panel" hidden>
-            <label>Responder en
-              <select id="draft-conversation"></select>
-            </label>
-            <input id="draft-instructions" maxlength="1000"
-                   placeholder="Indicaciones (opcional): más formal, ofrece un 5 % de descuento…">
-            <div class="draft-actions">
-              <button class="primary small-btn" id="draft-generate">✨ Generar borrador</button>
-              <button class="link" id="draft-write" title="Escribir la respuesta sin IA">o escribirla yo</button>
-              <span class="reply-picker-wrap">
-                <button class="link" id="reply-open" title="Insertar una respuesta guardada (también escribiendo / en el texto)">Respuestas guardadas</button>
-                <div class="menu reply-picker" id="reply-picker" hidden>
-                  <input id="reply-filter" type="search" placeholder="Buscar respuesta…" autocomplete="off">
-                  <ul id="reply-options" class="reply-options" role="listbox"></ul>
-                  <button class="link small" id="reply-manage">Gestionar respuestas guardadas…</button>
-                </div>
-              </span>
-              <span class="spacer"></span>
-              <button class="link" id="draft-close">Cerrar</button>
-            </div>
-            <div class="mention-wrap">
-              <textarea id="draft-text" rows="8" hidden placeholder="Escribe / para insertar una respuesta guardada"></textarea>
-              <ul id="reply-suggest" class="mention-list reply-options" role="listbox" hidden></ul>
-            </div>
-            <p class="muted small" id="draft-applied" hidden></p>
-            <div class="draft-actions" id="draft-result-actions" hidden>
-              <button class="primary small-btn" id="draft-send" hidden>Enviar</button>
-              <button class="ghost small-btn" id="draft-copy">Copiar</button>
-              <select id="draft-rewrite" class="small-select" title="Retocar el texto con IA">
-                <option value="">✨ Retocar…</option>
-                <option value="formal">Más formal</option>
-                <option value="friendly">Más cercano</option>
-                <option value="shorter">Más corto</option>
-                <option value="fix">Corregir ortografía</option>
-                <option value="translate:inglés">Traducir al inglés</option>
-                <option value="translate:francés">Traducir al francés</option>
-                <option value="translate:">Traducir a otro idioma…</option>
-              </select>
-              <button class="link small" id="draft-undo" hidden>Deshacer</button>
-              <span class="muted small">Revísalo antes de enviarlo.</span>
-              <label class="check followup-check">Al enviarla o copiarla, avísame si no contesta en
-                <select id="draft-followup" class="small-select">
-                  <option value="">— no avisar —</option>
-                  <option value="1">1 día</option>
-                  <option value="3">3 días</option>
-                  <option value="7">1 semana</option>
-                  <option value="14">2 semanas</option>
-                </select>
-              </label>
-            </div>
-          </div>
           <div class="timeline-controls">
             <select id="channel-filter"><option value="">Todos los canales</option></select>
             <label class="check" title="Ocultar las conversaciones que llevan tus compañeros con este cliente">
@@ -250,6 +197,61 @@
             </label>
           </div>
           <ol id="timeline" class="timeline"></ol>
+          <div class="composer">
+            <button class="ghost small-btn draft-open" id="draft-open">Redactar respuesta</button>
+            <p class="muted small" id="draft-sent-note" hidden></p>
+            <div class="draft-panel" id="draft-panel" hidden>
+              <label>Responder en
+                <select id="draft-conversation"></select>
+              </label>
+              <input id="draft-instructions" maxlength="1000"
+                     placeholder="Indicaciones (opcional): más formal, ofrece un 5 % de descuento…">
+              <div class="draft-actions">
+                <button class="primary small-btn" id="draft-generate">✨ Generar borrador</button>
+                <button class="link" id="draft-write" title="Escribir la respuesta sin IA">o escribirla yo</button>
+                <span class="reply-picker-wrap">
+                  <button class="link" id="reply-open" title="Insertar una respuesta guardada (también escribiendo / en el texto)">Respuestas guardadas</button>
+                  <div class="menu reply-picker" id="reply-picker" hidden>
+                    <input id="reply-filter" type="search" placeholder="Buscar respuesta…" autocomplete="off">
+                    <ul id="reply-options" class="reply-options" role="listbox"></ul>
+                    <button class="link small" id="reply-manage">Gestionar respuestas guardadas…</button>
+                  </div>
+                </span>
+                <span class="spacer"></span>
+                <button class="link" id="draft-close">Cerrar</button>
+              </div>
+              <div class="mention-wrap">
+                <textarea id="draft-text" rows="4" hidden placeholder="Escribe / para insertar una respuesta guardada"></textarea>
+                <ul id="reply-suggest" class="mention-list reply-options" role="listbox" hidden></ul>
+              </div>
+              <p class="muted small" id="draft-applied" hidden></p>
+              <div class="draft-actions" id="draft-result-actions" hidden>
+                <button class="primary small-btn" id="draft-send" hidden>Enviar</button>
+                <button class="ghost small-btn" id="draft-copy">Copiar</button>
+                <select id="draft-rewrite" class="small-select" title="Retocar el texto con IA">
+                  <option value="">✨ Retocar…</option>
+                  <option value="formal">Más formal</option>
+                  <option value="friendly">Más cercano</option>
+                  <option value="shorter">Más corto</option>
+                  <option value="fix">Corregir ortografía</option>
+                  <option value="translate:inglés">Traducir al inglés</option>
+                  <option value="translate:francés">Traducir al francés</option>
+                  <option value="translate:">Traducir a otro idioma…</option>
+                </select>
+                <button class="link small" id="draft-undo" hidden>Deshacer</button>
+                <span class="muted small">Revísalo antes de enviarlo.</span>
+                <label class="check followup-check">Al enviarla o copiarla, avísame si no contesta en
+                  <select id="draft-followup" class="small-select">
+                    <option value="">— no avisar —</option>
+                    <option value="1">1 día</option>
+                    <option value="3">3 días</option>
+                    <option value="7">1 semana</option>
+                    <option value="14">2 semanas</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          </div>
         </section>
       </div>
     </aside>

@@ -10,6 +10,10 @@
   --on-accent: #ffffff;
   --in-bubble: #f4f4f5;
   --out-bubble: #4f46e5;
+  /* Conversación con el cliente (pestaña Mensajes) */
+  --chat-bg: #eef0f4;
+  --bubble-in: #ffffff;
+  --bubble-out: #e1e5ff;
   /* Canales = paleta categórica validada (orden fijo: email, telegram, whatsapp). Mismo color en
      etiquetas, historial y gráficos: el color sigue al canal. */
   --email: #2a78d6;
@@ -43,6 +47,9 @@
     --on-accent: #0c0d10;
     --in-bubble: #1b1c21;
     --out-bubble: #4f46e5;
+    --chat-bg: #0b0c0f;
+    --bubble-in: #1f2128;
+    --bubble-out: #312f7a;
     --danger-bg: #3b1d1f;
     --danger-text: #fca5a5;
     --warn: #fbbf24;
@@ -68,6 +75,9 @@
   --on-accent: #0c0d10;
   --in-bubble: #1b1c21;
   --out-bubble: #4f46e5;
+  --chat-bg: #0b0c0f;
+  --bubble-in: #1f2128;
+  --bubble-out: #312f7a;
   --danger-bg: #3b1d1f;
   --danger-text: #fca5a5;
   --warn: #fbbf24;
@@ -335,23 +345,26 @@ button.link.small { font-size: 12px; }
 .whats-new-summary { margin-top: 6px; white-space: pre-wrap; line-height: 1.45; }
 
 /* Borrador de respuesta */
-.draft-open { align-self: flex-start; margin-bottom: 10px; }
+/* Caja de respuesta bajo la conversación, como en un chat */
+.composer { flex-shrink: 0; margin-top: 8px; display: flex; flex-direction: column; }
+.draft-open { align-self: stretch; padding: 9px 12px; }
 .draft-panel {
-  display: flex; flex-direction: column; gap: 8px; padding: 10px; margin-bottom: 12px;
+  display: flex; flex-direction: column; gap: 8px; padding: 10px;
   border: 1px solid var(--border); border-radius: 8px; background: var(--sub); font-size: 14px;
 }
 .draft-panel label { display: flex; flex-direction: column; gap: 4px; }
+.draft-panel .small-select { width: auto; padding: 4px 8px; font-size: 13px; }
 .draft-panel select, .draft-panel input, .draft-panel textarea {
   background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 6px 8px; font-size: 14px; width: 100%;
 }
-.draft-panel textarea { resize: vertical; line-height: 1.45; min-height: 140px; }
+.draft-panel textarea { resize: vertical; line-height: 1.45; min-height: 90px; }
 .draft-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .primary.small-btn { padding: 5px 12px; }
 .small-select { padding: 4px 8px; font-size: 13px; }
 
 /* Respuestas guardadas: selector en el borrador y gestión */
 .reply-picker-wrap { position: relative; }
-.reply-picker { left: 0; right: auto; width: 300px; max-width: calc(100vw - 32px); gap: 4px; }
+.reply-picker { left: 0; right: auto; top: auto; bottom: calc(100% + 6px); width: 300px; max-width: calc(100vw - 32px); gap: 4px; }
 .reply-picker input { width: 100%; }
 .reply-options { list-style: none; margin: 0; padding: 0; max-height: 240px; overflow-y: auto; }
 .reply-option { display: flex; flex-direction: column; gap: 2px; padding: 6px 8px; border-radius: 6px; cursor: pointer; font-size: 13px; }
@@ -579,7 +592,7 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 @media (max-width: 760px) { .viz-row { grid-template-columns: 1fr; } }
 
 /* Mensaje resaltado al venir desde un dato o una tarea */
-.timeline li.flash { outline: 2px solid var(--accent); animation: flash 2.5s ease; }
+.timeline li.flash .bubble { outline: 2px solid var(--accent); animation: flash 2.5s ease; }
 @keyframes flash { 0%, 60% { background: var(--accent-soft); } }
 
 /* Importación */
@@ -713,13 +726,39 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 .segmented button:hover { color: var(--text); }
 .segmented button.active { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px var(--shadow); }
 
-.timeline { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }
-.timeline li { font-size: 13px; padding: 7px 10px; border-radius: 6px; background: var(--in-bubble); border-left: 2px solid var(--other); }
-.timeline li.email { border-left-color: var(--email); }
-.timeline li.whatsapp { border-left-color: var(--whatsapp); }
-.timeline li.telegram { border-left-color: var(--telegram); }
-.timeline li.out { background: var(--accent-soft); }
-.timeline .meta { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+/* Conversación tipo chat: cliente a la izquierda (burbuja clara), equipo a la derecha (burbuja de color) */
+.timeline {
+  list-style: none; margin: 0; padding: 12px 14px; overflow-y: auto; flex: 1; min-height: 160px;
+  display: flex; flex-direction: column; gap: 6px; background: var(--chat-bg); border-radius: 8px;
+}
+.timeline > li.muted { align-self: center; padding: 20px; font-size: 13px; text-align: center; }
+.day-sep { align-self: center; margin: 10px 0 4px; }
+.day-sep span {
+  font-size: 12px; font-weight: 500; padding: 3px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 85%, transparent); color: var(--muted); box-shadow: 0 1px 1px var(--shadow);
+}
+.day-sep span::first-letter { text-transform: uppercase; }
+.msg-row { display: flex; }
+.msg-row.out { justify-content: flex-end; }
+.msg-row.grouped { margin-top: -3px; }
+.bubble {
+  max-width: min(78%, 560px); padding: 6px 10px 5px; border-radius: 12px; font-size: 14px; line-height: 1.4;
+  background: var(--bubble-in); color: var(--text); box-shadow: 0 1px 1px var(--shadow);
+}
+.msg-row.in .bubble { border-bottom-left-radius: 4px; }
+.msg-row.out .bubble { background: var(--bubble-out); border-bottom-right-radius: 4px; }
+.msg-row.in.grouped .bubble { border-top-left-radius: 4px; }
+.msg-row.out.grouped .bubble { border-top-right-radius: 4px; }
+.bubble-sender { font-size: 13px; font-weight: 600; margin-bottom: 1px; color: var(--c, var(--accent)); }
+.msg-row.email { --c: var(--email); }
+.msg-row.whatsapp { --c: var(--whatsapp); }
+.msg-row.telegram { --c: var(--telegram); }
+.msg-row.out .bubble-sender { color: var(--accent); }
+.bubble-text { white-space: pre-wrap; word-break: break-word; }
+.bubble-meta { display: flex; align-items: center; justify-content: flex-end; gap: 4px; margin-top: 2px; font-size: 11px; color: var(--muted); white-space: nowrap; flex-wrap: wrap; }
+.ch-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c, var(--other)); }
+.bubble .att-chips { margin-top: 4px; }
+.msg-row.out .bubble-meta { color: color-mix(in srgb, var(--text) 60%, transparent); }
 
 /* Hilos del asistente: uno por cliente */
 .thread { display: flex; flex-direction: column; gap: 12px; min-height: 100%; }
