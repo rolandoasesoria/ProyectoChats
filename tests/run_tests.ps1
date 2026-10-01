@@ -37,7 +37,7 @@ $unitarias = @("check_js.py", "test_importers.py", "test_insights.py", "test_age
 # Con servidor de pruebas.
 $api = @("test_auth_api.py", "test_profile_api.py", "test_inbox_api.py", "test_import_api.py", "test_notes_api.py",
          "test_clients_api.py", "test_privacy_api.py", "test_dashboard_api.py", "test_documents_api.py",
-         "test_search_api.py", "test_drafts.py", "test_integrations.py", "test_replies_api.py", "test_followups_api.py", "test_settings_api.py", "test_redaction_api.py")
+         "test_search_api.py", "test_drafts.py", "test_integrations.py", "test_replies_api.py", "test_followups_api.py", "test_settings_api.py", "test_redaction_api.py", "test_presence_api.py")
 $ui = @("test_ui.py")
 
 if (-not $Pruebas) { $Pruebas = $unitarias + $api + $(if ($Todas) { $ui } else { @() }) }
