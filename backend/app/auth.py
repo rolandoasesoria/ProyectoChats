@@ -8,10 +8,13 @@ import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Cookie, HTTPException
+from fastapi import Cookie
 
 from .config import config
-from .db import get_conn, rows
+from .db import get_conn
+from .errors import Conflict, Forbidden, InvalidInput, NotAuthenticated, NotFound, TooManyAttempts
+from .repositories import sessions as sessions_repo
+from .repositories import users as users_repo
 
 COOKIE_NAME = "pc_session"
 SESSION_DAYS = 30
@@ -28,7 +31,6 @@ MAX_FAILS_PER_USER = config.security.login_max_fails_per_user
 MAX_FAILS_PER_IP = config.security.login_max_fails_per_ip
 
 _SCRYPT = {"n": 2**14, "r": 8, "p": 1}
-USER_FIELDS = "id, name, email, username, role, active, theme, tour_version"
 
 
 def hash_password(password: str) -> str:
@@ -47,9 +49,9 @@ def verify_password(password: str, stored: str | None) -> bool:
 
 def validate_password(password: str) -> None:
     if len(password) < MIN_PASSWORD_LENGTH:
-        raise HTTPException(400, f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres.")
+        raise InvalidInput(f"La contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres.")
     if len(password) > MAX_PASSWORD_LENGTH:
-        raise HTTPException(400, f"La contraseña no puede tener más de {MAX_PASSWORD_LENGTH} caracteres.")
+        raise InvalidInput(f"La contraseña no puede tener más de {MAX_PASSWORD_LENGTH} caracteres.")
 
 
 # Hash de relleno: si el usuario no existe se verifica contra él igualmente, para que el tiempo
@@ -73,33 +75,27 @@ def _check_lockout(username: str, ip: str) -> None:
     """Lanza 429 si el usuario o la IP han superado el número de intentos fallidos permitidos."""
     since = _minutes_ago(LOCK_MINUTES)
     with get_conn() as conn:
-        for column, value, limit in (("lower(username)", username.lower(), MAX_FAILS_PER_USER),
-                                     ("ip", ip, MAX_FAILS_PER_IP)):
+        for key, value, limit in (("username", username.lower(), MAX_FAILS_PER_USER),
+                                  ("ip", ip, MAX_FAILS_PER_IP)):
             # El intento que activó el bloqueo es el N-ésimo más reciente; el bloqueo dura hasta que caduque.
-            row = conn.execute(
-                f"""SELECT created_at FROM login_failures WHERE {column} = ? AND created_at > ?
-                     ORDER BY created_at DESC LIMIT 1 OFFSET ?""",
-                (value, since, limit - 1),
-            ).fetchone()
-            if row:
-                unlock = datetime.fromisoformat(row["created_at"]).replace(tzinfo=timezone.utc) \
+            failed_at = sessions_repo.nth_recent_failure_at(conn, key, value, since, limit)
+            if failed_at:
+                unlock = datetime.fromisoformat(failed_at).replace(tzinfo=timezone.utc) \
                     + timedelta(minutes=LOCK_MINUTES)
                 minutes = max(1, round((unlock - datetime.now(timezone.utc)).total_seconds() / 60))
-                raise HTTPException(
-                    429, f"Demasiados intentos fallidos. Vuelve a intentarlo en {minutes} min "
-                         "o pide a un administrador que restablezca tu contraseña.")
+                raise TooManyAttempts(f"Demasiados intentos fallidos. Vuelve a intentarlo en {minutes} min "
+                                      "o pide a un administrador que restablezca tu contraseña.")
 
 
 def _record_failure(username: str, ip: str) -> None:
     with get_conn() as conn:
-        conn.execute("DELETE FROM login_failures WHERE created_at < ?", (_minutes_ago(LOCK_MINUTES * 4),))
-        conn.execute("INSERT INTO login_failures (username, ip, created_at) VALUES (?, ?, ?)",
-                     (username, ip, _now()))
+        sessions_repo.purge_failures_before(conn, _minutes_ago(LOCK_MINUTES * 4))
+        sessions_repo.insert_failure(conn, username, ip, _now())
 
 
 def clear_failures(username: str) -> None:
     with get_conn() as conn:
-        conn.execute("DELETE FROM login_failures WHERE lower(username) = lower(?)", (username,))
+        sessions_repo.delete_failures(conn, username)
 
 
 def login(username: str, password: str, ip: str) -> tuple[str, dict]:
@@ -107,23 +103,17 @@ def login(username: str, password: str, ip: str) -> tuple[str, dict]:
     username = username.strip()
     _check_lockout(username, ip)
     with get_conn() as conn:
-        row = conn.execute(
-            f"SELECT {USER_FIELDS}, password_hash FROM users WHERE lower(username) = lower(?)",
-            (username,),
-        ).fetchone()
+        row = users_repo.get_with_password_by_username(conn, username)
     valid = verify_password(password, row["password_hash"] if row else _DUMMY_HASH)
     if not row or not valid or not row["active"]:
         _record_failure(username, ip)
-        raise HTTPException(401, "Usuario o contraseña incorrectos.")
+        raise NotAuthenticated("Usuario o contraseña incorrectos.")
     clear_failures(username)
     token = secrets.token_urlsafe(32)
     expires = (datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)).strftime("%Y-%m-%d %H:%M:%S")
     with get_conn() as conn:
-        conn.execute("DELETE FROM auth_sessions WHERE expires_at < ?", (_now(),))
-        conn.execute(
-            "INSERT INTO auth_sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
-            (_token_hash(token), row["id"], expires),
-        )
+        sessions_repo.purge_expired(conn, _now())
+        sessions_repo.insert(conn, _token_hash(token), row["id"], expires)
     user = dict(row)
     user.pop("password_hash")
     return token, user
@@ -132,41 +122,47 @@ def login(username: str, password: str, ip: str) -> tuple[str, dict]:
 def logout(token: str | None) -> None:
     if token:
         with get_conn() as conn:
-            conn.execute("DELETE FROM auth_sessions WHERE token_hash = ?", (_token_hash(token),))
+            sessions_repo.delete(conn, _token_hash(token))
 
 
 def end_all_sessions(user_id: int, except_token: str | None = None) -> None:
     """Cierra todas las sesiones del usuario (p. ej. al cambiar la contraseña)."""
     keep = _token_hash(except_token) if except_token else ""
     with get_conn() as conn:
-        conn.execute("DELETE FROM auth_sessions WHERE user_id = ? AND token_hash != ?", (user_id, keep))
+        sessions_repo.delete_for_user(conn, user_id, keep)
 
 
 def current_user(pc_session: str | None = Cookie(None)) -> dict:
     """Dependencia de FastAPI: usuario autenticado o 401."""
     if not pc_session:
-        raise HTTPException(401, "Inicia sesión para continuar.")
+        raise NotAuthenticated("Inicia sesión para continuar.")
     with get_conn() as conn:
-        row = conn.execute(
-            f"""SELECT {', '.join('u.' + f.strip() for f in USER_FIELDS.split(','))}
-                  FROM auth_sessions s JOIN users u ON u.id = s.user_id
-                 WHERE s.token_hash = ? AND s.expires_at > ? AND u.active = 1""",
-            (_token_hash(pc_session), _now()),
-        ).fetchone()
-    if not row:
-        raise HTTPException(401, "La sesión ha caducado. Vuelve a iniciar sesión.")
-    return dict(row)
+        user = sessions_repo.active_user(conn, _token_hash(pc_session), _now())
+    if not user:
+        raise NotAuthenticated("La sesión ha caducado. Vuelve a iniciar sesión.")
+    return user
 
 
 def require_admin(user: dict) -> dict:
     if user["role"] != "admin":
-        raise HTTPException(403, "Solo los administradores pueden hacer esto.")
+        raise Forbidden("Solo los administradores pueden hacer esto.")
     return user
 
 
 def list_users() -> list[dict]:
     with get_conn() as conn:
-        return rows(conn.execute(f"SELECT {USER_FIELDS} FROM users ORDER BY name"))
+        return users_repo.list_all(conn)
+
+
+def list_team() -> list[dict]:
+    """Miembros activos del equipo (id y nombre), por orden alfabético."""
+    with get_conn() as conn:
+        return users_repo.list_team(conn)
+
+
+def find_user_id_by_username(username: str) -> int | None:
+    with get_conn() as conn:
+        return users_repo.id_by_username(conn, username)
 
 
 def create_user(username: str, name: str, password: str, email: str | None = None,
@@ -174,17 +170,15 @@ def create_user(username: str, name: str, password: str, email: str | None = Non
     validate_password(password)
     username = username.strip()
     if not username:
-        raise HTTPException(400, "El nombre de usuario es obligatorio.")
+        raise InvalidInput("El nombre de usuario es obligatorio.")
     with get_conn() as conn:
-        if conn.execute("SELECT 1 FROM users WHERE lower(username) = lower(?)", (username,)).fetchone():
-            raise HTTPException(409, "Ese nombre de usuario ya existe.")
-        if email and conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone():
-            raise HTTPException(409, "Ese email ya está en uso.")
-        user_id = conn.execute(
-            "INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?) RETURNING id",
-            (username, name.strip() or username, email or None, hash_password(password), role),
-        ).lastrowid
-        return dict(conn.execute(f"SELECT {USER_FIELDS} FROM users WHERE id = ?", (user_id,)).fetchone())
+        if users_repo.username_exists(conn, username):
+            raise Conflict("Ese nombre de usuario ya existe.")
+        if email and users_repo.email_exists(conn, email):
+            raise Conflict("Ese email ya está en uso.")
+        user_id = users_repo.insert(conn, username, name.strip() or username, email or None,
+                                    hash_password(password), role)
+        return users_repo.get(conn, user_id)
 
 
 def update_user(user_id: int, **fields) -> dict:
@@ -198,14 +192,22 @@ def update_user(user_id: int, **fields) -> dict:
         validate_password(password)
         updates["password_hash"] = hash_password(password)
     with get_conn() as conn:
-        if updates:
-            sets = ", ".join(f"{k} = ?" for k in updates)
-            conn.execute(f"UPDATE users SET {sets} WHERE id = ?", [*updates.values(), user_id])
-        row = conn.execute(f"SELECT {USER_FIELDS} FROM users WHERE id = ?", (user_id,)).fetchone()
+        users_repo.update(conn, user_id, updates)
+        row = users_repo.get(conn, user_id)
     if not row:
-        raise HTTPException(404, "Usuario no encontrado.")
+        raise NotFound("Usuario no encontrado.")
     if password or fields.get("active") == 0:
         end_all_sessions(user_id, except_token=fields.get("keep_token"))
     if password and row["username"]:
         clear_failures(row["username"])  # restablecer la contraseña desbloquea la cuenta
-    return dict(row)
+    return row
+
+
+def change_password(user_id: int, current_password: str, new_password: str, keep_token: str | None) -> None:
+    """Cambio de contraseña por el propio usuario: exige la actual y cierra sus demás sesiones abiertas."""
+    with get_conn() as conn:
+        stored = users_repo.password_hash(conn, user_id)
+    if not verify_password(current_password, stored):
+        raise InvalidInput("La contraseña actual no es correcta.")
+    # Cierra las demás sesiones abiertas del usuario, pero no la actual.
+    update_user(user_id, password=new_password, keep_token=keep_token)

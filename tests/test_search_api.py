@@ -47,7 +47,7 @@ def structured(system, content, schema):
     if "keywords" in schema["properties"]:
         return {"keywords": ["entrega", "entregar", "mañana", "tarde", "almacén", "Entrega"]}
     refs = [line.split("]")[0][1:] for line in content.splitlines() if line.startswith("[")]
-    target = next(r for r, line in zip(refs, [l for l in content.splitlines() if l.startswith("[")]) if "mañana" in line)
+    target = next(r for r, line in zip(refs, [ln for ln in content.splitlines() if ln.startswith("[")]) if "mañana" in line)
     return {"results": [{"ref": target, "reason": "Prefiere entregas por la mañana"}, {"ref": "m99999", "reason": "inventado"}]}
 
 

@@ -20,6 +20,13 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   (`backend/database/migrations`), con control de cambios (`schema_migrations`) y los comandos
   `python -m app.manage migrate` y `db-status`.
 - Toda la configuración se lee en un único módulo (`backend/app/config.py`).
+- Código organizado por capas (Clean Code / SOLID): rutas HTTP por área en `backend/app/api/`, reglas de negocio
+  en los servicios y todo el SQL en `backend/app/repositories/`. `main.py` pasa de ~1.150 a ~110 líneas.
+- La lógica lanza errores de dominio (`backend/app/errors.py`) y un único traductor los convierte en respuestas
+  HTTP; ya no depende de FastAPI y se puede usar igual desde la consola.
+- Ninguna consulta mete valores en el texto SQL (plazos e intervalos van como parámetros) y las actualizaciones
+  dinámicas solo aceptan columnas de una lista permitida.
+- Comprobación de estilo con `ruff` (`backend/ruff.toml`).
 - Se quita la importación de chats exportados (botón «Importar»): los mensajes entran solo por las
   integraciones, en tiempo real. La lectura de correos pasa a `backend/app/emails.py`.
 - Pestaña «Mensajes» al estilo de un chat: burbujas del cliente a la izquierda y del equipo a la derecha,

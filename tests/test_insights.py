@@ -1,6 +1,5 @@
 """Prueba del análisis con IA usando una respuesta simulada de Claude (sin llamar a la API)."""
 import json
-import os
 import sys
 from pathlib import Path
 from types import SimpleNamespace
@@ -85,6 +84,7 @@ check("prioridad y tono guardados", (prof["priority"], prof["mood"], prof["prior
       == ("alta", "molesto", "Espera la reposición de 3 cajas defectuosas"), prof)
 check("el esquema pide prioridad y tono", {"priority", "mood"} <= set(p["output_config"]["format"]["schema"]["required"]))
 from app import search  # noqa: E402
+
 laura_inbox = [i for i in search.unanswered(0, "team") if i["client_id"] == 1]
 check("la bandeja muestra la prioridad del cliente", laura_inbox and all(i["priority"] == "alta" and i["mood"] == "molesto"
                                                                      for i in laura_inbox), laura_inbox)
@@ -114,6 +114,7 @@ fake_result = {
 }
 # Una persona cambia el estado a mano: la IA no lo pisa mientras no lleguen mensajes nuevos.
 from app import clients  # noqa: E402
+
 clients.update_client(1, {"status": "active"}, 3)
 second_result = {**fake_result, "status": "issue", "status_reason": "Sigue la reclamación"}
 fake_result = {**second_result, "completed_task_ids": []}

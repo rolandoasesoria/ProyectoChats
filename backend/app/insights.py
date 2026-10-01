@@ -10,7 +10,14 @@ from collections import defaultdict
 from datetime import date
 
 from . import agent, attachments, clients, notes
-from .db import get_conn, rows
+from .db import get_conn
+from .errors import AppError, NotFound
+from .repositories import analysis as analysis_repo
+from .repositories import facts as facts_repo
+from .repositories import tasks as tasks_repo
+
+# Las tareas tienen su propio módulo; se siguen pudiendo usar desde aquí (insights.list_tasks, insights.get_task).
+from .tasks import get_task, list_tasks  # noqa: F401
 
 log = logging.getLogger(__name__)
 
@@ -80,32 +87,24 @@ SCHEMA = {
 }
 
 
-class AnalysisError(Exception):
-    pass
+class AnalysisError(AppError):
+    """La IA no ha podido hacer el análisis, o no hay nada que analizar."""
+
+
+class AnalysisSubjectNotFound(AnalysisError, NotFound):
+    """El cliente o la conversación que se quiere analizar no existe."""
 
 
 def _load_context(client_id: int) -> dict | None:
     with get_conn() as conn:
-        client = conn.execute("SELECT id, name, company FROM clients WHERE id = ?", (client_id,)).fetchone()
+        client = analysis_repo.client(conn, client_id)
         if not client:
             return None
-        messages = rows(conn.execute(
-            """SELECT * FROM (
-                   SELECT m.id, m.direction, m.sender, m.body, m.sent_at, c.channel, c.owner_user_id, u.name AS owner
-                     FROM messages m JOIN conversations c ON c.id = m.conversation_id
-                     JOIN users u ON u.id = c.owner_user_id
-                    WHERE c.client_id = ? ORDER BY m.sent_at DESC, m.id DESC LIMIT ?
-               ) ORDER BY sent_at, id""",
-            (client_id, MAX_MESSAGES),
-        ))
-        facts = rows(conn.execute(
-            "SELECT label, value, origin FROM client_facts WHERE client_id = ? AND origin IN ('manual', 'dismissed')",
-            (client_id,),
-        ))
-        tasks = rows(conn.execute(
-            "SELECT id, title, status, due_date FROM tasks WHERE client_id = ? ORDER BY id", (client_id,)))
-        users = rows(conn.execute("SELECT id, name FROM users WHERE active = 1"))
-    return {"client": dict(client), "messages": messages, "facts": facts, "tasks": tasks, "users": users}
+        messages = analysis_repo.recent_client_messages(conn, client_id, MAX_MESSAGES)
+        facts = facts_repo.list_confirmed_and_dismissed(conn, client_id)
+        tasks = tasks_repo.list_brief(conn, client_id)
+        users = analysis_repo.active_users(conn)
+    return {"client": client, "messages": messages, "facts": facts, "tasks": tasks, "users": users}
 
 
 def _prompt(ctx: dict) -> str:
@@ -173,7 +172,7 @@ def analyze_client(client_id: int) -> dict:
     with _locks[client_id]:
         ctx = _load_context(client_id)
         if ctx is None:
-            raise AnalysisError("Cliente no encontrado.")
+            raise AnalysisSubjectNotFound("Cliente no encontrado.")
         if not ctx["messages"]:
             raise AnalysisError("Este cliente todavía no tiene mensajes que analizar.")
         result = _call_claude(_prompt(ctx))
@@ -189,34 +188,16 @@ def analyze_client(client_id: int) -> dict:
 
         with get_conn() as conn:
             # Los datos de la IA se sustituyen enteros en cada análisis; los manuales y descartados se conservan.
-            conn.execute("DELETE FROM client_facts WHERE client_id = ? AND origin = 'ai'", (client_id,))
-            conn.executemany(
-                """INSERT INTO client_facts (client_id, label, value, origin, source_message_id)
-                   VALUES (?, ?, ?, 'ai', ?)""",
-                [(client_id, f["label"].strip(), f["value"].strip(),
-                  f["message_id"] if f["message_id"] in by_id else None) for f in facts],
-            )
-            conn.executemany(
-                """INSERT INTO tasks (client_id, title, due_date, assignee_user_id, origin, source_message_id)
-                   VALUES (?, ?, ?, ?, 'ai', ?)""",
-                [(client_id, t["title"].strip(), _valid_date(t["due_date"]),
-                  _resolve_assignee(t["owner"], by_id.get(t["message_id"]), ctx["users"]),
-                  t["message_id"] if t["message_id"] in by_id else None) for t in new_tasks],
-            )
-            conn.executemany(
-                "UPDATE tasks SET status = 'done', done_at = localtimestamp(0) WHERE id = ? AND status = 'open'",
-                [(i,) for i in completed],
-            )
-            conn.execute(
-                """INSERT INTO client_analysis (client_id, summary, last_message_id, priority, mood, priority_reason,
-                                               analyzed_at)
-                   VALUES (?, ?, ?, ?, ?, ?, localtimestamp(0))
-                   ON CONFLICT(client_id) DO UPDATE SET summary = excluded.summary,
-                       last_message_id = excluded.last_message_id, priority = excluded.priority, mood = excluded.mood,
-                       priority_reason = excluded.priority_reason, analyzed_at = excluded.analyzed_at""",
-                (client_id, result["summary"].strip(), max(by_id), result.get("priority"), result.get("mood"),
-                 (result.get("priority_reason") or "").strip() or None),
-            )
+            facts_repo.replace_ai(conn, client_id, [
+                {"label": f["label"].strip(), "value": f["value"].strip(),
+                 "source_message_id": f["message_id"] if f["message_id"] in by_id else None} for f in facts])
+            tasks_repo.insert_ai(conn, client_id, [
+                {"title": t["title"].strip(), "due_date": _valid_date(t["due_date"]),
+                 "assignee_user_id": _resolve_assignee(t["owner"], by_id.get(t["message_id"]), ctx["users"]),
+                 "source_message_id": t["message_id"] if t["message_id"] in by_id else None} for t in new_tasks])
+            tasks_repo.complete(conn, completed)
+            analysis_repo.save(conn, client_id, result["summary"].strip(), max(by_id), result.get("priority"),
+                               result.get("mood"), (result.get("priority_reason") or "").strip() or None)
             status_changed = None
             if result.get("status"):
                 reason = (result.get("status_reason") or "").strip()
@@ -232,7 +213,7 @@ def _notify_status(conn, client_id: int, status: str, reason: str) -> None:
     """Si la IA marca una incidencia, avisa al responsable del cliente."""
     if status != "issue":
         return
-    row = conn.execute("SELECT name, assignee_user_id FROM clients WHERE id = ?", (client_id,)).fetchone()
+    row = analysis_repo.client_notice_target(conn, client_id)
     if row and row["assignee_user_id"]:
         notes.notify(conn, [row["assignee_user_id"]], "status_issue",
                      f"La IA ha marcado a {row['name']} como Incidencia" + (f": {reason}" if reason else ""), client_id, None)
@@ -305,20 +286,11 @@ CHANNEL_STYLE = {
 def draft_reply(conversation_id: int, author: dict, instructions: str = "") -> dict:
     """Borrador de respuesta para una conversación, con el contexto del cliente en todos los canales."""
     with get_conn() as conn:
-        conv = conn.execute(
-            """SELECT c.id, c.channel, c.subject, c.client_id, cl.name AS client, u.name AS owner
-                 FROM conversations c JOIN clients cl ON cl.id = c.client_id
-                 JOIN users u ON u.id = c.owner_user_id WHERE c.id = ?""", (conversation_id,)).fetchone()
+        conv = analysis_repo.conversation(conn, conversation_id)
         if not conv:
-            raise AnalysisError("Conversación no encontrada.")
-        thread = rows(conn.execute(
-            """SELECT * FROM (SELECT direction, sender, body, sent_at FROM messages WHERE conversation_id = ?
-                               ORDER BY sent_at DESC, id DESC LIMIT 40) ORDER BY sent_at""", (conversation_id,)))
-        other = rows(conn.execute(
-            """SELECT * FROM (SELECT m.direction, m.sender, m.body, m.sent_at, c.channel FROM messages m
-                               JOIN conversations c ON c.id = m.conversation_id
-                              WHERE c.client_id = ? AND c.id != ? ORDER BY m.sent_at DESC LIMIT 20)
-               ORDER BY sent_at""", (conv["client_id"], conversation_id)))
+            raise AnalysisSubjectNotFound("Conversación no encontrada.")
+        thread = analysis_repo.conversation_thread(conn, conversation_id)
+        other = analysis_repo.other_channel_messages(conn, conv["client_id"], conversation_id)
     if not thread:
         raise AnalysisError("La conversación está vacía.")
     ficha = profile(conv["client_id"])
@@ -391,25 +363,13 @@ def rewrite_draft(text: str, action: str, language: str = "", channel: str | Non
     return "\n".join(b.text for b in response.content if b.type == "text").strip()
 
 
-# ---------------------------------------------------------------- Consultas y edición manual
+# ---------------------------------------------------------------- Ficha (tareas: tasks.py; datos a mano: facts.py)
 
 def profile(client_id: int) -> dict:
     with get_conn() as conn:
-        analysis = conn.execute(
-            """SELECT summary, analyzed_at, last_message_id, priority, mood, priority_reason
-                 FROM client_analysis WHERE client_id = ?""", (client_id,)
-        ).fetchone()
-        new_since = conn.execute(
-            """SELECT count(*) FROM messages m JOIN conversations c ON c.id = m.conversation_id
-                WHERE c.client_id = ? AND m.id > ?""",
-            (client_id, analysis["last_message_id"] if analysis else 0),
-        ).fetchone()[0]
-        facts = rows(conn.execute(
-            """SELECT f.id, f.label, f.value, f.origin, f.source_message_id, f.updated_at, u.name AS updated_by
-                 FROM client_facts f LEFT JOIN users u ON u.id = f.updated_by
-                WHERE f.client_id = ? AND f.origin != 'dismissed' ORDER BY lower(f.label)""",
-            (client_id,),
-        ))
+        analysis = analysis_repo.get(conn, client_id)
+        new_since = analysis_repo.count_messages_after(conn, client_id, analysis["last_message_id"] if analysis else 0)
+        facts = facts_repo.list_visible(conn, client_id)
     return {
         "summary": analysis["summary"] if analysis else None,
         "analyzed_at": analysis["analyzed_at"] if analysis else None,
@@ -419,35 +379,3 @@ def profile(client_id: int) -> dict:
         "new_messages_since_analysis": new_since,
         "facts": facts,
     }
-
-
-TASK_FIELDS = """t.id, t.client_id, cl.name AS client, t.title, t.due_date, t.status, t.origin,
-                 t.source_message_id, t.assignee_user_id, u.name AS assignee, t.created_at, t.done_at"""
-
-
-def list_tasks(client_id: int | None = None, assignee_id: int | None = None,
-               status: str | None = None) -> list[dict]:
-    sql = f"""SELECT {TASK_FIELDS} FROM tasks t JOIN clients cl ON cl.id = t.client_id
-              LEFT JOIN users u ON u.id = t.assignee_user_id WHERE 1 = 1"""
-    args: list = []
-    if client_id is not None:
-        sql += " AND t.client_id = ?"
-        args.append(client_id)
-    if assignee_id is not None:
-        sql += " AND t.assignee_user_id = ?"
-        args.append(assignee_id)
-    if status:
-        sql += " AND t.status = ?"
-        args.append(status)
-    # Primero las abiertas; dentro, las que vencen antes (las que no tienen fecha, al final).
-    sql += " ORDER BY t.status = 'done', t.due_date IS NULL, t.due_date, t.id DESC"
-    with get_conn() as conn:
-        return rows(conn.execute(sql, args))
-
-
-def get_task(task_id: int) -> dict | None:
-    with get_conn() as conn:
-        row = conn.execute(
-            f"""SELECT {TASK_FIELDS} FROM tasks t JOIN clients cl ON cl.id = t.client_id
-                LEFT JOIN users u ON u.id = t.assignee_user_id WHERE t.id = ?""", (task_id,)).fetchone()
-    return dict(row) if row else None

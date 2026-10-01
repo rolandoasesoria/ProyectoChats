@@ -12,11 +12,11 @@ import argparse
 import getpass
 import sys
 
-from fastapi import HTTPException
-
 from . import auth
 from .config import config
 from .db import get_conn, init_db, migrations, safe_url
+from .errors import AppError
+from .repositories import database as database_repo
 
 
 def _ask_password() -> str:
@@ -28,9 +28,7 @@ def _ask_password() -> str:
 
 def _db_status() -> None:
     with get_conn() as conn:
-        info = conn.execute("""SELECT current_user AS usuario, s.ssl, s.version AS tls, s.cipher,
-                                       has_schema_privilege('public', 'CREATE') AS puede_crear
-                                  FROM pg_stat_ssl s WHERE s.pid = pg_backend_pid()""").fetchone()
+        info = database_repo.connection_info(conn)
     print(f"Conexión de la app: {safe_url(config.database.url)}")
     print(f"  usuario {info['usuario']}; cifrada: {'sí, ' + info['tls'] + ' ' + info['cipher'] if info['ssl'] else 'NO'}")
     print(f"  puede crear o borrar tablas: {'sí' if info['puede_crear'] else 'no'}")
@@ -69,19 +67,17 @@ def main() -> None:
                                     "admin" if args.admin else "user")
             print(f"Cuenta creada: {user['username']} ({user['role']})")
         elif args.command == "set-password":
-            with get_conn() as conn:
-                row = conn.execute("SELECT id FROM users WHERE lower(username) = lower(?)",
-                                   (args.username,)).fetchone()
-            if not row:
+            user_id = auth.find_user_id_by_username(args.username)
+            if user_id is None:
                 sys.exit("No existe ese usuario.")
-            auth.update_user(row["id"], password=_ask_password())
+            auth.update_user(user_id, password=_ask_password())
             print("Contraseña actualizada; se han cerrado sus sesiones abiertas.")
         elif args.command == "list-users":
             for u in auth.list_users():
                 state = "activo" if u["active"] else "desactivado"
                 print(f"{u['id']:>3}  {u['username'] or '-':<15} {u['name']:<25} {u['role']:<6} {state}")
-    except HTTPException as exc:
-        sys.exit(exc.detail)
+    except AppError as exc:
+        sys.exit(exc.message)
 
 
 if __name__ == "__main__":

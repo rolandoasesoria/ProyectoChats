@@ -1,13 +1,12 @@
 """Notas internas del equipo, menciones (@Nombre) y avisos."""
 import re
 
-from .db import get_conn, rows
+from .db import get_conn
+from .repositories import notes as repo
+from .repositories import notifications as notifications_repo
+from .repositories import users as users_repo
 
 MENTION_PREVIEW_CHARS = 120
-
-
-def _active_users(conn) -> list[dict]:
-    return rows(conn.execute("SELECT id, name, username FROM users WHERE active = 1"))
 
 
 def find_mentions(body: str, users: list[dict]) -> set[int]:
@@ -28,10 +27,9 @@ def find_mentions(body: str, users: list[dict]) -> set[int]:
 
 
 def notify(conn, user_ids, kind: str, text: str, client_id: int | None, actor_id: int | None) -> None:
-    conn.executemany(
-        "INSERT INTO notifications (user_id, kind, text, client_id, actor_user_id) VALUES (?, ?, ?, ?, ?)",
-        [(uid, kind, text, client_id, actor_id) for uid in user_ids if uid != actor_id],
-    )
+    """Avisa a los usuarios indicados, salvo a quien provoca el aviso. Usa la transacción de quien llama."""
+    notifications_repo.insert_many(conn, [uid for uid in user_ids if uid != actor_id], kind, text, client_id,
+                                   actor_id)
 
 
 def _preview(body: str) -> str:
@@ -41,52 +39,45 @@ def _preview(body: str) -> str:
 
 # ---------------------------------------------------------------- Notas
 
-NOTE_FIELDS = """n.id, n.client_id, n.body, n.created_at, n.updated_at, n.user_id, u.name AS author"""
+def _mention_text(author: dict, client_name: str, body: str) -> str:
+    return f"{author['name']} te ha mencionado en una nota sobre {client_name}: «{_preview(body)}»"
 
 
 def list_notes(client_id: int) -> list[dict]:
     with get_conn() as conn:
-        return rows(conn.execute(
-            f"""SELECT {NOTE_FIELDS} FROM client_notes n LEFT JOIN users u ON u.id = n.user_id
-                WHERE n.client_id = ? ORDER BY n.id DESC""", (client_id,)))
+        return repo.list_for_client(conn, client_id)
 
 
 def get_note(note_id: int) -> dict | None:
     with get_conn() as conn:
-        row = conn.execute(f"""SELECT {NOTE_FIELDS} FROM client_notes n LEFT JOIN users u ON u.id = n.user_id
-                               WHERE n.id = ?""", (note_id,)).fetchone()
-    return dict(row) if row else None
+        return repo.get(conn, note_id)
 
 
 def add_note(client_id: int, author: dict, body: str) -> dict:
     with get_conn() as conn:
-        note_id = conn.execute("INSERT INTO client_notes (client_id, user_id, body) VALUES (?, ?, ?) RETURNING id",
-                               (client_id, author["id"], body)).lastrowid
-        client = conn.execute("SELECT name FROM clients WHERE id = ?", (client_id,)).fetchone()
-        mentioned = find_mentions(body, _active_users(conn))
-        notify(conn, mentioned, "mention",
-               f"{author['name']} te ha mencionado en una nota sobre {client['name']}: «{_preview(body)}»",
-               client_id, author["id"])
+        note_id = repo.insert(conn, client_id, author["id"], body)
+        client_name = repo.client_name(conn, client_id)
+        mentioned = find_mentions(body, users_repo.list_active_for_mentions(conn))
+        notify(conn, mentioned, "mention", _mention_text(author, client_name, body), client_id, author["id"])
     return get_note(note_id)
 
 
 def update_note(note_id: int, author: dict, body: str) -> dict:
     """Al editar, solo se avisa a quienes no estaban mencionados antes."""
     with get_conn() as conn:
-        old = conn.execute("SELECT client_id, body FROM client_notes WHERE id = ?", (note_id,)).fetchone()
-        conn.execute("UPDATE client_notes SET body = ?, updated_at = localtimestamp(0) WHERE id = ?", (body, note_id))
-        users = _active_users(conn)
+        old = repo.get_raw(conn, note_id)
+        repo.update_body(conn, note_id, body)
+        users = users_repo.list_active_for_mentions(conn)
         new_mentions = find_mentions(body, users) - find_mentions(old["body"], users)
-        client = conn.execute("SELECT name FROM clients WHERE id = ?", (old["client_id"],)).fetchone()
-        notify(conn, new_mentions, "mention",
-               f"{author['name']} te ha mencionado en una nota sobre {client['name']}: «{_preview(body)}»",
-               old["client_id"], author["id"])
+        client_name = repo.client_name(conn, old["client_id"])
+        notify(conn, new_mentions, "mention", _mention_text(author, client_name, body), old["client_id"],
+               author["id"])
     return get_note(note_id)
 
 
 def delete_note(note_id: int) -> None:
     with get_conn() as conn:
-        conn.execute("DELETE FROM client_notes WHERE id = ?", (note_id,))
+        repo.delete(conn, note_id)
 
 
 # ---------------------------------------------------------------- Avisos
@@ -102,20 +93,14 @@ def notify_task_assigned(task: dict, actor: dict) -> None:
 
 def list_notifications(user_id: int, limit: int = 30) -> dict:
     with get_conn() as conn:
-        items = rows(conn.execute(
-            """SELECT id, kind, text, client_id, created_at, read_at FROM notifications
-                WHERE user_id = ? ORDER BY id DESC LIMIT ?""", (user_id, limit)))
-        unread = conn.execute("SELECT count(*) FROM notifications WHERE user_id = ? AND read_at IS NULL",
-                              (user_id,)).fetchone()[0]
+        items = notifications_repo.list_recent(conn, user_id, limit)
+        unread = notifications_repo.count_unread(conn, user_id)
     return {"unread": unread, "items": items}
 
 
 def mark_read(user_id: int, ids: list[int] | None = None) -> None:
     with get_conn() as conn:
         if ids is None:
-            conn.execute("UPDATE notifications SET read_at = localtimestamp(0) WHERE user_id = ? AND read_at IS NULL",
-                         (user_id,))
+            notifications_repo.mark_all_read(conn, user_id)
         else:
-            conn.executemany(
-                "UPDATE notifications SET read_at = localtimestamp(0) WHERE id = ? AND user_id = ? AND read_at IS NULL",
-                [(i, user_id) for i in ids])
+            notifications_repo.mark_read(conn, user_id, ids)

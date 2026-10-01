@@ -3,6 +3,7 @@ import sys
 from datetime import date, timedelta
 
 from apitest import Session, check, results
+
 from app import metrics
 from app.db import get_conn
 

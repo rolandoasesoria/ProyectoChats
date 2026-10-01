@@ -44,8 +44,10 @@ check("mensaje enorme = 422", ana.post("/api/chat", {"message": "x" * 5000})[0] 
 
 # Seguridad
 check("/docs desactivado", anon.get("/docs")[0] == 404)
-t0 = time.perf_counter(); anon.post("/api/auth/login", {"username": "nadie", "password": "x"})
-t1 = time.perf_counter(); anon.post("/api/auth/login", {"username": "carlos", "password": "x"})
+t0 = time.perf_counter()
+anon.post("/api/auth/login", {"username": "nadie", "password": "x"})
+t1 = time.perf_counter()
+anon.post("/api/auth/login", {"username": "carlos", "password": "x"})
 t2 = time.perf_counter()
 check("mismo tiempo exista o no el usuario", abs((t1 - t0) - (t2 - t1)) < 0.2, f"{t1 - t0:.3f} / {t2 - t1:.3f}")
 for _ in range(4):  # + el fallo de la comprobación de tiempos = 5 fallos seguidos

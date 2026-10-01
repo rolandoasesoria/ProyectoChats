@@ -11,11 +11,11 @@ al usarla se aplican al cliente y a la conversación.
 """
 import re
 
-from fastapi import HTTPException
-
 from . import clients, search
 from .clients import STATUSES, _norm_name
-from .db import get_conn, rows
+from .db import Conn, get_conn
+from .errors import Forbidden, InvalidInput, NotFound
+from .repositories import replies as repo
 
 VARIABLE = re.compile(r"\{(nombre|cliente|empresa|yo|dato:([^{}]{1,100}))\}", re.IGNORECASE)
 SHORTCUT = re.compile(r"^[a-z0-9_-]{1,30}$")
@@ -30,55 +30,48 @@ def _clean(fields: dict) -> dict:
     if "shortcut" in out:
         sc = (out["shortcut"] or "").strip().lstrip("/").lower() or None
         if sc and not SHORTCUT.match(sc):
-            raise HTTPException(400, "El atajo solo puede tener letras sin tildes, números, guiones y _ (máx. 30).")
+            raise InvalidInput("El atajo solo puede tener letras sin tildes, números, guiones y _ (máx. 30).")
         out["shortcut"] = sc
     if out.get("set_status") and out["set_status"] not in STATUSES:
-        raise HTTPException(400, "Estado no válido.")
+        raise InvalidInput("Estado no válido.")
     if "mark_done" in out:
         out["mark_done"] = int(bool(out["mark_done"]))
     for required in ("title", "body"):
         if required in out and not out[required]:
-            raise HTTPException(400, "El título y el texto son obligatorios.")
+            raise InvalidInput("El título y el texto son obligatorios.")
     return out
 
 
-def _check_shortcut(conn, shortcut: str | None, reply_id: int | None = None) -> None:
-    if shortcut and conn.execute("SELECT 1 FROM saved_replies WHERE lower(shortcut) = ? AND id IS DISTINCT FROM ?",
-                                 (shortcut, reply_id)).fetchone():
-        raise HTTPException(400, f"Ya hay otra respuesta con el atajo /{shortcut}.")
+def _check_shortcut(conn: Conn, shortcut: str | None, reply_id: int | None = None) -> None:
+    if shortcut and repo.shortcut_taken(conn, shortcut, reply_id):
+        raise InvalidInput(f"Ya hay otra respuesta con el atajo /{shortcut}.")
 
 
 def list_replies() -> list[dict]:
     with get_conn() as conn:
-        return rows(conn.execute(
-            """SELECT r.id, r.title, r.shortcut, r.body, r.set_status, r.add_tag, r.mark_done = 1 AS mark_done,
-                      r.created_by, u.name AS author
-                 FROM saved_replies r LEFT JOIN users u ON u.id = r.created_by
-                ORDER BY lower(r.title)"""))
+        return repo.list_all(conn)
 
 
 def get_reply(reply_id: int) -> dict:
     reply = next((r for r in list_replies() if r["id"] == reply_id), None)
     if not reply:
-        raise HTTPException(404, "Respuesta guardada no encontrada")
+        raise NotFound("Respuesta guardada no encontrada")
     return reply
 
 
 def create(fields: dict, user_id: int) -> dict:
     data = _clean(fields)
     if not data.get("title") or not data.get("body"):
-        raise HTTPException(400, "El título y el texto son obligatorios.")
+        raise InvalidInput("El título y el texto son obligatorios.")
     with get_conn() as conn:
         _check_shortcut(conn, data.get("shortcut"))
-        reply_id = conn.execute(
-            f"INSERT INTO saved_replies ({', '.join(data)}, created_by) VALUES ({', '.join('?' * len(data))}, ?) RETURNING id",
-            [*data.values(), user_id]).lastrowid
+        reply_id = repo.insert(conn, data, user_id)
     return get_reply(reply_id)
 
 
 def _can_edit(reply: dict, user: dict) -> None:
     if reply["created_by"] != user["id"] and user["role"] != "admin":
-        raise HTTPException(403, "Solo quien la creó (o un administrador) puede cambiarla.")
+        raise Forbidden("Solo quien la creó (o un administrador) puede cambiarla.")
 
 
 def update(reply_id: int, fields: dict, user: dict) -> dict:
@@ -87,15 +80,14 @@ def update(reply_id: int, fields: dict, user: dict) -> dict:
     if data:
         with get_conn() as conn:
             _check_shortcut(conn, data.get("shortcut"), reply_id)
-            conn.execute(f"UPDATE saved_replies SET {', '.join(f'{k} = ?' for k in data)}, updated_at = localtimestamp(0) "
-                         "WHERE id = ?", [*data.values(), reply_id])
+            repo.update(conn, reply_id, data)
     return get_reply(reply_id)
 
 
 def delete(reply_id: int, user: dict) -> None:
     _can_edit(get_reply(reply_id), user)
     with get_conn() as conn:
-        conn.execute("DELETE FROM saved_replies WHERE id = ?", (reply_id,))
+        repo.delete(conn, reply_id)
 
 
 def fill(body: str, client: dict, facts: list[dict], author: dict) -> str:
@@ -122,12 +114,11 @@ def use(reply_id: int, client_id: int, conversation_id: int | None, user: dict) 
     """Texto listo para el borrador y, si es una macro, aplica sus acciones. Devuelve qué se ha hecho."""
     reply = get_reply(reply_id)
     with get_conn() as conn:
-        client = conn.execute("SELECT id, name, company FROM clients WHERE id = ?", (client_id,)).fetchone()
+        client = repo.client(conn, client_id)
         if not client:
-            raise HTTPException(404, "Cliente no encontrado")
-        facts = rows(conn.execute(
-            "SELECT label, value FROM client_facts WHERE client_id = ? AND origin != 'dismissed'", (client_id,)))
-        tags = [r["tag"] for r in conn.execute("SELECT tag FROM client_tags WHERE client_id = ?", (client_id,))]
+            raise NotFound("Cliente no encontrado")
+        facts = repo.client_facts(conn, client_id)
+        tags = repo.client_tags(conn, client_id)
     applied = []
     if reply["set_status"]:
         clients.update_client(client_id, {"status": reply["set_status"]}, user["id"])
@@ -137,10 +128,7 @@ def use(reply_id: int, client_id: int, conversation_id: int | None, user: dict) 
         applied.append(f"etiqueta «{reply['add_tag']}»")
     if reply["mark_done"] and conversation_id:
         with get_conn() as conn:
-            last_in = conn.execute(
-                """SELECT m.id FROM messages m JOIN conversations c ON c.id = m.conversation_id
-                    WHERE c.id = ? AND c.client_id = ? AND m.direction = 'in' ORDER BY m.sent_at DESC, m.id DESC LIMIT 1""",
-                (conversation_id, client_id)).fetchone()
-        if last_in and search.dismiss_unanswered(conversation_id, last_in["id"]):
+            last_in_id = repo.last_incoming_message_id(conn, conversation_id, client_id)
+        if last_in_id and search.dismiss_unanswered(conversation_id, last_in_id):
             applied.append("conversación marcada como atendida")
-    return {"text": fill(reply["body"], dict(client), facts, user), "applied": applied}
+    return {"text": fill(reply["body"], client, facts, user), "applied": applied}

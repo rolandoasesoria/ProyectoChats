@@ -2,6 +2,7 @@
 import sys
 
 from apitest import Session, check, receive, results
+
 from app import clients
 from app.db import get_conn
 

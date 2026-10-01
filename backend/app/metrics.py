@@ -3,7 +3,8 @@ from collections import defaultdict
 from datetime import date, datetime, timedelta
 
 from . import search, settings
-from .db import get_conn, rows
+from .db import Conn, get_conn
+from .repositories import metrics as repo
 
 CHANNELS = ("email", "telegram", "whatsapp")  # orden fijo de apilado (y de color) en los gráficos
 
@@ -16,13 +17,10 @@ def _week_start(d: date) -> date:
     return d - timedelta(days=d.weekday())
 
 
-def response_times(since: str, conn) -> list[dict]:
+def response_times(since: str, conn: Conn) -> list[dict]:
     """Tiempos de primera respuesta: desde el primer mensaje del cliente sin contestar hasta la siguiente
     respuesta del equipo en la misma conversación."""
-    msgs = rows(conn.execute(
-        """SELECT m.conversation_id, m.direction, m.sent_at, c.owner_user_id, c.channel
-             FROM messages m JOIN conversations c ON c.id = m.conversation_id
-            ORDER BY m.conversation_id, m.sent_at, m.id"""))
+    msgs = repo.messages_in_order(conn)
     result, pending, current = [], None, None
     for m in msgs:
         if m["conversation_id"] != current:
@@ -56,20 +54,13 @@ def dashboard(days: int, include_people: bool) -> dict:
     since_day = today - timedelta(days=days - 1)
     since = since_day.isoformat()
     with get_conn() as conn:
-        received = rows(conn.execute(
-            """SELECT to_char(m.sent_at, 'YYYY-MM-DD') AS day, c.channel, count(*) AS n
-                 FROM messages m JOIN conversations c ON c.id = m.conversation_id
-                WHERE m.direction = 'in' AND m.sent_at >= ? GROUP BY day, c.channel""", (since,)))
-        sent = conn.execute("SELECT count(*) FROM messages WHERE direction = 'out' AND sent_at >= ?", (since,)).fetchone()[0]
-        active_clients = conn.execute(
-            """SELECT count(DISTINCT c.client_id) FROM messages m JOIN conversations c ON c.id = m.conversation_id
-                WHERE m.sent_at >= ?""", (since,)).fetchone()[0]
-        by_status = {r["status"]: r["n"] for r in conn.execute("SELECT status, count(*) AS n FROM clients GROUP BY status")}
-        users = rows(conn.execute("SELECT id, name FROM users WHERE active = 1 ORDER BY name"))
-        tasks = rows(conn.execute(
-            "SELECT assignee_user_id, due_date FROM tasks WHERE status = 'open'"))
-        responsible = {r["assignee_user_id"]: r["n"] for r in conn.execute(
-            "SELECT assignee_user_id, count(*) AS n FROM clients WHERE assignee_user_id IS NOT NULL GROUP BY assignee_user_id")}
+        received = repo.received_by_day_and_channel(conn, since)
+        sent = repo.count_sent(conn, since)
+        active_clients = repo.count_active_clients(conn, since)
+        by_status = repo.clients_by_status(conn)
+        users = repo.active_users(conn)
+        tasks = repo.open_tasks(conn)
+        responsible = repo.clients_per_assignee(conn)
         times = response_times(since, conn)
     sla = settings.get("sla_hours")
 
