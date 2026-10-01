@@ -8,12 +8,12 @@ from app.db import get_conn
 
 ana, carlos = Session("ana"), Session("carlos")
 
-check("plazo por defecto: 24 h", carlos.get("/api/settings")[1] == {"sla_hours": 24})
+check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0})
 check("solo administradores lo cambian = 403", carlos.patch("/api/admin/settings", {"sla_hours": 4})[0] == 403)
 check("fuera de rango = 422", ana.patch("/api/admin/settings", {"sla_hours": 0})[0] == 422
       and ana.patch("/api/admin/settings", {"sla_hours": 500})[0] == 422)
 st, r = ana.patch("/api/admin/settings", {"sla_hours": 1})
-check("cambiar el plazo", st == 200 and r == {"sla_hours": 1} and carlos.get("/api/settings")[1]["sla_hours"] == 1, r)
+check("cambiar el plazo", st == 200 and r["sla_hours"] == 1 and carlos.get("/api/settings")[1]["sla_hours"] == 1, r)
 check("queda en el registro de accesos",
       ana.get("/api/admin/audit?action=settings_change")[1]["entries"][0]["detail"] == "sla_hours=1")
 
