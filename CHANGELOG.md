@@ -11,6 +11,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Búsqueda de texto en español: sin tildes y por raíz de palabra («entregas» encuentra «entrega» y «entreguen»).
   La búsqueda de clientes ya no distingue mayúsculas ni tildes.
 - Las pruebas usan su propia base de datos (`TEST_DATABASE_URL`) y se niegan a vaciar una que no sea de pruebas.
+- Aspecto más sobrio y minimalista: paneles a sangre separados por líneas, colores neutros, etiquetas de canal
+  con un punto de color, controles más finos y Chispa más discreta. Solo queda el emoji ✨ para marcar lo que
+  hace la IA.
+- Tutorial más breve: 12 pasos de una o dos frases (versión 14).
 
 ### Añadido
 - Datos de prueba abundantes (`python -m app.seed --reset`): ~85 clientes, 6 personas, ~1.500 mensajes de los
