@@ -54,6 +54,13 @@ def update_client(client_id: int, fields: dict, user_id: int | None = None) -> N
         conn.execute(f"UPDATE clients SET {', '.join(sets)} WHERE id = ?", [*args, client_id])
 
 
+def release_status(client_id: int) -> None:
+    """Deshace el «fijado a mano»: el estado se queda como está hasta que lo decida la IA o la regla de inactividad."""
+    with get_conn() as conn:
+        conn.execute("""UPDATE clients SET status_source = 'auto', status_reason = NULL, status_updated_by = NULL
+                         WHERE id = ? AND status_source = 'manual'""", (client_id,))
+
+
 def set_auto_status(conn, client_id: int, status: str, reason: str) -> str | None:
     """Estado decidido por la IA o por la regla de inactividad. No pisa un cambio manual mientras no haya mensajes
     nuevos desde entonces. Devuelve el estado anterior si ha cambiado (None si no)."""

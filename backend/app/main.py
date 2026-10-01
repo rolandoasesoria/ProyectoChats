@@ -446,6 +446,7 @@ class ClientUpdate(BaseModel):
     name: str | None = Field(None, min_length=1, max_length=200)
     company: str | None = Field(None, max_length=200)
     status: Literal["lead", "active", "issue", "inactive"] | None = None
+    status_auto: bool | None = None  # true: que el estado lo vuelva a decidir la IA
     assignee_user_id: int | None = None
 
 
@@ -457,6 +458,8 @@ def update_client(client_id: int, req: ClientUpdate, user: CurrentUser):
     fields = {k: getattr(req, k) for k in req.model_fields_set}
     if "company" in fields:
         fields["company"] = (fields["company"] or "").strip() or None
+    if fields.pop("status_auto", None):
+        clients.release_status(client_id)
     clients.update_client(client_id, fields, user["id"])
     new_assignee = fields.get("assignee_user_id")
     if new_assignee and new_assignee != before["assignee_user_id"]:
