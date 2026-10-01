@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import (agent, attachments, audit, auth, chats, clients, followups, importers, insights, integrations, metrics,
-               notes, replies, search, smartsearch)
+               notes, replies, search, settings, smartsearch)
 from .db import get_conn, init_db
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -187,6 +187,26 @@ def admin_update_user(user_id: int, req: UserUpdate, admin: AdminUser):
     described = ", ".join("contraseña restablecida" if k == "password" else f"{k}={v}" for k, v in changes.items())
     audit.log(admin["id"], "user_update", detail=f"{user['username']}: {described}")
     return user
+
+
+# ---------------------------------------------------------------- Ajustes del equipo
+
+@app.get("/api/settings")
+def get_settings(_: CurrentUser):
+    return settings.get_all()
+
+
+class SettingsUpdate(BaseModel):
+    sla_hours: int | None = Field(None, ge=1, le=168)
+
+
+@app.patch("/api/admin/settings")
+def update_settings(req: SettingsUpdate, admin: AdminUser):
+    changes = req.model_dump(exclude_none=True)
+    result = settings.update(changes)
+    if changes:
+        audit.log(admin["id"], "settings_change", detail=", ".join(f"{k}={v}" for k, v in changes.items()))
+    return result
 
 
 # ---------------------------------------------------------------- Integraciones con los canales

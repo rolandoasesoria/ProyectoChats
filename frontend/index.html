@@ -327,6 +327,7 @@
       <button role="tab" data-admin-tab="users" class="active">Usuarios</button>
       <button role="tab" data-admin-tab="integrations">Integraciones</button>
       <button role="tab" data-admin-tab="audit">Registro de accesos</button>
+      <button role="tab" data-admin-tab="settings">Ajustes</button>
     </div>
     <section id="admin-users" class="admin-pane">
     <table class="users-table">
@@ -376,6 +377,20 @@
         <div class="dialog-actions">
           <button type="button" class="ghost" id="if-cancel" hidden>Cancelar edición</button>
           <button type="submit" class="primary" id="if-submit">Conectar</button>
+        </div>
+      </form>
+    </section>
+    <section id="admin-settings" class="admin-pane" hidden>
+      <form id="settings-form" class="form">
+        <label>Plazo de respuesta (horas)
+          <input id="set-sla" type="number" min="1" max="168" required>
+        </label>
+        <p class="muted small">Tiempo máximo para contestar a un cliente. En «Sin responder» se avisa cuando queda poco
+          («vence en…») y se marca en rojo al pasarse; el panel muestra qué porcentaje se responde a tiempo.</p>
+        <p class="form-error" id="set-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <span class="muted small" id="set-saved" hidden>Guardado.</span>
+          <button type="submit" class="primary">Guardar ajustes</button>
         </div>
       </form>
     </section>

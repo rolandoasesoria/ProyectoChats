@@ -400,7 +400,7 @@ function bindEvents() {
   bindEvents();
   try {
     state.convClients = new Set(await api("/api/conversations/agent/clients"));
-    await initProfile();
+    await Promise.all([initProfile(), loadSettings()]);
     await loadTagOptions();
     refreshInboxCount();
     loadNotifications();

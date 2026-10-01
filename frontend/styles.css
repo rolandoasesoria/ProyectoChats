@@ -303,6 +303,9 @@ body.login-page { background: var(--bg); align-items: center; justify-content: c
 .inbox-snippet { font-size: 13px; line-height: 1.4; word-break: break-word; }
 .wait { font-size: 12px; color: var(--muted); white-space: nowrap; }
 .wait.late { color: var(--danger-text); font-weight: 600; }
+.wait.soon { color: #b45309; font-weight: 600; }
+:root[data-theme="dark"] .wait.soon { color: #fbbf24; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .wait.soon { color: #fbbf24; } }
 button.link.small { font-size: 12px; }
 .inbox-group { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 10px 2px 4px; }
 .inbox-item.follow-up { border-left: 2px solid var(--accent); padding-left: 8px; }

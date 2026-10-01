@@ -1,7 +1,8 @@
 // Bandeja "Sin responder" y novedades desde la última visita a un cliente.
 
 let inboxScope = "mine";
-const WAIT_ALERT_HOURS = 24; // a partir de aquí la espera se marca en rojo
+let slaHours = 24; // plazo de respuesta del equipo (lo fija un administrador); se carga al arrancar
+const SLA_WARNING = 0.75; // a partir del 75 % del plazo se avisa de que está a punto de vencer
 
 // Tiempo transcurrido desde un mensaje (hora local): «40 min», «5 h», «3 días».
 function elapsed(sentAt) {
@@ -11,9 +12,21 @@ function elapsed(sentAt) {
   return `${Math.round(hours / 24)} días`;
 }
 
+function waitHours(sentAt) {
+  return (Date.now() - new Date(sentAt)) / 3600000;
+}
+
+// Tiempo de espera con el plazo de respuesta: normal, «vence en…» (ámbar) o fuera de plazo (rojo).
 function waitLabel(sentAt) {
-  const late = (Date.now() - new Date(sentAt)) / 3600000 >= WAIT_ALERT_HOURS;
-  return `<span class="wait ${late ? "late" : ""}" title="Esperando respuesta desde ${formatDate(sentAt)}">${elapsed(sentAt)}</span>`;
+  const hours = waitHours(sentAt);
+  const title = `Esperando respuesta desde ${formatDate(sentAt)} · plazo de respuesta: ${slaHours} h`;
+  if (hours >= slaHours) return `<span class="wait late" title="Fuera de plazo · ${title}">${elapsed(sentAt)}</span>`;
+  if (hours >= slaHours * SLA_WARNING) {
+    const left = slaHours - hours;
+    const leftText = left < 1 ? `${Math.max(1, Math.round(left * 60))} min` : `${Math.round(left)} h`;
+    return `<span class="wait soon" title="${title}">vence en ${leftText}</span>`;
+  }
+  return `<span class="wait" title="${title}">${elapsed(sentAt)}</span>`;
 }
 
 // Número de conversaciones en cada lado del selector «Mías · Todo el equipo».
@@ -101,13 +114,19 @@ async function loadInbox() {
 }
 
 function setInboxCount(items, followUps = []) {
-  const late = items.filter((i) => (Date.now() - new Date(i.sent_at)) / 3600000 >= WAIT_ALERT_HOURS).length + followUps.length;
+  const late = items.filter((i) => waitHours(i.sent_at) >= slaHours).length + followUps.length;
   const total = items.length + followUps.length;
   const count = $("#inbox-count");
   count.textContent = total;
   count.hidden = !total;
   count.classList.toggle("alert", late > 0);
-  count.title = [late && `${late} esperando más de ${WAIT_ALERT_HOURS} h o sin contestar`].filter(Boolean).join("");
+  count.title = late ? `${late} fuera de plazo (${slaHours} h) o sin contestar` : "";
+}
+
+async function loadSettings() {
+  try {
+    slaHours = (await api("/api/settings")).sla_hours;
+  } catch { /* se queda el plazo por defecto */ }
 }
 
 async function refreshInboxCount() {

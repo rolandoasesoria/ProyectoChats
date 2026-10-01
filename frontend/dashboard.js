@@ -171,6 +171,7 @@ async function loadDashboard() {
     ["Mensajes enviados", compact(t.sent)],
     ["Clientes con actividad", compact(t.active_clients)],
     ["Primera respuesta (mediana)", formatHours(t.median_response_hours)],
+    [`Respondidas en plazo (${t.sla_hours} h)`, t.within_sla_pct === null ? "—" : `${t.within_sla_pct} %`],
     ["Tareas abiertas", `${compact(t.open_tasks)}${t.overdue_tasks ? ` <span class="tile-note">⚠ ${t.overdue_tasks} vencida${t.overdue_tasks === 1 ? "" : "s"}</span>` : ""}`],
   ];
   $("#dash-tiles").innerHTML = tiles.map(([label, value]) =>
@@ -179,9 +180,9 @@ async function loadDashboard() {
   renderStatus(data.clients_by_status);
   $("#dash-people-card").hidden = !data.people;
   if (data.people) {
-    $("#dash-people").innerHTML = `<thead><tr><th>Persona</th><th title="Mediana del tiempo de primera respuesta">1.ª resp.</th><th title="Respuestas en el periodo">Resp.</th><th title="Conversaciones esperando respuesta ahora">Esperan</th><th title="Tareas abiertas">Tareas</th><th>Vencidas</th><th title="Clientes de los que es responsable">Clientes</th></tr></thead>
+    $("#dash-people").innerHTML = `<thead><tr><th>Persona</th><th title="Mediana del tiempo de primera respuesta">1.ª resp.</th><th title="Respuestas en el periodo">Resp.</th><th title="Respuestas dentro del plazo (${t.sla_hours} h)">En plazo</th><th title="Conversaciones esperando respuesta ahora">Esperan</th><th title="Tareas abiertas">Tareas</th><th>Vencidas</th><th title="Clientes de los que es responsable">Clientes</th></tr></thead>
       <tbody>${data.people.map((p) => `<tr><td>${escapeHtml(p.name)}</td><td class="num">${formatHours(p.median_response_hours)}</td>
-        <td class="num">${p.responses}</td><td class="num">${p.waiting}</td><td class="num">${p.open_tasks}</td>
+        <td class="num">${p.responses}</td><td class="num">${p.within_sla_pct === null ? "—" : `${p.within_sla_pct} %`}</td><td class="num">${p.waiting}</td><td class="num">${p.open_tasks}</td>
         <td class="num">${p.overdue_tasks ? `⚠ ${p.overdue_tasks}` : 0}</td><td class="num">${p.clients}</td></tr>`).join("")}</tbody>`;
   }
 }
