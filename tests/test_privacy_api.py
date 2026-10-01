@@ -16,6 +16,10 @@ acts = [(e["user"], e["action"], e["client_name"]) for e in entries]
 check("registra ver mensajes del equipo (una sola vez en 10 min)",
       acts.count(("Carlos Pérez", "team_messages", "Laura Gómez")) == 1, acts)
 check("ver solo mis mensajes no se registra", len([a for a in acts if a[1] == "team_messages"]) == 1)
+marta = Session("marta")
+st, tl = marta.get("/api/clients/3/timeline?scope=team")  # Sofía: todas sus conversaciones son de Marta
+check("historial completo sin conversaciones ajenas no se registra", st == 200 and tl and
+      not any(e["action"] == "team_messages" for e in ana.get("/api/admin/audit?user_id=3")[1]["entries"]))
 check("registra la búsqueda en el equipo con el texto", any(e["action"] == "team_search" and e["detail"] == "presupuesto" for e in entries))
 check("registra la bandeja del equipo", ("Carlos Pérez", "team_inbox", None) in acts)
 check("con descripción legible", entries[0]["action_label"].startswith("Vio") or entries[0]["action_label"].startswith("Buscó"), entries[0])
