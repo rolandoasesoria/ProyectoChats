@@ -1,11 +1,11 @@
-// Documentos y adjuntos: lista en la ficha, subida, lectura con IA, ver texto y borrar; 📎 en los mensajes.
+// Documentos y adjuntos: lista en la ficha, subida, lectura con IA, ver texto y borrar; adjuntos en los mensajes.
 
 const AI_READABLE = ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"];
 
 function fileIcon(mime) {
-  if (mime === "application/pdf") return "📄";
-  if (mime.startsWith("image/")) return "🖼️";
-  return "📎";
+  if (mime === "application/pdf") return "PDF";
+  if (mime.startsWith("image/")) return "IMG";
+  return "DOC";
 }
 
 function formatSize(bytes) {
@@ -22,7 +22,7 @@ function attachmentUrl(id, download = false) {
 function attachmentChips(list) {
   if (!list || !list.length) return "";
   return `<div class="att-chips">${list.map((a) =>
-    `<a class="att-chip" href="${attachmentUrl(a.id)}" target="_blank" rel="noopener" title="${escapeHtml(a.filename)} · ${formatSize(a.size)}">${fileIcon(a.mime)} ${escapeHtml(a.filename)}</a>`).join("")}</div>`;
+    `<a class="att-chip" href="${attachmentUrl(a.id)}" target="_blank" rel="noopener" title="${escapeHtml(a.filename)} · ${formatSize(a.size)}">${escapeHtml(a.filename)}</a>`).join("")}</div>`;
 }
 
 async function loadDocuments(clientId) {

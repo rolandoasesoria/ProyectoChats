@@ -165,7 +165,7 @@ function renderNotifications({ unread, items }) {
   $("#bell-read-all").hidden = !unread;
   $("#bell-list").innerHTML = items.length ? items.map((n) => `
     <li class="bell-item ${n.read_at ? "" : "unread-item"}" data-notification="${n.id}" data-client="${n.client_id || ""}" data-kind="${n.kind}">
-      <span class="bell-icon">${{ mention: "💬", task_assigned: "☑️", client_assigned: "👤" }[n.kind] || "🔔"}</span>
+      <span class="bell-icon"></span>
       <span class="bell-text">${escapeHtml(n.text)}<span class="muted small">${timeAgo(n.created_at)}</span></span>
     </li>`).join("") : `<li class="muted small bell-empty">No tienes avisos.</li>`;
 }

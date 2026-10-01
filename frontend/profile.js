@@ -240,7 +240,7 @@ async function loadMyTasks() {
   ].filter(([, list]) => list.length);
   $("#my-tasks").innerHTML = groups.length
     ? groups.map(([title, list]) => `<li class="task-group">${title}</li>` + list.map((t) => taskItem(t, { showClient: true })).join("")).join("")
-    : `<li class="muted small empty-tasks">No tienes tareas pendientes. 🎉</li>`;
+    : `<li class="muted small empty-tasks">No tienes tareas pendientes.</li>`;
 }
 
 function setMyTasksCount(tasks) {

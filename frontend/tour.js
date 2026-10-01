@@ -8,94 +8,69 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 13;
+const TOUR_VERSION = 14;
 
 const TOUR_STEPS = [
   {
     target: null,
-    title: "¡Bienvenido a ProyectoChats! 👋",
-    text: "Aquí tienes todas las conversaciones con tus clientes —email, WhatsApp, Telegram…— en un solo sitio, y un asistente de IA que busca los datos por ti. Te enseño la pantalla en un minuto.",
+    title: "Bienvenido a ProyectoChats",
+    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. Un recorrido de un minuto.",
   },
   {
     target: ".clients",
-    title: "Tus clientes",
-    text: "Aquí están todos los clientes, con los canales por los que se ha hablado con cada uno. El buscador encuentra por nombre, empresa, email, teléfono o @usuario. Un número azul indica mensajes nuevos desde la última vez que abriste ese cliente, y un punto, que tienes una conversación abierta con el asistente sobre él.",
-  },
-  {
-    target: "#client-filters",
-    title: "Filtrar clientes",
-    text: "Filtra la lista por estado (potencial, activo, incidencia, inactivo), por etiqueta o para ver solo los clientes de los que eres responsable. El punto de color junto a cada nombre indica su estado. Con ＋ puedes crear un cliente a mano.",
+    title: "Clientes",
+    text: "Busca por nombre, empresa, email o teléfono, y filtra por estado, etiqueta o responsable. El número azul indica mensajes nuevos. «Consulta general» pregunta sobre todos los clientes a la vez.",
   },
   {
     target: "#import-btn",
-    title: "Importar conversaciones",
-    text: "Trae aquí tus chats: exporta una conversación de WhatsApp (.txt, o .zip si incluye fotos y archivos), Telegram (.json) o tus correos (.eml o .mbox, con sus adjuntos) y súbela. Te preguntaré quién es el cliente y la guardaré en su ficha. Si importas el mismo chat más tarde, solo se añaden los mensajes nuevos.",
-  },
-  {
-    target: "#client-list li.general",
-    title: "Consulta general",
-    text: "Si no sabes de qué cliente se trata, o quieres preguntar por varios a la vez, usa la consulta general: puede buscar en todos los clientes.",
+    title: "Importar",
+    text: "Sube un chat exportado de WhatsApp (.txt/.zip), Telegram (.json) o correo (.eml/.mbox). Si lo vuelves a importar, solo se añaden los mensajes nuevos.",
   },
   {
     target: ".chat",
-    title: "El asistente",
-    text: "Pregúntale cualquier dato: «¿qué CIF nos dio?», «¿qué fecha de entrega acordamos?». Cada cliente tiene su propia conversación, que se guarda en tu perfil. Por defecto busca solo en TUS conversaciones; si quieres que mire también las de tus compañeros, pídeselo («busca también en las del equipo»).",
-  },
-  {
-    target: "#new-chat",
-    title: "Nueva conversación",
-    text: "Empieza de cero la conversación con el asistente sobre el cliente actual.",
+    title: "Asistente",
+    text: "Pregunta cualquier dato: «¿qué CIF nos dio?». Cada cliente tiene su propia conversación. Busca en las tuyas; si quieres que mire las de tus compañeros, pídeselo.",
   },
   {
     target: ".detail",
-    title: "Ficha, tareas y mensajes del cliente",
-    text: "Al elegir un cliente verás arriba su estado, responsable y etiquetas; con ✎ los cambias, añades identificadores (email, teléfono…) o lo unes con otro cliente si es la misma persona (y si la app detecta un posible duplicado, te lo propone). Debajo hay cuatro pestañas. «Ficha»: un resumen de cómo va todo y sus datos clave (dirección, CIF, forma de pago…), que la IA saca de las conversaciones; puedes corregirlos, añadir los tuyos o descartar los que sobren, y con ↗ ves el mensaje de donde sale cada uno. Debajo están sus «Documentos»: adjuntos de correos y WhatsApp y los que subas tú; la IA puede leer fotos y PDF para que también se pueda buscar en ellos. «Tareas»: lo que hay pendiente con ese cliente, incluidos los compromisos que la IA detecta («te mando el presupuesto el lunes»). «Notas»: comentarios internos del equipo que el cliente nunca ve; escribe @ y el nombre de un compañero para avisarle. «Mensajes»: todo el historial del cliente en todos los canales, también lo que hablaron tus compañeros (verás «la lleva…» en esas conversaciones; marca «Solo mis conversaciones» para ver solo las tuyas), con un buscador por palabras o ✨ por significado (entiende la pregunta aunque el mensaje use otras palabras), y el botón «✍️ Redactar respuesta» para que la IA te prepare la contestación (o escribirla tú); si el canal está conectado, la envías desde aquí con «📤 Enviar», y si no, la copias. Si han llegado mensajes desde tu última visita, te lo avisaré arriba y podrás pedir un resumen de las novedades.",
+    title: "Ficha del cliente",
+    text: "«Ficha»: resumen, datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta». Con ✎ editas estado, responsable y etiquetas.",
   },
   {
     target: "#side-inbox-tab",
     title: "Sin responder",
-    text: "Clientes que te han escrito y esperan respuesta, del que más tiempo lleva esperando al que menos (en rojo si pasan de 24 h). Pulsa uno para ir directo a su mensaje. Con «✍️ Responder» la IA te prepara un borrador. Si un mensaje no necesita respuesta (un «¡gracias!»), márcalo como «Atendido». Arriba eliges «Mías» o «Todo el equipo» (con el número de cada lado); en las de tus compañeros verás quién la lleva.",
+    text: "Quién espera respuesta, de más a menos tiempo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta.",
   },
   {
     target: "#side-tasks-tab",
-    title: "Tus tareas",
-    text: "Aquí tienes todas tus tareas pendientes de todos los clientes, ordenadas: vencidas, para hoy, próximas y sin fecha. El número se pone en rojo si alguna vence hoy o ya ha vencido.",
+    title: "Tareas",
+    text: "Tus tareas de todos los clientes. El número se pone en rojo si alguna vence hoy o ya ha vencido.",
   },
   {
     target: "#dashboard-btn",
-    title: "Panel de actividad",
-    text: "Cifras del equipo en el periodo que elijas: mensajes recibidos y enviados, clientes con actividad, tiempo de primera respuesta, tareas y clientes por estado. Los administradores ven además el desglose por persona.",
+    title: "Panel",
+    text: "Mensajes, tiempo de respuesta, tareas y clientes por estado en el periodo que elijas.",
   },
   {
     target: "#bell",
     title: "Avisos",
-    text: "La campana te avisa cuando un compañero te menciona en una nota o te asigna una tarea. Pulsa un aviso para ir directo al cliente.",
-  },
-  {
-    target: "#theme-toggle",
-    title: "Tema claro u oscuro",
-    text: "Cambia entre tema claro y oscuro. Se guarda en tu perfil, así que lo tendrás igual en cualquier dispositivo.",
+    text: "Te avisa cuando te mencionan en una nota o te asignan una tarea.",
   },
   {
     target: "#user-menu-btn",
     title: "Tu cuenta",
-    text: "Desde aquí puedes volver a ver este tutorial, cambiar tu contraseña y cerrar sesión.",
+    text: "Contraseña, este tutorial y cerrar sesión. El botón de al lado cambia entre tema claro y oscuro.",
   },
   {
     target: "#user-menu-btn",
     title: "Administración",
-    text: "Como administrador, en este mismo menú tienes «Administración»: crear cuentas, cambiar roles, restablecer contraseñas y desactivar cuentas; «Integraciones», para conectar el correo, un bot de Telegram o WhatsApp Business y que los mensajes entren solos; y el «Registro de accesos», que muestra quién ha consultado conversaciones de compañeros y quién ha exportado, borrado o unido clientes. Además, en ✎ de cada cliente puedes descargar todos sus datos o borrarlo por completo si lo pide (protección de datos).",
+    text: "En este menú gestionas cuentas, conectas canales en «Integraciones» y consultas el «Registro de accesos». Desde ✎ en cada cliente puedes exportar o borrar sus datos.",
     when: () => currentUser?.role === "admin",
   },
   {
     target: "#mascot",
-    title: "Chispa, tu ayudante",
-    text: "¿Dudas sobre cómo funciona algo? Pulsa aquí y pregúntale a Chispa. Ella sabe todo sobre la app (pero no ve los datos de los clientes: para eso está el asistente).",
-  },
-  {
-    target: null,
-    title: "¡Listo!",
-    text: "Ya puedes empezar. Elige un cliente de la lista y pregúntale al asistente lo que necesites.",
+    title: "¿Dudas? Pregunta a Chispa",
+    text: "Chispa te explica cómo funciona la app. Ya puedes empezar: elige un cliente y pregúntale al asistente.",
   },
 ];
 

@@ -147,7 +147,7 @@ async function updateSendButton() {
     const s = await api(`/api/conversations/${convId}/sender`);
     if ($("#draft-conversation").value !== convId) return;
     btn.hidden = !s.can_send;
-    btn.textContent = `📤 Enviar por ${s.via || ""}`.trim();
+    btn.textContent = `Enviar por ${s.via || ""}`.trim();
   } catch { /* sin envío */ }
 }
 

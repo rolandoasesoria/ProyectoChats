@@ -84,7 +84,7 @@ async function renderImportReview() {
     </label>`).join("");
 
   const clients = await api("/api/clients");
-  $("#import-client").innerHTML = `<option value="">➕ Cliente nuevo</option>` +
+  $("#import-client").innerHTML = `<option value="">+ Cliente nuevo</option>` +
     clients.map((c) => `<option value="${c.id}">${escapeHtml(c.name)}</option>`).join("");
   $("#import-handle").placeholder = HANDLE_HINTS[p.channel] || "";
   $("#import-handle-label").hidden = p.channel === "email"; // en email el identificador es la propia dirección
@@ -132,7 +132,7 @@ async function submitImport(e) {
     importState.analysisStarted = res.analysis_started;
     importState.importedAt = res.imported_at;
     $("#import-result").innerHTML = res.messages
-      ? `✅ Importados <strong>${res.messages}</strong> mensajes en ${res.conversations} conversación${res.conversations === 1 ? "" : "es"}` +
+      ? `Importados <strong>${res.messages}</strong> mensajes en ${res.conversations} conversación${res.conversations === 1 ? "" : "es"}` +
         (res.attachments ? ` y ${res.attachments} archivo${res.attachments === 1 ? "" : "s"} adjunto${res.attachments === 1 ? "" : "s"}` : "") +
         (res.duplicates ? ` <span class="muted">(${res.duplicates} ya estaban y se han omitido)</span>` : "") + "."
       : `No había mensajes nuevos: los ${res.duplicates} mensajes ya estaban importados.`;
