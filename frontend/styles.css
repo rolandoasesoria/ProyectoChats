@@ -595,7 +595,8 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 .detail p { margin: 2px 0 10px; font-size: 13px; }
 .identities { display: flex; flex-direction: column; gap: 4px; font-size: 13px; margin-bottom: 12px; }
 .identities div { display: flex; gap: 6px; align-items: center; }
-.timeline-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.timeline-controls { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; }
+.owner-tag { color: var(--accent); font-weight: 600; }
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .segmented button { background: none; border: none; padding: 5px 12px; cursor: pointer; }
 .segmented button.active { background: var(--accent); color: #fff; }

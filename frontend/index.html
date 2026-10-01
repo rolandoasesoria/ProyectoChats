@@ -217,11 +217,10 @@
             </div>
           </div>
           <div class="timeline-controls">
-            <div class="segmented" role="group" aria-label="Alcance">
-              <button data-scope="mine" class="active">Mías</button>
-              <button data-scope="team">Equipo</button>
-            </div>
             <select id="channel-filter"><option value="">Todos los canales</option></select>
+            <label class="check" title="Ocultar las conversaciones que llevan tus compañeros con este cliente">
+              <input type="checkbox" id="only-mine"> Solo mis conversaciones
+            </label>
           </div>
           <ol id="timeline" class="timeline"></ol>
         </section>

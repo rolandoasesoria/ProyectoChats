@@ -4,7 +4,7 @@ const GENERAL = "general"; // clave del hilo sin cliente seleccionado
 
 const state = {
   clientId: null,
-  scope: "mine",
+  scope: "team",  // historial del cliente: todo el equipo, salvo «Solo mis conversaciones»
   channel: "",
   // Un hilo del asistente por cliente: clave -> { el (div.thread), busy, loaded }
   threads: new Map(),
@@ -119,13 +119,13 @@ async function loadTimeline() {
   const list = $("#timeline");
   if (!messages.length) {
     list.innerHTML = `<li class="muted">${state.scope === "mine"
-      ? "No tienes conversaciones con este cliente. Prueba con «Equipo»."
+      ? "Tú no has hablado con este cliente. Desmarca «Solo mis conversaciones» para ver las del equipo."
       : "Sin mensajes."}</li>`;
     return;
   }
   list.innerHTML = messages.map((m) => `
     <li class="${escapeHtml(m.channel)} ${m.direction}" data-id="${m.id}">
-      <div class="meta">${badge(m.channel)} ${escapeHtml(m.sender)} · ${formatDate(m.sent_at)}${state.scope === "team" ? ` · de ${escapeHtml(m.owner)}` : ""}</div>
+      <div class="meta">${badge(m.channel)} ${escapeHtml(m.sender)} · ${formatDate(m.sent_at)}${m.owner !== currentUser.name ? ` · <span class="owner-tag" title="Conversación que lleva ${escapeHtml(m.owner)}">la lleva ${escapeHtml(m.owner)}</span>` : ""}</div>
       ${escapeHtml(m.body)}${attachmentChips(m.attachments)}
     </li>`).join("");
   list.scrollTop = list.scrollHeight;
@@ -352,11 +352,10 @@ function bindEvents() {
     if (li) selectClient(li.dataset.id ? Number(li.dataset.id) : null);
   });
 
-  document.querySelectorAll(".timeline-controls .segmented button").forEach((btn) => btn.addEventListener("click", () => {
-    state.scope = btn.dataset.scope;
-    document.querySelectorAll(".timeline-controls .segmented button").forEach((b) => b.classList.toggle("active", b === btn));
+  $("#only-mine").addEventListener("change", (e) => {
+    state.scope = e.target.checked ? "mine" : "team";
     loadTimeline();
-  }));
+  });
   $("#channel-filter").addEventListener("change", (e) => {
     state.channel = e.target.value;
     loadTimeline();

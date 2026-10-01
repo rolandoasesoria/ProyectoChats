@@ -352,11 +352,9 @@ async function onTaskSubmit(e) {
 
 async function showSourceMessage(messageId) {
   showDetailTab("messages");
-  // El mensaje puede ser de la conversación de un compañero: se muestra el historial del equipo.
-  if (state.scope !== "team") {
-    state.scope = "team";
-    document.querySelectorAll(".timeline-controls .segmented button").forEach((b) => b.classList.toggle("active", b.dataset.scope === "team"));
-  }
+  // El mensaje puede ser de la conversación de un compañero: se muestra todo el historial.
+  state.scope = "team";
+  $("#only-mine").checked = false;
   state.channel = "";
   $("#channel-filter").value = "";
   await loadTimeline();
