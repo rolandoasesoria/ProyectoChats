@@ -3,7 +3,13 @@ import sys
 from pathlib import Path
 
 from apitest import check, results
+from app.db import get_conn
 from browser import Browser
+
+# Jorge Martín (cliente 2) con un análisis de la IA que lo marca como urgente y molesto.
+with get_conn() as conn:
+    conn.execute("""INSERT INTO client_analysis (client_id, summary, last_message_id, priority, mood, priority_reason)
+                    VALUES (2, 'Pide etiquetas resistentes a aceite.', 0, 'alta', 'molesto', 'Espera respuesta desde hace días')""")
 
 BASE = "http://127.0.0.1:8001"
 b = Browser()
@@ -159,6 +165,9 @@ try:
     # Bandeja sin responder
     b.click('.side-tabs [data-side="inbox"]')
     b.wait("document.querySelectorAll('#inbox-list .inbox-item').length > 0")
+    check("la bandeja marca la prioridad y el tono que detectó la IA",
+          b.js("[...document.querySelectorAll('#inbox-list .inbox-item')].find(li => li.textContent.includes('Jorge Martín'))"
+               ".querySelectorAll('.prio-chip').length") == 2)
     check("bandeja sin responder con elementos", b.js("document.querySelectorAll('#inbox-list .inbox-item').length") == 2)
     b.wait("document.querySelector('#inbox-count-team').textContent !== ''")
     check("el selector muestra cuántas hay en cada lado", b.js(
