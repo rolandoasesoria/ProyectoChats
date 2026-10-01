@@ -1,13 +1,13 @@
 """Agente conversacional: Claude + herramientas de búsqueda sobre las conversaciones."""
 import json
-import os
 from datetime import date
 
 import anthropic
 
 from . import attachments, audit, insights, notes, search
+from .config import config
 
-MODEL = os.getenv("CLAUDE_MODEL", "claude-opus-5-5")
+MODEL = config.ai.model
 MAX_TOOL_ROUNDS = 10
 
 SYSTEM_PROMPT = """Eres el asistente de un equipo que atiende clientes por varios canales \
@@ -270,12 +270,12 @@ class MissingCredentialsError(Exception):
 
 _client: anthropic.Anthropic | None = None
 # DISABLE_AI=true: la app se comporta como si no hubiera clave (pruebas: nunca llaman a la API de verdad).
-AI_DISABLED = os.getenv("DISABLE_AI", "false").lower() == "true"
+AI_DISABLED = config.ai.disabled
 
 
 def credentials_configured() -> bool:
     """Aproximación rápida (sin llamar a la API) de si hay credenciales de Anthropic configuradas."""
-    return not AI_DISABLED and bool(os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN"))
+    return config.ai.has_credentials
 
 
 def _get_client() -> anthropic.Anthropic:
