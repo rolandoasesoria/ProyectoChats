@@ -226,7 +226,7 @@ p. ej. de Google Takeout o Thunderbird). Máximo 25 MB. La app muestra los parti
 cuál es el cliente y si es un cliente nuevo o uno existente. Lo importado queda como conversación del usuario \
 que lo sube. Reimportar el mismo chat solo añade los mensajes nuevos. En un .mbox solo se importan los correos \
 en los que participa el cliente elegido, agrupados por asunto.
-- Panel central, "Asistente": cada cliente tiene su propia conversación con el asistente, guardada en tu perfil: \
+- Columna derecha, "Asistente": cada cliente tiene su propia conversación con el asistente, guardada en tu perfil: \
 se conserva al cambiar de cliente, recargar la página o entrar otro día. "Nueva conversación" empieza una limpia.
 - El asistente busca por defecto solo en TUS conversaciones. Para que busque también en las de tus compañeros, \
 pídeselo explícitamente ("busca también en las del equipo"). Bajo cada respuesta aparece qué búsquedas hizo; \
@@ -239,7 +239,7 @@ las marcadas como "equipo" salieron de conversaciones de otros compañeros.
 agrupadas en vencidas, hoy, próximas y sin fecha. El contador se pone en rojo si alguna vence hoy o ya venció. \
 Pulsando el nombre del cliente se abre su ficha.
 - Lista de clientes: filtros por estado (Potencial, Activo, Incidencia, Inactivo), por etiqueta y "Míos" (clientes de los que eres responsable). El punto de color junto al nombre es el estado. El buscador también encuentra por etiqueta. "＋" crea un cliente a mano (p. ej. tras una llamada); queda con la persona que lo crea como responsable.
-- Panel derecho (al elegir un cliente): arriba el nombre con su estado, la empresa, el responsable, las etiquetas y sus identificadores por canal. El lápiz ✎ junto al nombre abre "Editar cliente": nombre, empresa, estado, responsable (recibe un aviso), etiquetas separadas por comas, identificadores (añadir o quitar email, WhatsApp, Telegram, teléfono u otro; sirven para que las importaciones se asocien al cliente correcto) y "Unir con otro cliente": si dos fichas son la misma persona, todo (conversaciones, datos, tareas, notas, etiquetas) pasa al cliente elegido y el otro desaparece; no se puede deshacer. Si la app ve un posible duplicado (mismo nombre, email o teléfono), lo muestra en amarillo con el botón "Unir aquí". Debajo hay cuatro pestañas:
+- Panel central (al elegir un cliente): arriba el nombre con su estado, la empresa, el responsable, las etiquetas y sus identificadores por canal. El lápiz ✎ junto al nombre abre "Editar cliente": nombre, empresa, estado, responsable (recibe un aviso), etiquetas separadas por comas, identificadores (añadir o quitar email, WhatsApp, Telegram, teléfono u otro; sirven para que las importaciones se asocien al cliente correcto) y "Unir con otro cliente": si dos fichas son la misma persona, todo (conversaciones, datos, tareas, notas, etiquetas) pasa al cliente elegido y el otro desaparece; no se puede deshacer. Si la app ve un posible duplicado (mismo nombre, email o teléfono), lo muestra en amarillo con el botón "Unir aquí". Debajo hay cuatro pestañas:
   · "Ficha": resumen del estado del cliente y "Datos clave" (dirección, CIF, teléfonos, forma de pago, precios \
 acordados...). Al analizar, la IA también deduce la prioridad del cliente (alta, media o baja, con el motivo) y su tono ("molesto" si se queja): se ven como etiquetas bajo "Resumen" y junto al nombre en "Sin responder" ("Prioridad alta", "Molesto"), para atender antes lo urgente. "✨ Actualizar con IA" hace que la IA lea todas las conversaciones del cliente (de todo el equipo) \
 y actualice resumen, datos y tareas; también se hace sola, en segundo plano, después de cada importación. \
@@ -258,7 +258,7 @@ búsqueda con sinónimos, busca en mensajes y documentos y ordena lo que de verd
 qué). Ambos buscan en tus conversaciones o en las del equipo según la casilla "Solo mis conversaciones". Al pulsar un resultado se \
 salta a ese mensaje. Debajo, todos los mensajes del cliente en orden cronológico. Por defecto se ve el historial completo, \
 con "la lleva X" en las conversaciones de compañeros; la casilla "Solo mis conversaciones" deja solo las tuyas. Se puede filtrar por canal. Arriba está "Redactar respuesta": se elige la conversación (canal) a la que responder, se pueden dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y la IA redacta un borrador con el contexto de todos los canales, la ficha y las tareas del cliente, en el estilo del canal (breve en WhatsApp/Telegram; con saludo y firma en email). No inventa precios ni fechas: deja huecos entre corchetes como [precio]. El borrador se puede editar, regenerar y copiar para pegarlo en WhatsApp, el correo, etc., o se envía directamente con "Enviar" si el canal está conectado en Integraciones. En "Sin responder", "Responder" abre directamente el borrador de esa conversación. "Respuestas guardadas" (en el borrador, o escribiendo / y el atajo en el texto, p. ej. /facturacion) inserta un texto del equipo con variables rellenas: {nombre}, {cliente}, {empresa}, {yo} y {dato:CIF} (cualquier dato clave de la ficha; lo que falta queda entre corchetes). Una vez escrito, el desplegable "✨ Retocar…" lo cambia con IA: más formal, más cercano, más corto, corregir ortografía o traducir (inglés, francés u otro idioma); "Deshacer" recupera el texto anterior. Si la respuesta guardada tiene acciones (cambiar el estado, añadir una etiqueta, marcar la conversación como atendida) es una macro y se aplican al usarla. Se crean y editan en el menú de usuario > "Respuestas guardadas"; cada uno edita las suyas y un administrador, todas.
-- Tú (Chispa) estás en la esquina inferior derecha; tu conversación también se guarda.
+- Tú (Chispa) estás en la esquina inferior izquierda; tu conversación también se guarda.
 - Consejos para preguntar: sé concreto ("¿qué CIF nos dio?", "¿qué fecha de entrega acordamos?"). \
 El asistente prueba sinónimos solo, pero conviene nombrar el dato que buscas.
 
@@ -272,15 +272,19 @@ class MissingCredentialsError(Exception):
 
 
 _client: anthropic.Anthropic | None = None
+# DISABLE_AI=true: la app se comporta como si no hubiera clave (pruebas: nunca llaman a la API de verdad).
+AI_DISABLED = os.getenv("DISABLE_AI", "false").lower() == "true"
 
 
 def credentials_configured() -> bool:
     """Aproximación rápida (sin llamar a la API) de si hay credenciales de Anthropic configuradas."""
-    return bool(os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN"))
+    return not AI_DISABLED and bool(os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN"))
 
 
 def _get_client() -> anthropic.Anthropic:
     global _client
+    if AI_DISABLED:
+        raise MissingCredentialsError()
     if _client is None:
         _client = anthropic.Anthropic()
     return _client

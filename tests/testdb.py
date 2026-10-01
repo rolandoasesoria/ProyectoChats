@@ -22,5 +22,6 @@ if not url or "test" not in url.rsplit("/", 1)[-1]:
 os.environ["DATABASE_URL"] = url
 os.environ.setdefault("DATA_DIR", str(TMP))
 os.environ["DISABLE_SYNC"] = "true"
+os.environ["DISABLE_AI"] = "true"  # las pruebas nunca llaman a la API de Claude de verdad
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
