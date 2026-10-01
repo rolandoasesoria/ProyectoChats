@@ -183,6 +183,28 @@ frontend (navegador) ──HTTP──▶ FastAPI ──▶ PostgreSQL (clientes,
 - **Trazabilidad:** cada respuesta muestra qué búsquedas hizo el agente y si salió de tus conversaciones
   o de las del equipo.
 
+### Organización del código (por capas)
+
+```
+backend/
+├── database/            Base de datos, separada del código
+│   ├── migrations/      Esquema: 0001_esquema_inicial.sql, 0002_…  (se aplican en orden, una sola vez)
+│   └── roles.sql        Usuarios con el mínimo privilegio (dueño del esquema / app)
+└── app/
+    ├── main.py          Crea la app: seguridad HTTP, traducción de errores, arranque y routers
+    ├── api/             Capa web: una ruta por área (clients.py, inbox.py, tasks.py…). Valida la entrada
+    │                    (pydantic), comprueba la sesión (deps.py) y llama a los servicios. Sin SQL.
+    ├── *.py             Servicios: las reglas de negocio (clients.py, followups.py, integrations.py…). Abren
+    │                    la transacción y usan los repositorios. No saben nada de HTTP: lanzan errors.py.
+    ├── repositories/    Capa de datos: todo el SQL, una función por consulta, con parámetros.
+    ├── db/              Conexiones (pool, TLS, tiempos límite) y migraciones.
+    ├── config.py        Toda la configuración (.env), leída y validada una vez al arrancar.
+    └── errors.py        Errores de dominio (NotFound, Conflict…); main.py los convierte en códigos HTTP.
+```
+
+Las dependencias van en un solo sentido: `api → servicios → repositorios → db`. Así cada pieza tiene una
+responsabilidad, se puede probar por separado y un cambio en la base de datos no obliga a tocar las rutas.
+
 ## API
 
 | Método | Ruta | Descripción |
@@ -210,6 +232,9 @@ Todas salvo el login requieren haber iniciado sesión.
   ramas por funcionalidad, versiones en [`CHANGELOG.md`](CHANGELOG.md). Al clonar, activa los hooks:
   `powershell -ExecutionPolicy Bypass -File scripts/instalar-hooks.ps1`.
 - **Pruebas**: [`tests/README.md`](tests/README.md) — `powershell -ExecutionPolicy Bypass -File tests/run_tests.ps1`.
+- **Estilo**: `ruff` (configuración en `backend/ruff.toml`). Desde `backend/`: `python -m ruff check . ../tests`.
+- **Cambiar el esquema**: añade `backend/database/migrations/NNNN_descripcion.sql` (nunca edites una ya aplicada)
+  y el SQL nuevo en `backend/app/repositories/`.
 
 ## Limitaciones actuales / siguientes pasos
 
