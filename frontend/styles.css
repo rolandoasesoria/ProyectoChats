@@ -193,6 +193,8 @@ body.login-page { align-items: center; justify-content: center; padding: 16px; }
 }
 .count.alert { background: var(--danger-bg); color: var(--danger-text); }
 .side-pane { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; overflow-y: auto; }
+/* Solo la lista se desplaza: los controles de arriba (selectores, buscador, filtros) nunca se encogen. */
+.side-pane > :not(ul) { flex-shrink: 0; }
 .tab-pane { flex: 1; min-height: 0; overflow-y: auto; padding-top: 12px; display: flex; flex-direction: column; }
 .detail-tabs { margin-top: 4px; }
 
@@ -247,7 +249,11 @@ body.login-page { align-items: center; justify-content: center; padding: 16px; }
 .side-tabs button { padding: 8px 6px; font-size: 13px; gap: 4px; white-space: nowrap; }
 
 /* Bandeja "Sin responder" */
-#inbox-scope { align-self: flex-start; }
+#inbox-scope { align-self: stretch; }
+.scope-switch { display: flex; }
+.scope-switch button { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 6px; font-size: 13px; padding: 6px 8px; }
+.scope-switch button.active .count { background: rgba(255, 255, 255, .25); color: #fff; }
+.count:empty { display: none; }
 .inbox-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
 .inbox-item { padding: 8px 10px; border-radius: 8px; cursor: pointer; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 4px; }
 .inbox-item:hover { background: var(--bg); }
@@ -589,7 +595,8 @@ td.num, .people-table td:not(:first-child) { text-align: right; font-variant-num
 .detail p { margin: 2px 0 10px; font-size: 13px; }
 .identities { display: flex; flex-direction: column; gap: 4px; font-size: 13px; margin-bottom: 12px; }
 .identities div { display: flex; gap: 6px; align-items: center; }
-.timeline-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.timeline-controls { display: flex; gap: 10px; align-items: center; justify-content: space-between; margin-bottom: 10px; flex-wrap: wrap; }
+.owner-tag { color: var(--accent); font-weight: 600; }
 .segmented { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
 .segmented button { background: none; border: none; padding: 5px 12px; cursor: pointer; }
 .segmented button.active { background: var(--accent); color: #fff; }

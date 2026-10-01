@@ -6,7 +6,7 @@ function highlight(snippet) {
 }
 
 function scopeLabel() {
-  return state.scope === "team" ? "en las conversaciones de todo el equipo" : "en tus conversaciones";
+  return state.scope === "team" ? "en todo el historial del cliente" : "solo en tus conversaciones";
 }
 
 function renderResults(html) {
@@ -24,7 +24,7 @@ function resultItem(r, { reason = "", text = "" } = {}) {
       <div class="result-text">${text}</div></li>`;
   }
   return `<li class="result" data-message="${r.message_id}">
-    <div class="result-meta">${badge(r.channel)} ${escapeHtml(r.sender)} · ${formatDate(r.sent_at)}${r.owner ? ` · de ${escapeHtml(r.owner)}` : ""}</div>
+    <div class="result-meta">${badge(r.channel)} ${escapeHtml(r.sender)} · ${formatDate(r.sent_at)}${r.owner && r.owner !== currentUser.name ? ` · <span class="owner-tag">la lleva ${escapeHtml(r.owner)}</span>` : ""}</div>
     ${reason ? `<div class="result-reason">${escapeHtml(reason)}</div>` : ""}
     <div class="result-text">${text}</div></li>`;
 }
@@ -38,7 +38,7 @@ async function keywordSearch(e) {
     const results = await api(`/api/search?${params}`);
     renderResults(results.length
       ? `<ul class="results">${results.map((r) => resultItem(r, { text: highlight(r.snippet) })).join("")}</ul>`
-      : `<p class="muted small">Nada con esas palabras. Prueba «✨ Por significado» o cambia a «Equipo».</p>`);
+      : `<p class="muted small">Nada con esas palabras. Prueba «✨ Por significado» o desmarca «Solo mis conversaciones».</p>`);
     $("#msg-results-title").textContent = `${results.length} resultado${results.length === 1 ? "" : "s"} ${scopeLabel()}`;
   } catch (err) {
     alert(err.message);

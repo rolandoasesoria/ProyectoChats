@@ -12,8 +12,15 @@ function waitLabel(sentAt) {
   return `<span class="wait ${hours >= WAIT_ALERT_HOURS ? "late" : ""}" title="Esperando respuesta desde ${formatDate(sentAt)}">⏱ ${text}</span>`;
 }
 
+// Número de conversaciones en cada lado del selector «Mías · Todo el equipo».
+async function loadInboxCounts() {
+  const c = await api("/api/inbox/counts");
+  $("#inbox-count-mine").textContent = c.mine;
+  $("#inbox-count-team").textContent = c.team;
+}
+
 async function loadInbox() {
-  const items = await api(`/api/inbox?scope=${inboxScope}`);
+  const [items] = await Promise.all([api(`/api/inbox?scope=${inboxScope}`), loadInboxCounts()]);
   if (inboxScope === "mine") setInboxCount(items);
   $("#inbox-list").innerHTML = items.length ? items.map((i) => `
     <li class="inbox-item" data-client="${i.client_id}" data-message="${i.message_id}" data-conversation="${i.conversation_id}">
@@ -23,7 +30,7 @@ async function loadInbox() {
       </div>
       <div class="inbox-snippet">${badge(i.channel)} ${escapeHtml(i.body.length > 140 ? `${i.body.slice(0, 140)}…` : i.body)}</div>
       <div class="inbox-bottom">
-        <span class="muted small">${i.is_mine ? "Tu conversación" : `Conversación de ${escapeHtml(i.owner)}`}</span>
+        <span class="muted small">${i.is_mine ? "La llevas tú" : `La lleva ${escapeHtml(i.owner)}`}</span>
         <span>
           <button class="link small" data-reply title="Redactar la respuesta con IA">✍️ Responder</button>
           <button class="link small" data-dismiss title="Quitar de la bandeja: no necesita respuesta">✓ Atendido</button>

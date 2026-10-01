@@ -186,7 +186,7 @@ respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de 
 - Administración (solo administradores), pestaña "Usuarios": crear cuentas, cambiar nombre, email o rol \
 (usuario/administrador), restablecer contraseñas y desactivar cuentas. Una cuenta desactivada no puede entrar pero \
 sus conversaciones se conservan. Pestaña "Registro de accesos": quién ha visto mensajes del equipo (historial \
-"Equipo", bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
+de un cliente con conversaciones de compañeros, bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
 exportado, borrado o unido clientes o cambiado cuentas; filtrable por persona y acción. Las consultas repetidas \
 en 10 minutos cuentan como una.
 - Administración, pestaña "Integraciones" (solo administradores): conecta canales para que los mensajes entren \
@@ -231,7 +231,7 @@ se conserva al cambiar de cliente, recargar la página o entrar otro día. "Nuev
 - El asistente busca por defecto solo en TUS conversaciones. Para que busque también en las de tus compañeros, \
 pídeselo explícitamente ("busca también en las del equipo"). Bajo cada respuesta aparece qué búsquedas hizo; \
 las marcadas como "equipo" salieron de conversaciones de otros compañeros.
-- Columna izquierda, pestaña "Sin responder": conversaciones cuyo último mensaje es del cliente, ordenadas por tiempo de espera (en rojo a partir de 24 h; el contador de la pestaña también). Al pulsar una se abre el cliente en su mensaje. "✓ Atendido" la quita de la bandeja si no necesita respuesta (vuelve si el cliente escribe otra vez). "Mías" muestra tus conversaciones y "Equipo" las de todos.
+- Columna izquierda, pestaña "Sin responder": conversaciones cuyo último mensaje es del cliente, ordenadas por tiempo de espera (en rojo a partir de 24 h; el contador de la pestaña también). Al pulsar una se abre el cliente en su mensaje. "✓ Atendido" la quita de la bandeja si no necesita respuesta (vuelve si el cliente escribe otra vez). Arriba, "Mías" muestra tus conversaciones y "Todo el equipo" las de todos, con el número de cada lado; en las ajenas pone quién la lleva.
 - En la lista de clientes, un número azul junto al nombre indica mensajes nuevos desde tu última visita a ese cliente. Al abrirlo, arriba de la ficha aparece "N mensajes nuevos desde tu última visita" con el botón "✨ Resumir novedades", que hace un resumen con IA de solo esos mensajes.
 - Columna izquierda, pestaña "Tareas": todas las tareas pendientes asignadas a ti, de todos los clientes, \
 agrupadas en vencidas, hoy, próximas y sin fecha. El contador se pone en rojo si alguna vence hoy o ya venció. \
@@ -253,9 +253,9 @@ editar (✎), completar (casilla), borrar (×) y ver las ya hechas.
   · "Mensajes": arriba, un buscador con dos modos: "Buscar" (por palabras, instantáneo, ignora tildes y resalta \
 lo encontrado) y "✨ Por significado" (la IA entiende la pregunta aunque el mensaje use otras palabras: amplía la \
 búsqueda con sinónimos, busca en mensajes y documentos y ordena lo que de verdad responde, con una frase de por \
-qué). Ambos buscan en tus conversaciones o en las del equipo según "Mías"/"Equipo". Al pulsar un resultado se \
-salta a ese mensaje. Debajo, todos los mensajes del cliente en orden cronológico. "Mías" muestra solo tus conversaciones \
-y "Equipo" las de todos. Se puede filtrar por canal. Arriba está "✍️ Redactar respuesta": se elige la conversación (canal) a la que responder, se pueden dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y la IA redacta un borrador con el contexto de todos los canales, la ficha y las tareas del cliente, en el estilo del canal (breve en WhatsApp/Telegram; con saludo y firma en email). No inventa precios ni fechas: deja huecos entre corchetes como [precio]. El borrador se puede editar, regenerar y copiar (📋) para pegarlo en WhatsApp, el correo, etc., o se envía directamente con "📤 Enviar" si el canal está conectado en Integraciones. En "Sin responder", "✍️ Responder" abre directamente el borrador de esa conversación.
+qué). Ambos buscan en tus conversaciones o en las del equipo según la casilla "Solo mis conversaciones". Al pulsar un resultado se \
+salta a ese mensaje. Debajo, todos los mensajes del cliente en orden cronológico. Por defecto se ve el historial completo, \
+con "la lleva X" en las conversaciones de compañeros; la casilla "Solo mis conversaciones" deja solo las tuyas. Se puede filtrar por canal. Arriba está "✍️ Redactar respuesta": se elige la conversación (canal) a la que responder, se pueden dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y la IA redacta un borrador con el contexto de todos los canales, la ficha y las tareas del cliente, en el estilo del canal (breve en WhatsApp/Telegram; con saludo y firma en email). No inventa precios ni fechas: deja huecos entre corchetes como [precio]. El borrador se puede editar, regenerar y copiar (📋) para pegarlo en WhatsApp, el correo, etc., o se envía directamente con "📤 Enviar" si el canal está conectado en Integraciones. En "Sin responder", "✍️ Responder" abre directamente el borrador de esa conversación.
 - Tú (Chispa) estás en la esquina inferior derecha; tu conversación también se guarda.
 - Consejos para preguntar: sé concreto ("¿qué CIF nos dio?", "¿qué fecha de entrega acordamos?"). \
 El asistente prueba sinónimos solo, pero conviene nombrar el dato que buscas.

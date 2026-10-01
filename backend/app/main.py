@@ -458,6 +458,12 @@ def draft(conversation_id: int, req: DraftRequest, user: CurrentUser):
             raise HTTPException(404 if "no encontrada" in str(exc) else 400, str(exc))
 
 
+@app.get("/api/inbox/counts")
+def inbox_counts(user: CurrentUser):
+    """Cuántas conversaciones esperan respuesta: mías y de todo el equipo (solo números, sin contenido)."""
+    return {"mine": len(search.unanswered(user["id"], "mine")), "team": len(search.unanswered(user["id"], "team"))}
+
+
 @app.get("/api/inbox")
 def inbox(user: CurrentUser, scope: Literal["mine", "team"] = "mine"):
     """Bandeja "Sin responder": conversaciones cuyo último mensaje es del cliente."""
@@ -489,9 +495,11 @@ def client_detail(client_id: int, user: CurrentUser):
 @app.get("/api/clients/{client_id}/timeline")
 def client_timeline(client_id: int, user: CurrentUser, scope: Literal["mine", "team"] = "mine",
                     channel: str | None = None):
-    if scope == "team":
+    messages = search.timeline(client_id, user["id"], scope, channel)
+    # Solo cuenta como acceso al equipo si de verdad se muestran conversaciones de compañeros.
+    if scope == "team" and any(m["owner_id"] != user["id"] for m in messages):
         audit.log(user["id"], "team_messages", client_id, throttle=True)
-    return search.timeline(client_id, user["id"], scope, channel)
+    return messages
 
 
 @app.get("/api/search")

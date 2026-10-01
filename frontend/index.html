@@ -76,9 +76,9 @@
         <ul id="client-list" class="client-list"></ul>
       </div>
       <div class="side-pane" id="side-inbox" hidden>
-        <div class="segmented" role="group" aria-label="Alcance de la bandeja" id="inbox-scope">
-          <button data-inbox-scope="mine" class="active">Mías</button>
-          <button data-inbox-scope="team">Equipo</button>
+        <div class="segmented scope-switch" role="group" aria-label="Qué conversaciones mostrar" id="inbox-scope">
+          <button data-inbox-scope="mine" class="active" title="Clientes que te han escrito a ti">Mías <span class="count" id="inbox-count-mine"></span></button>
+          <button data-inbox-scope="team" title="Clientes que esperan respuesta de cualquier persona del equipo">Todo el equipo <span class="count" id="inbox-count-team"></span></button>
         </div>
         <ul id="inbox-list" class="inbox-list"></ul>
       </div>
@@ -217,11 +217,10 @@
             </div>
           </div>
           <div class="timeline-controls">
-            <div class="segmented" role="group" aria-label="Alcance">
-              <button data-scope="mine" class="active">Mías</button>
-              <button data-scope="team">Equipo</button>
-            </div>
             <select id="channel-filter"><option value="">Todos los canales</option></select>
+            <label class="check" title="Ocultar las conversaciones que llevan tus compañeros con este cliente">
+              <input type="checkbox" id="only-mine"> Solo mis conversaciones
+            </label>
           </div>
           <ol id="timeline" class="timeline"></ol>
         </section>
