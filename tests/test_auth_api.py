@@ -63,4 +63,8 @@ except urllib.error.HTTPError as e:
     check("petición desde otra web = 403", e.code == 403)
 check("contraseña enorme en login = 422", anon.post("/api/auth/login", {"username": "ana", "password": "x" * 500})[0] == 422)
 check("logout", ana.post("/api/auth/logout")[0] == 200 and ana.get("/api/me")[0] == 401)
+# Los archivos de la interfaz se revalidan siempre (evita mezclar versiones viejas y nuevas tras actualizar).
+for path in ("/", "/app.js", "/styles.css"):
+    with urllib.request.urlopen(BASE + path) as r:
+        check(f"{path}: Cache-Control no-cache", r.headers.get("Cache-Control") == "no-cache", r.headers.get("Cache-Control"))
 sys.exit(0 if results["ok"] else 1)
