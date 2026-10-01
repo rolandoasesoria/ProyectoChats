@@ -267,6 +267,66 @@ def admin_sync_integration(integration_id: int, _: AdminUser):
         raise HTTPException(502, f"No se pudo sincronizar: {exc}")
 
 
+# Cada persona conecta sus propias cuentas (correo, bot de Telegram, WhatsApp Business): los mensajes entran como
+# conversaciones suyas y puede responder desde la app.
+
+class MyIntegrationIn(BaseModel):
+    kind: Literal["email", "telegram", "whatsapp"]
+    name: str = Field(min_length=1, max_length=100)
+    config: dict[str, str]
+
+
+class MyIntegrationUpdate(BaseModel):
+    name: str | None = Field(None, max_length=100)
+    enabled: bool | None = None
+    config: dict[str, str] | None = None
+
+
+def _my_integration(integration_id: int, user: dict) -> dict:
+    integ = integrations.get(integration_id)
+    if integ["owner_user_id"] != user["id"]:
+        raise HTTPException(404, "Integración no encontrada")
+    return integ
+
+
+@app.get("/api/me/integrations")
+def my_integrations(user: CurrentUser):
+    return {"fields": integrations.FIELDS, "items": integrations.list_integrations(user["id"])}
+
+
+@app.post("/api/me/integrations")
+def create_my_integration(req: MyIntegrationIn, user: CurrentUser):
+    """Conecta una cuenta y la prueba al momento (trae lo pendiente o devuelve el error)."""
+    integration_id = integrations.create(req.kind, req.name, user["id"], req.config)
+    audit.log(user["id"], "integration_change", detail=f"conectó su cuenta «{req.name}» ({req.kind})")
+    return {"id": integration_id, "test": integrations.check_connection(integration_id)}
+
+
+@app.patch("/api/me/integrations/{integration_id}")
+def update_my_integration(integration_id: int, req: MyIntegrationUpdate, user: CurrentUser):
+    _my_integration(integration_id, user)
+    integrations.update(integration_id, req.name, None, req.enabled, req.config)
+    test = integrations.check_connection(integration_id) if req.config is not None else None
+    return {"ok": True, "test": test}
+
+
+@app.delete("/api/me/integrations/{integration_id}")
+def delete_my_integration(integration_id: int, user: CurrentUser):
+    integ = _my_integration(integration_id, user)
+    integrations.delete(integration_id)
+    audit.log(user["id"], "integration_change", detail=f"desconectó su cuenta «{integ['name']}»")
+    return {"ok": True}
+
+
+@app.post("/api/me/integrations/{integration_id}/sync")
+def sync_my_integration(integration_id: int, user: CurrentUser):
+    _my_integration(integration_id, user)
+    try:
+        return integrations.sync(integration_id)
+    except integrations.IntegrationError as exc:
+        raise HTTPException(502, f"No se pudo sincronizar: {exc}")
+
+
 @app.get("/api/webhooks/whatsapp/{integration_id}")
 def whatsapp_verify(integration_id: int, request: Request):
     """Verificación del webhook que hace Meta al configurarlo."""

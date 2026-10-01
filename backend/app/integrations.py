@@ -121,12 +121,14 @@ def _clean_config(kind: str, data: dict, old: dict | None = None) -> dict:
     return cfg
 
 
-def list_integrations() -> list[dict]:
+def list_integrations(owner_user_id: int | None = None) -> list[dict]:
+    """Todas las integraciones (administración) o solo las de una persona (sus cuentas)."""
     with get_conn() as conn:
         found = rows(conn.execute(
             """SELECT i.id, i.kind, i.name, i.owner_user_id, u.name AS owner, i.config, i.enabled,
                       i.last_sync_at, i.last_error, i.created_at
-                 FROM integrations i JOIN users u ON u.id = i.owner_user_id ORDER BY i.id"""))
+                 FROM integrations i JOIN users u ON u.id = i.owner_user_id
+                WHERE ?::bigint IS NULL OR i.owner_user_id = ? ORDER BY i.id""", (owner_user_id, owner_user_id)))
     for i in found:
         i["config"] = _mask(i["kind"], secrets_store.decrypt(i["config"]))
     return found
@@ -427,6 +429,16 @@ def sync(integration_id: int) -> dict:
             _save_state(integration_id, integ["state"], error=str(exc)[:500])
             raise IntegrationError(str(exc)) from exc
         return {"imported": n}
+
+
+def check_connection(integration_id: int) -> dict:
+    """Prueba la cuenta recién conectada trayendo lo pendiente. No lanza: devuelve el resultado o el error."""
+    if get(integration_id)["kind"] == "whatsapp":
+        return {"ok": True, "imported": 0, "error": None}
+    try:
+        return {"ok": True, "imported": sync(integration_id)["imported"], "error": None}
+    except IntegrationError as exc:
+        return {"ok": False, "imported": 0, "error": str(exc)[:300]}
 
 
 def sender_for(conversation_id: int, user: dict) -> dict | None:
