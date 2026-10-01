@@ -257,6 +257,14 @@ try:
     check("botón de enviar por la integración", "Bot de pruebas" in b.js("document.querySelector('#draft-send').textContent"))
     b.click("#draft-write")
     check("escribir sin IA abre el cuadro", b.js("!document.querySelector('#draft-text').hidden"))
+    b.fill("#draft-text", "hola, te paso el presu")
+    b.js("const s = document.querySelector('#draft-rewrite'); s.value = 'fix'; s.dispatchEvent(new Event('change'))")
+    b.wait("!document.querySelector('#draft-rewrite').disabled && document.querySelector('#draft-rewrite').value === ''")
+    check("retocar sin clave de IA avisa y deja el texto como estaba",
+          "ANTHROPIC_API_KEY" in b.dialogs[-1] and b.js("document.querySelector('#draft-text').value") == "hola, te paso el presu"
+          and b.js("document.querySelector('#draft-undo').hidden"), b.dialogs[-1:])
+    # Ese aviso (y el 503 que lo provoca) era el esperado: no cuenta como error.
+    b.errors[:] = [e for e in b.errors if "ANTHROPIC_API_KEY" not in e and "/api/drafts/rewrite" not in e]
     b.shot("18-enviar")
 finally:
     b.pump(0.5)

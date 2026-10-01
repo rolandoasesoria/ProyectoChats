@@ -49,7 +49,23 @@ try:
 except insights.AnalysisError:
     check("conversación inexistente da error", True)
 
+# Retocar un borrador
+out = insights.rewrite_draft("hola, te paso el presu [precio]", "formal", channel="email")
+check("retocar: devuelve el texto de la IA", out == "Hola Laura, ...")
+check("retocar: indica la acción y conserva huecos", "más formal" in calls[-1]["system"] and "[precio]" in calls[-1]["system"]
+      and "Email:" in calls[-1]["system"] and calls[-1]["messages"][0]["content"] == "hola, te paso el presu [precio]")
+insights.rewrite_draft("hola", "translate", "inglés")
+check("traducir indica el idioma", "Idioma: inglés." in calls[-1]["system"])
+for bad in (("hola", "translate", ""), ("hola", "otra", "")):
+    try:
+        insights.rewrite_draft(*bad)
+        check(f"retocar inválido {bad[1]}", False)
+    except insights.AnalysisError:
+        check(f"retocar inválido ({bad[1] or 'sin idioma'}) da error", True)
+
 # API (instancia de pruebas, sin clave)
+check("API retocar sin clave = 503", Session("ana").post("/api/drafts/rewrite", {"text": "hola", "action": "fix"})[0] == 503)
+check("API retocar acción desconocida = 422", Session("ana").post("/api/drafts/rewrite", {"text": "hola", "action": "x"})[0] == 422)
 s = Session("ana")
 st, r = s.post(f"/api/conversations/{wa}/draft", {"instructions": "x"})
 check("API sin clave = 503 claro", st == 503, r)
