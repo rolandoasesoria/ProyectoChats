@@ -18,7 +18,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import (agent, attachments, audit, auth, chats, clients, importers, insights, integrations, metrics, notes,
-               search, smartsearch)
+               replies, search, smartsearch)
 from .db import get_conn, init_db
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
@@ -456,6 +456,59 @@ def draft(conversation_id: int, req: DraftRequest, user: CurrentUser):
             return insights.draft_reply(conversation_id, user, req.instructions)
         except insights.AnalysisError as exc:
             raise HTTPException(404 if "no encontrada" in str(exc) else 400, str(exc))
+
+
+# ---------------------------------------------------------------- Respuestas guardadas y macros
+
+class ReplyIn(BaseModel):
+    title: str = Field(min_length=1, max_length=100)
+    shortcut: str | None = Field(None, max_length=31)
+    body: str = Field(min_length=1, max_length=5000)
+    set_status: Literal["lead", "active", "issue", "inactive"] | None = None
+    add_tag: str | None = Field(None, max_length=40)
+    mark_done: bool = False
+
+
+class ReplyUpdate(BaseModel):
+    title: str | None = Field(None, min_length=1, max_length=100)
+    shortcut: str | None = Field(None, max_length=31)
+    body: str | None = Field(None, min_length=1, max_length=5000)
+    set_status: Literal["lead", "active", "issue", "inactive"] | None = None
+    add_tag: str | None = Field(None, max_length=40)
+    mark_done: bool | None = None
+
+
+@app.get("/api/replies")
+def list_replies(_: CurrentUser):
+    return replies.list_replies()
+
+
+@app.post("/api/replies")
+def create_reply(req: ReplyIn, user: CurrentUser):
+    return replies.create(req.model_dump(), user["id"])
+
+
+@app.patch("/api/replies/{reply_id}")
+def update_reply(reply_id: int, req: ReplyUpdate, user: CurrentUser):
+    # Solo los campos enviados: así se puede quitar el atajo, el estado o la etiqueta enviando null.
+    return replies.update(reply_id, {k: getattr(req, k) for k in req.model_fields_set}, user)
+
+
+@app.delete("/api/replies/{reply_id}")
+def delete_reply(reply_id: int, user: CurrentUser):
+    replies.delete(reply_id, user)
+    return {"ok": True}
+
+
+class UseReplyRequest(BaseModel):
+    client_id: int
+    conversation_id: int | None = None
+
+
+@app.post("/api/replies/{reply_id}/use")
+def use_reply(reply_id: int, req: UseReplyRequest, user: CurrentUser):
+    """Texto con las variables rellenas para el borrador; si es una macro, aplica sus acciones."""
+    return replies.use(reply_id, req.client_id, req.conversation_id, user)
 
 
 @app.get("/api/inbox/counts")
