@@ -228,6 +228,12 @@ CREATE TABLE IF NOT EXISTS follow_ups (
 );
 CREATE INDEX IF NOT EXISTS idx_follow_ups_user ON follow_ups (user_id, due_at);
 
+-- Ajustes de la app que cambia un administrador (p. ej. sla_hours: plazo de respuesta).
+CREATE TABLE IF NOT EXISTS app_settings (
+    key    TEXT PRIMARY KEY,
+    value  TEXT NOT NULL
+);
+
 -- Respuestas guardadas del equipo (plantillas con variables). Si tienen acciones (estado, etiqueta,
 -- marcar atendido) funcionan como macro: al usarlas también se aplican al cliente.
 CREATE TABLE IF NOT EXISTS saved_replies (

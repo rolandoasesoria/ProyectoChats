@@ -14,6 +14,7 @@ ACTIONS = {
     "user_update": "Modificó una cuenta",
     "integration_change": "Cambió una integración de canal",
     "message_sent": "Envió un mensaje al cliente desde la app",
+    "settings_change": "Cambió los ajustes del equipo",
 }
 THROTTLE_MINUTES = 10  # las consultas repetidas en poco tiempo cuentan como un solo acceso
 
