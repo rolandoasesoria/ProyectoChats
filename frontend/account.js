@@ -95,6 +95,31 @@ function showAdminTab(tab) {
   });
   if (tab === "audit") loadAudit();
   if (tab === "integrations") loadIntegrations();
+  if (tab === "settings") loadSettingsForm();
+}
+
+/* ---------- Ajustes del equipo ---------- */
+
+async function loadSettingsForm() {
+  $("#set-error").hidden = true;
+  $("#set-saved").hidden = true;
+  $("#set-sla").value = (await api("/api/settings")).sla_hours;
+}
+
+async function submitSettings(e) {
+  e.preventDefault();
+  $("#set-error").hidden = true;
+  try {
+    const res = await api("/api/admin/settings", {
+      method: "PATCH", body: JSON.stringify({ sla_hours: Number($("#set-sla").value) }),
+    });
+    slaHours = res.sla_hours;
+    $("#set-saved").hidden = false;
+    refreshInboxCount();
+  } catch (err) {
+    $("#set-error").textContent = err.message;
+    $("#set-error").hidden = false;
+  }
 }
 
 async function loadAudit() {
@@ -222,6 +247,7 @@ function bindAccountEvents() {
   document.querySelectorAll("[data-admin-tab]").forEach((b) =>
     b.addEventListener("click", () => showAdminTab(b.dataset.adminTab)));
   ["#audit-user", "#audit-action"].forEach((sel) => $(sel).addEventListener("change", loadAudit));
+  $("#settings-form").addEventListener("submit", submitSettings);
   $("#password-form").addEventListener("submit", submitPassword);
   $("#user-form").addEventListener("submit", submitUserForm);
   $("#uf-cancel").addEventListener("click", () => { $("#uf-role").disabled = false; resetUserForm(); });
