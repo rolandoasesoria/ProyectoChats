@@ -20,6 +20,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Respuestas guardadas para todo el equipo, con variables ({nombre}, {empresa}, {dato:CIF}…) y atajos: en el
   borrador se insertan con un botón o escribiendo /atajo. Con acciones (estado, etiqueta, marcar atendida)
   funcionan como macros.
+- Paleta de comandos (Ctrl+K) para abrir clientes y lanzar acciones, y atajos de teclado (j/k, r, g c/s/t, ?).
 - Posponer conversaciones de «Sin responder» (vuelven en la fecha elegida o si el cliente escribe) y
   seguimientos: «avísame si no contesta en X días» al enviar o copiar una respuesta.
 - «✨ Retocar» en el borrador: más formal, más cercano, más corto, corregir ortografía o traducir, con «Deshacer».
