@@ -13,6 +13,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Las pruebas usan su propia base de datos (`TEST_DATABASE_URL`) y se niegan a vaciar una que no sea de pruebas.
 
 ### Añadido
+- `scripts/arrancar.ps1`: arranca PostgreSQL y la app sin ventanas, y opcionalmente al iniciar sesión en Windows.
 - Datos de prueba abundantes (`python -m app.seed --reset`): ~85 clientes, 6 personas, ~1.500 mensajes de los
   últimos seis meses, presupuestos en PDF, tareas, notas con menciones y clientes duplicados para practicar.
 

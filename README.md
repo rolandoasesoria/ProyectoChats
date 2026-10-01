@@ -34,6 +34,10 @@ mismo cliente (email, WhatsApp, Telegram…) y permite preguntar por un dato con
 
 4. Abre http://localhost:8000 e inicia sesión.
 
+**Arranque automático** (opcional): `powershell -ExecutionPolicy Bypass -File scripts/arrancar.ps1 -InstalarInicio`
+crea un acceso directo en la carpeta de Inicio de Windows que, al iniciar sesión, arranca PostgreSQL y después la app
+sin ventanas (registro en `backend/data/app.log`). `-QuitarInicio` lo desactiva; sin parámetros, arranca todo ahora.
+
 ## Usuarios y acceso
 
 - Cada persona entra con **usuario y contraseña**. No hay registro libre: las cuentas las crea un administrador
