@@ -5,6 +5,12 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 
 ## [Sin publicar]
 
+### Añadido
+- Identidad de color propia: paleta lavanda (#F8EBF6, #E7D7EA, #DBD1EC, #CECFEB, #B2BFDE) en fondos, columna de
+  clientes, conversación, selecciones y bordes, con un índigo de la misma familia (#4F4E96) para botones y
+  enlaces (contraste AA). Franja con la paleta en la barra superior, marca en degradado y pantalla de entrada
+  a juego. El tema oscuro usa el azul pervinca como color principal.
+
 ### Seguridad
 - Conexión a la base de datos cifrada con TLS 1.3 y certificado verificado (`DB_SSLMODE=verify-full`). PostgreSQL
   solo acepta conexiones cifradas y con contraseña SCRAM; con un servidor remoto, la app se niega a conectarse
