@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Ancho ajustable de las zonas: se arrastra la línea entre clientes, ficha y asistente (o con Tab y las flechas;
+  doble clic la restablece). Cada navegador recuerda el ancho elegido.
 - Identidad de color propia: paleta lavanda (#F8EBF6, #E7D7EA, #DBD1EC, #CECFEB, #B2BFDE) en fondos, columna de
   clientes, conversación, selecciones y bordes, con un índigo de la misma familia (#4F4E96) para botones y
   enlaces (contraste AA). Franja con la paleta en la barra superior, marca en degradado y pantalla de entrada
@@ -24,6 +26,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- Con la ventana estrecha se mantienen siempre las tres zonas (antes se ocultaba el asistente y se apilaban).
 - El esquema de la base de datos sale del código Python a migraciones SQL versionadas
   (`backend/database/migrations`), con control de cambios (`schema_migrations`) y los comandos
   `python -m app.manage migrate` y `db-status`.
