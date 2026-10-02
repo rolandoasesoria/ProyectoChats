@@ -107,7 +107,7 @@ function renderIntegrationFields(values = {}) {
   $("#if-provider-label").hidden = kind !== "email";
   $("#if-help").textContent = KIND_HELP[kind];
   const field = (f) => `
-    <label>${escapeHtml(f.label)}${f.required ? "" : ` <span class="muted">(opcional)</span>`}
+    <label><span>${escapeHtml(f.label)}${f.required ? "" : ` <span class="muted">(opcional)</span>`}</span>
       <input name="${f.key}" ${f.secret ? 'type="password" autocomplete="new-password"' : 'autocomplete="off"'}
              placeholder="${escapeHtml(f.placeholder || f.default || (f.secret && editingIntegration ? "Déjalo vacío para no cambiarlo" : ""))}"
              value="${escapeHtml(values[f.key] && !f.secret ? values[f.key] : "")}">
