@@ -6,6 +6,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- WhatsApp: «Conectar y probar» pregunta a Meta por el número y dice si el access token, el Phone number ID y el app
+  secret son correctos; después se comprueba sola cada 6 horas («↻ Comprobar ahora» para hacerlo al momento).
+- Si un servicio deja de aceptar las credenciales (token de WhatsApp o de Telegram caducado o revocado, contraseña de
+  correo cambiada), la cuenta queda marcada con el motivo y su dueño recibe un aviso en la campana, una sola vez.
 - Ancho ajustable de las zonas: se arrastra la línea entre clientes, ficha y asistente (o con Tab y las flechas;
   doble clic la restablece). Cada navegador recuerda el ancho elegido.
 - Identidad de color propia: paleta lavanda (#F8EBF6, #E7D7EA, #DBD1EC, #CECFEB, #B2BFDE) en fondos, columna de
@@ -26,6 +30,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- Si una foto o un documento de WhatsApp no se puede descargar, el mensaje se guarda igualmente con una nota (antes
+  se perdía el mensaje entero).
+- Un administrador que conecta o edita la cuenta de otra persona también la prueba al momento.
 - Con la ventana estrecha se mantienen siempre las tres zonas (antes se ocultaba el asistente y se apilaban).
 - El esquema de la base de datos sale del código Python a migraciones SQL versionadas
   (`backend/database/migrations`), con control de cambios (`schema_migrations`) y los comandos
