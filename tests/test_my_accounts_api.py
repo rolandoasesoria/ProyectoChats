@@ -11,7 +11,9 @@ check("sin cuentas al principio, con los campos de cada tipo", st == 200 and r["
 
 st, wa = carlos.post("/api/me/integrations", {"kind": "whatsapp", "name": "WhatsApp de Carlos", "config": {
     "phone_number_id": "123", "access_token": "tok", "app_secret": "sec"}})
-check("conectar su WhatsApp Business (queda a su nombre)", st == 200 and wa["test"]["ok"], wa)
+# Al conectar se pregunta a Meta por el número; en las pruebas no hay salida a internet, así que no conecta.
+check("conectar su WhatsApp Business: queda a su nombre y se prueba con Meta",
+      st == 200 and wa["test"]["ok"] is False and wa["test"]["error"].startswith("No se pudo conectar con Meta"), wa)
 items = carlos.get("/api/me/integrations")[1]["items"]
 check("aparece en sus cuentas, con los secretos ocultos", [(i["kind"], i["owner"]) for i in items] == [("whatsapp", "Carlos Pérez")]
       and items[0]["config"]["access_token"] == "••••••" and items[0]["config"]["verify_token"], items)

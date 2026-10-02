@@ -387,6 +387,18 @@ try:
     b.shot("17-integraciones")
     b.js("document.querySelector('#accounts-dialog').close()")
 
+    # Un aviso de una cuenta que ha dejado de funcionar abre «Mis cuentas»
+    with get_conn() as conn:
+        conn.execute("""INSERT INTO notifications (user_id, kind, text) VALUES (1, 'integration_error',
+                        'Tu cuenta «WhatsApp» necesita atención: Meta no acepta el access token')""")
+    b.js("loadNotifications()")
+    b.wait("document.querySelector('#bell-list [data-kind=\"integration_error\"]')")
+    b.click("#bell")
+    b.click('#bell-list [data-kind="integration_error"]')
+    b.wait("document.querySelector('#accounts-dialog').open")
+    check("el aviso de una cuenta que no funciona abre «Mis cuentas»", True)
+    b.js("document.querySelector('#accounts-dialog').close()")
+
     # Con la integración de Telegram, el borrador de Laura (Telegram) permite enviar
     b.click('#client-list li[data-id="1"]')
     b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
