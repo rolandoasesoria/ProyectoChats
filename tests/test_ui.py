@@ -51,6 +51,40 @@ try:
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
     b.shot("04-inicio")
 
+    # Zonas ajustables: arrastrar, teclado, doble clic, se recuerda y siempre se ven las tres
+    width = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().width)")  # noqa: E731
+    check("anchos iniciales", (width(".clients"), width(".chat")) == (290, 400), (width(".clients"), width(".chat")))
+    x = b.js("document.querySelector('.resizer[data-zone=\"clients\"]').getBoundingClientRect().left")
+    for kind, px in (("mousePressed", x), ("mouseMoved", x + 60), ("mouseReleased", x + 60)):
+        b.send("Input.dispatchMouseEvent", type=kind, x=px, y=400, button="left", buttons=1 if kind != "mouseReleased" else 0,
+               clickCount=1)
+    b.pump(0.3)
+    check("arrastrar el separador ensancha la lista de clientes", width(".clients") == 350, width(".clients"))
+    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
+    check("con el teclado: flecha izquierda ensancha el asistente", width(".chat") == 416, width(".chat"))
+    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
+    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new MouseEvent('dblclick'))")
+    check("doble clic vuelve al ancho inicial", width(".chat") == 400, width(".chat"))
+    b.js("document.querySelector('.resizer[data-zone=\"clients\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
+    b.send("Emulation.setDeviceMetricsOverride", width=1100, height=900, deviceScaleFactor=1, mobile=False)
+    b.js("for (let i = 0; i < 40; i++) document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
+    check("el asistente no crece tanto como para dejar la ficha por debajo de su mínimo", width(".detail") >= 300, width(".detail"))
+    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new MouseEvent('dblclick'))")
+    b.send("Emulation.setDeviceMetricsOverride", width=1400, height=900, deviceScaleFactor=1, mobile=False)
+    b.goto(BASE + "/")
+    b.wait("document.querySelectorAll('#client-list li[data-id]').length > 1")
+    check("el ancho elegido se recuerda al recargar", width(".clients") == 366, width(".clients"))
+    b.send("Emulation.setDeviceMetricsOverride", width=760, height=900, deviceScaleFactor=1, mobile=False)
+    b.pump(0.3)
+    visible = b.js("['.clients', '.detail', '.chat'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().width))")
+    check("pantalla estrecha: siguen las tres zonas", all(w >= 150 for w in visible), visible)
+    b.shot("04b-estrecha")
+    b.send("Emulation.setDeviceMetricsOverride", width=1400, height=900, deviceScaleFactor=1, mobile=False)
+    b.js("localStorage.removeItem('pc-layout')")
+    b.goto(BASE + "/")
+    b.wait("document.querySelectorAll('#client-list li[data-id]').length > 1")
+    check("sin preferencia guardada vuelve a los anchos iniciales", width(".clients") == 290, width(".clients"))
+
     # Abrir Laura (Carlos la tiene abierta y está respondiendo)
     with get_conn() as conn:
         conn.execute("INSERT INTO presence (user_id, client_id, composing, seen_at) VALUES (2, 1, 1, localtimestamp(0))")

@@ -211,6 +211,10 @@ en el mismo hilo. "o escribirla yo" abre el cuadro para escribir sin IA. Si no h
 - Protección de datos (solo administradores), en ✎ Editar cliente: "Buscar datos sensibles" lista los mensajes del cliente con IBAN, DNI/NIE o números de tarjeta; "Ocultar" los sustituye por "[IBAN oculto]" (no se puede deshacer y queda en el registro de accesos; el CIF de empresa no se toca). En Administración > Ajustes, "Conservar los mensajes (meses)" borra cada día los mensajes más antiguos que ese plazo (0 = conservarlos siempre); al escribirlo dice cuántos se borrarían, y "Borrar ya los mensajes antiguos" lo aplica al momento. "Descargar todos sus datos" genera un archivo \
 JSON con todo lo guardado del cliente (derecho de acceso); "Borrar cliente y todos sus datos" lo elimina por completo \
 (derecho de supresión), pidiendo escribir su nombre para confirmar. No se puede deshacer y queda en el registro.
+- La pantalla tiene tres zonas, siempre visibles: clientes (izquierda), ficha del cliente (centro) y asistente \
+(derecha). El ancho de la izquierda y de la derecha se ajusta arrastrando la línea que las separa del centro (o \
+seleccionándola con Tab y usando las flechas); doble clic en la línea vuelve al ancho inicial. Cada navegador \
+recuerda el ancho elegido. Si la ventana es estrecha, la ficha se encoge primero.
 - Columna izquierda: lista de clientes con los canales por los que se ha hablado con cada uno. \
 El buscador encuentra por nombre, empresa, email, teléfono o @usuario. "Consulta general" (arriba de la lista) \
 abre una conversación que puede buscar en todos los clientes. Un punto de color junto a un cliente indica \

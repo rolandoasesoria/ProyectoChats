@@ -420,6 +420,7 @@ function bindEvents() {
   }
   initAccount(user);
   document.body.classList.remove("booting");
+  bindLayoutEvents();
   bindAccountEvents();
   bindProfileEvents();
   bindInboxEvents();
