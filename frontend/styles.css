@@ -29,8 +29,8 @@
   --bubble-out: var(--lavanda-4);
   /* Canales = paleta categórica validada (orden fijo: email, telegram, whatsapp). Mismo color en
      etiquetas, historial y gráficos: el color sigue al canal. */
-  --email: #2a78d6;
-  --telegram: #eb6834;
+  --email: #eb6834;
+  --telegram: #2a78d6;
   --whatsapp: #1baf7a;
   --phone: #4a3aa7;
   --chart-grid: #ebe4ee;
@@ -71,8 +71,8 @@
     --warn: #fbbf24;
     --shadow: rgba(0, 0, 0, .5);
     --backdrop: rgba(5, 4, 10, .6);
-    --email: #3987e5;
-    --telegram: #d95926;
+    --email: #d95926;
+    --telegram: #3987e5;
     --whatsapp: #199e70;
     --phone: #9085e9;
     --chart-grid: #2c2a36;
@@ -102,8 +102,8 @@
   --warn: #fbbf24;
   --shadow: rgba(0, 0, 0, .5);
   --backdrop: rgba(5, 4, 10, .6);
-  --email: #3987e5;
-  --telegram: #d95926;
+  --email: #d95926;
+  --telegram: #3987e5;
   --whatsapp: #199e70;
   --phone: #9085e9;
   --chart-grid: #2c2a36;
