@@ -567,6 +567,10 @@ dialog:not(.is-admin) .admin-only { display: none !important; }
 .integration-form { border-top: 1px solid var(--border); padding-top: 12px; }
 .accounts-scope { margin-bottom: 10px; }
 .if-advanced { grid-column: 1 / -1; font-size: 14px; }
+/* Mis cuentas: las mismas tres columnas en todos los bloques del formulario (aunque un bloque tenga más o menos
+   campos) y las casillas alineadas por abajo aunque la etiqueta ocupe dos líneas. */
+.integration-form .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }
+@media (max-width: 640px) { .integration-form .form-grid { grid-template-columns: 1fr; } }
 .if-advanced summary { cursor: pointer; color: var(--accent); margin-bottom: 8px; }
 .error-text { color: var(--danger-text); }
 
