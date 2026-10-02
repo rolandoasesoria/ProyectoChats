@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 20;
+const TOUR_VERSION = 21;
 
 const TOUR_STEPS = [
   {
@@ -54,7 +54,7 @@ const TOUR_STEPS = [
   {
     target: "#bell",
     title: "Avisos",
-    text: "Te avisa cuando te mencionan en una nota o te asignan una tarea.",
+    text: "Te avisa cuando te mencionan en una nota, te asignan una tarea o una de tus cuentas conectadas deja de funcionar (por ejemplo, un token caducado).",
   },
   {
     target: "#user-menu-btn",

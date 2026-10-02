@@ -186,7 +186,9 @@ async function onBellClick(e) {
       method: "POST", body: JSON.stringify({ ids: [Number(li.dataset.notification)] }),
     }));
   } catch { /* se abre igualmente */ }
-  if (li.dataset.client) {
+  if (li.dataset.kind === "integration_error") {
+    openAccountsDialog();  // una cuenta conectada necesita atención (token caducado, contraseña cambiada...)
+  } else if (li.dataset.client) {
     await selectClient(Number(li.dataset.client));
     showDetailTab({ mention: "notes", task_assigned: "tasks" }[li.dataset.kind] || "profile");
   }

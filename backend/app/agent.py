@@ -174,7 +174,8 @@ un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Menú de usuario (arriba a la derecha, con tu nombre): "Ver tutorial" repite el recorrido de bienvenida, \
 "Cambiar contraseña", "Administración" (solo administradores) y "Cerrar sesión".
-- Campana (arriba a la derecha): avisos de menciones en notas y de tareas que otra persona te asigna. El número rojo son los no leídos; al pulsar un aviso se abre el cliente (en Notas o Tareas). "Marcar todo como leído" los limpia.
+- Campana (arriba a la derecha): avisos de menciones en notas, de tareas que otra persona te asigna y de cuentas \
+conectadas que han dejado de funcionar (al pulsarlo se abre "Mis cuentas"). El número rojo son los no leídos; al pulsar un aviso se abre el cliente (en Notas o Tareas). "Marcar todo como leído" los limpia.
 - Botón del gráfico de barras (arriba a la derecha): "Panel de actividad". Periodo de 7, 30, 90 días o 1 año. \
 Muestra mensajes recibidos y enviados, clientes con actividad, la mediana del tiempo de primera respuesta (desde el \
 primer mensaje del cliente sin contestar hasta la respuesta del equipo), el porcentaje respondido dentro del plazo de \nrespuesta, tareas abiertas y vencidas, mensajes \
@@ -202,9 +203,16 @@ que los clientes escriben a ese bot y se les responde desde la app (un bot no pu
 Telegram). (3) WhatsApp Business (Cloud API de Meta): phone number ID, access token y app secret; hay que copiar en \
 Meta la URL del webhook y el verify token que muestra la app y suscribirse a "messages"; requiere que la app sea \
 accesible por HTTPS desde internet; Meta solo permite respuestas libres en las 24 h siguientes al último mensaje del \
-cliente. Un WhatsApp personal (no Business) no se puede conectar: WhatsApp no lo permite. "↻ Revisar ahora" trae lo \
-pendiente; "Activa" pausa o reanuda la cuenta; "Desconectar" la quita (lo que ya entró se conserva). Los \
-administradores tienen además "Todo el equipo" para ver y gestionar las cuentas de todos.
+cliente. El access token se pega una sola vez si es permanente: se crea en el Business Manager > Usuarios del sistema > \
+"Generar nuevo token" con caducidad "Nunca" y los permisos whatsapp_business_messaging y \
+whatsapp_business_management (el temporal de "API Setup" caduca en 24 h). Al conectar o editar, la app pregunta a \
+Meta por el número y dice si el token, el Phone number ID y el app secret son correctos; también lo comprueba sola \
+cada pocas horas. Un WhatsApp personal (no Business) no se puede conectar: WhatsApp no lo permite. "↻ Revisar ahora" \
+trae lo pendiente (en WhatsApp, "↻ Comprobar ahora" vuelve a comprobar las credenciales); "Activa" pausa o reanuda la \
+cuenta; "Desconectar" la quita (lo que ya entró se conserva). Si un servicio deja de aceptar las credenciales (token \
+caducado o revocado, contraseña cambiada), la cuenta aparece como "No conecta" con el motivo y su dueño recibe un \
+aviso en la campana; si una foto o documento de WhatsApp no se puede descargar, el mensaje entra igualmente con una \
+nota. Los administradores tienen además "Todo el equipo" para ver y gestionar las cuentas de todos.
 - Enviar desde la app: en el borrador de respuesta, si tienes una integración activa del canal de esa conversación, \
 aparece "Enviar por …" (pide confirmación); el mensaje enviado queda en la conversación. En email se responde \
 en el mismo hilo. "o escribirla yo" abre el cuadro para escribir sin IA. Si no hay integración, se copia con "Copiar".

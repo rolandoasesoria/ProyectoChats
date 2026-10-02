@@ -8,8 +8,10 @@ const KIND_HELP = {
   telegram: "Crea un bot hablando con @BotFather en Telegram (/newbot) y pega aquí su token. Entrarán los mensajes que "
     + "los clientes escriban a ese bot y podrás responderles desde la app. Telegram no deja que un bot lea tus chats personales.",
   whatsapp: "Necesitas un número de WhatsApp Business Platform (Meta for Developers) y que la app sea accesible por HTTPS "
-    + "desde internet. Tras conectar, copia la URL del webhook y el verify token en Meta y suscríbete a «messages». "
-    + "Meta solo permite respuestas libres durante las 24 h siguientes al último mensaje del cliente.",
+    + "desde internet. Usa un access token permanente (Business Manager → Usuarios del sistema → Generar token, caducidad "
+    + "«Nunca»): el temporal de «API Setup» caduca en 24 h. Al conectar, la app comprueba con Meta el token, el número y el "
+    + "app secret. Después copia la URL del webhook y el verify token en Meta y suscríbete a «messages». Meta solo permite "
+    + "respuestas libres durante las 24 h siguientes al último mensaje del cliente.",
 };
 // Servidores de los proveedores de correo más habituales (se rellenan solos al elegir el proveedor).
 const EMAIL_PROVIDERS = {
@@ -58,8 +60,9 @@ async function loadIntegrations() {
   }
   $("#integrations-list").innerHTML = items.length ? items.map((i) => {
     const status = i.last_error
-      ? `<span class="int-status error" title="${escapeHtml(i.last_error)}">⚠ No conecta: ${escapeHtml(i.last_error.slice(0, 120))}</span>`
-      : i.kind === "whatsapp" ? `<span class="int-status">Recibe por webhook</span>`
+      ? `<span class="int-status error" title="${escapeHtml(i.last_error)}">⚠ No conecta: ${escapeHtml(i.last_error.slice(0, 240))}</span>`
+      : i.kind === "whatsapp" ? `<span class="int-status ${i.last_sync_at ? "ok" : ""}">${i.last_sync_at
+        ? `✓ Conectada · comprobada ${timeAgo(i.last_sync_at)} · recibe por webhook` : "Recibe por webhook"}</span>`
       : i.last_sync_at ? `<span class="int-status ok">✓ Conectada · revisada ${timeAgo(i.last_sync_at)}</span>`
       : `<span class="int-status">Pendiente de la primera sincronización</span>`;
     const webhook = i.kind === "whatsapp" ? `
@@ -78,7 +81,7 @@ async function loadIntegrations() {
         <div class="int-body">${status}${i.kind === "email" ? ` · ${escapeHtml(i.config.address)}` : ""}</div>
         ${webhook}
         <div class="draft-actions">
-          ${i.kind !== "whatsapp" ? `<button class="ghost small-btn" data-sync-integration>↻ Revisar ahora</button>` : ""}
+          <button class="ghost small-btn" data-sync-integration>${i.kind === "whatsapp" ? "↻ Comprobar ahora" : "↻ Revisar ahora"}</button>
           <button class="link small" data-edit-integration>Editar</button>
           <button class="link small danger" data-delete-integration>Desconectar</button>
         </div>
@@ -137,7 +140,11 @@ function resetIntegrationForm() {
 
 function connectionResult(test) {
   if (!test) return "Cambios guardados.";
-  if (!test.ok) return `Guardada, pero no conecta (${test.error.replace(/\.$/, "")}). Revisa los datos y pulsa «Editar».`;
+  if (!test.ok) return `Guardada, pero no conecta: ${test.error.replace(/\.$/, "")}. Revisa los datos y pulsa «Editar».`;
+  if (test.detail !== undefined) {
+    return `✓ Conectada: Meta acepta las credenciales${test.detail ? ` (${test.detail})` : ""}. `
+      + "Copia en Meta la URL del webhook y el verify token que ves en la lista.";
+  }
   return test.imported ? `✓ Conectada. Han entrado ${test.imported} mensajes.` : "✓ Conectada. De momento no hay mensajes nuevos.";
 }
 
@@ -159,6 +166,7 @@ async function submitIntegration(e) {
     $("#if-result").classList.toggle("error-text", res.test ? !res.test.ok : false);
     $("#if-result").hidden = false;
     await loadIntegrations();
+    loadNotifications();
     if (res.test?.imported) {
       loadClients($("#client-search").value);
       refreshInboxCount();
@@ -183,12 +191,17 @@ async function onIntegrationsClick(e) {
     } else if (e.target.closest("[data-sync-integration]")) {
       const btn = e.target.closest("[data-sync-integration]");
       btn.disabled = true;
-      btn.textContent = "↻ Revisando…";
+      btn.textContent = item.kind === "whatsapp" ? "↻ Comprobando…" : "↻ Revisando…";
       try {
         const r = await api(accountsApi(`/${id}/sync`), { method: "POST" });
-        alert(r.imported ? `${r.imported} mensaje${r.imported === 1 ? "" : "s"} nuevo${r.imported === 1 ? "" : "s"}.` : "No hay mensajes nuevos.");
-        loadClients($("#client-search").value);
-        refreshInboxCount();
+        if (item.kind === "whatsapp") {
+          alert(`✓ Meta acepta las credenciales${r.detail ? ` (${r.detail})` : ""}.`);
+        } else {
+          alert(r.imported ? `${r.imported} mensaje${r.imported === 1 ? "" : "s"} nuevo${r.imported === 1 ? "" : "s"}.` : "No hay mensajes nuevos.");
+          loadClients($("#client-search").value);
+          refreshInboxCount();
+        }
+        loadNotifications();
       } finally {
         await loadIntegrations();
       }

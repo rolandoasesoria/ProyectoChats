@@ -1,9 +1,11 @@
 """Integraciones con servidores simulados: IMAP/SMTP falsos, API de Telegram simulada y webhook de WhatsApp firmado."""
 import hashlib
 import hmac
+import imaplib
 import json
 import sys
 import urllib.request
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
@@ -13,6 +15,14 @@ from app import integrations  # noqa: E402
 from app.db import get_conn  # noqa: E402
 
 ana, carlos = Session("ana"), Session("carlos")
+
+
+def notices(user_id=1):
+    """Avisos de «tu cuenta necesita atención» que ha recibido la persona."""
+    with get_conn() as conn:
+        return conn.execute("SELECT count(*) FROM notifications WHERE user_id = ? AND kind = 'integration_error'",
+                            (user_id,)).fetchone()[0]
+
 
 # ---------------------------------------------------------------- Administración (API)
 st, r = ana.post("/api/admin/integrations", {"kind": "email", "name": "Buzón de Ana", "owner_user_id": 1, "config": {
@@ -105,7 +115,26 @@ try:
     check("error de conexión", False)
 except integrations.IntegrationError:
     check("un error de conexión se guarda en la integración", "Autenticación fallida" in integrations.get(email_id)["last_error"])
+check("un fallo de red no avisa en la campana (suele ser pasajero)", notices() == 0)
+
+
+class Rejected(FakeIMAP):
+    def login(self, user, password):
+        raise imaplib.IMAP4.error("b'[AUTHENTICATIONFAILED] Invalid credentials (Failure)'")
+
+
+integrations.IMAP_CLASS = Rejected
+for _ in range(2):
+    try:
+        integrations.sync(email_id)
+    except integrations.IntegrationError:
+        pass
+check("contraseña de correo rechazada: lo explica en la cuenta",
+      "no acepta el usuario o la contraseña" in integrations.get(email_id)["last_error"])
+check("y avisa a su dueña una sola vez, aunque falle en cada revisión", notices() == 1)
 integrations.IMAP_CLASS = FakeIMAP
+integrations.sync(email_id)
+check("cuando vuelve a funcionar se quita la marca", integrations.get(email_id)["last_error"] is None)
 
 # ---------------------------------------------------------------- Email: envío por SMTP falso
 sent = []
@@ -235,5 +264,99 @@ check("responder por WhatsApp (Cloud API)", url.endswith("/1111/messages") and k
 check("desactivada: el webhook la rechaza", (ana.patch(f"/api/admin/integrations/{wa_id}", {"enabled": False}),
       raw("POST", f"/api/webhooks/whatsapp/{wa_id}", payload, {"X-Hub-Signature-256": sig})[0])[1] == 403)
 check("registro de cambios de integraciones", any(e["action"] == "integration_change" for e in ana.get("/api/admin/audit")[1]["entries"]))
+check("Telegram con el token revocado: se marca para revisarlo",
+      integrations._explain("telegram", integrations.IntegrationError("401", status=401)).needs_attention)
 check("borrar integración", ana.delete(f"/api/admin/integrations/{tg_id}")[0] == 200)
+
+# ---------------------------------------------------------------- WhatsApp: comprobar las credenciales con Meta
+ana.patch(f"/api/admin/integrations/{wa_id}", {"enabled": True})
+graph = []
+
+
+def meta_ok(method, url, *, body=None, headers=None, raw=False, timeout=30):
+    graph.append((method, url, headers))
+    return {"display_phone_number": "+34 600 000 000", "verified_name": "Asesoría Pruebas", "id": "1111"}
+
+
+def meta_error(status, code, message=""):
+    def fake(method, url, **kw):
+        raise integrations.IntegrationError(f"El servicio respondió {status}", status=status,
+                                            error={"code": code, "message": message})
+    return fake
+
+
+integrations.http_request = meta_ok
+before = notices()
+r = integrations.check_connection(wa_id)
+proof = hmac.new(b"shh", b"EAAX", hashlib.sha256).hexdigest()
+check("WhatsApp: «Conectar y probar» pregunta a Meta por el número",
+      r["ok"] and r["detail"] == "+34 600 000 000 · Asesoría Pruebas" and "/1111?" in graph[-1][1]
+      and graph[-1][2]["Authorization"] == "Bearer EAAX", (r, graph[-1:]))
+check("y comprueba el app secret (appsecret_proof)", f"appsecret_proof={proof}" in graph[-1][1], graph[-1][1])
+check("queda como conectada", integrations.get(wa_id)["last_error"] is None and integrations.get(wa_id)["last_sync_at"])
+
+integrations.http_request = meta_error(400, 190, "Error validating access token: Session has expired")
+r = integrations.check_connection(wa_id)
+check("token caducado: lo explica", not r["ok"] and r["error"] == integrations.META_TOKEN_REJECTED, r)
+check("la cuenta queda marcada con el motivo", integrations.get(wa_id)["last_error"] == integrations.META_TOKEN_REJECTED)
+check("su dueña recibe un aviso en la campana", notices() == before + 1)
+integrations.check_connection(wa_id)
+check("una sola vez, no en cada comprobación", notices() == before + 1)
+integrations.http_request = meta_error(400, 100, "Invalid appsecret_proof provided in the API argument")
+check("app secret de otra app", "app secret no corresponde" in integrations.check_connection(wa_id)["error"])
+integrations.http_request = meta_error(400, 100, "Unsupported get request. Object with ID '1111' does not exist")
+check("Phone number ID equivocado", "Phone number ID no existe" in integrations.check_connection(wa_id)["error"])
+integrations.http_request = meta_error(403, 200, "Permissions error")
+check("faltan permisos", "faltan permisos" in integrations.check_connection(wa_id)["error"])
+integrations.http_request = meta_error(500, 2, "Service temporarily unavailable")
+n = notices()
+r = integrations.check_connection(wa_id)
+check("un fallo pasajero de Meta: lo dice, pero no avisa", r["error"].startswith("Meta ha respondido con un error") and notices() == n, r)
+
+
+def no_network(method, url, **kw):
+    raise integrations.IntegrationError("No se pudo conectar: [WinError 10061] conexión rechazada")
+
+
+integrations.http_request = no_network
+r = integrations.check_connection(wa_id)
+check("sin conexión con Meta: lo dice, pero no avisa", r["error"].startswith("No se pudo conectar con Meta") and notices() == n, r)
+integrations.http_request = meta_ok
+integrations.check_connection(wa_id)
+check("al volver a funcionar se quita la marca", integrations.get(wa_id)["last_error"] is None)
+utc = lambda hours: (datetime.now(timezone.utc) - timedelta(hours=hours)).strftime("%Y-%m-%dT%H:%M:%S")  # noqa: E731
+check("se vuelve a comprobar sola cada 6 horas",
+      not integrations._due({"kind": "whatsapp", "config": "", "last_sync_at": utc(5)})
+      and integrations._due({"kind": "whatsapp", "config": "", "last_sync_at": utc(7)}))
+
+# Foto con el token caducado: el mensaje entra igualmente, sin el archivo y con una nota
+n = notices()
+integrations.http_request = meta_error(401, 190, "Session has expired")
+photo = {"entry": [{"changes": [{"value": {
+    "contacts": [{"wa_id": "34600111222", "profile": {"name": "Laura"}}],
+    "messages": [{"from": "34600111222", "id": "wamid.foto1", "timestamp": "1790000500", "type": "image",
+                  "image": {"id": "media1", "mime_type": "image/jpeg", "caption": "La factura"}}]}}]}]}
+check("foto con el token caducado: el mensaje no se pierde", integrations.receive_whatsapp(integrations.get(wa_id), photo) == 1)
+tl = ana.get("/api/clients/1/timeline?scope=mine&channel=whatsapp")[1]
+foto = next((m for m in tl if m["body"].startswith("La factura")), {})
+check("sin el archivo y con una nota", "⚠ No se pudo descargar" in foto.get("body", "") and not foto.get("attachments"), foto)
+check("la cuenta queda marcada y se avisa", integrations.get(wa_id)["last_error"] == integrations.META_TOKEN_REJECTED
+      and notices() == n + 1)
+try:
+    integrations.send_reply(wa_conv, {"id": 1, "name": "Ana Ruiz", "role": "admin"}, "¿Me la reenvías?")
+    check("enviar con el token caducado da error", False)
+except Exception as exc:  # noqa: BLE001
+    check("enviar con el token caducado explica qué pasa", "access token" in str(exc), str(exc))
+
+# Por el webhook real: el servidor de pruebas no llega a Meta, pero el documento no hace perder el mensaje
+doc = json.dumps({"entry": [{"changes": [{"value": {
+    "contacts": [{"wa_id": "34600111222", "profile": {"name": "Laura"}}],
+    "messages": [{"from": "34600111222", "id": "wamid.doc1", "timestamp": "1790000600", "type": "document",
+                  "document": {"id": "media2", "filename": "nomina.pdf", "mime_type": "application/pdf"}}]}}]}]}).encode()
+st, body = raw("POST", f"/api/webhooks/whatsapp/{wa_id}", doc,
+               {"X-Hub-Signature-256": "sha256=" + hmac.new(b"shh", doc, hashlib.sha256).hexdigest()})
+check("webhook con un documento que no se puede descargar: responde bien y guarda el mensaje",
+      st == 200 and json.loads(body)["imported"] == 1, body)
+check("con la nota del archivo", any(m["body"].startswith("📎 nomina.pdf\n⚠ No se pudo descargar")
+                                      for m in ana.get("/api/clients/1/timeline?scope=mine&channel=whatsapp")[1]))
 sys.exit(0 if results["ok"] else 1)

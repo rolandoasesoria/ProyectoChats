@@ -43,10 +43,20 @@ def save_state(conn: Conn, integration_id: int, state: str, error: str | None) -
                  (state, error, integration_id))
 
 
+def lock_last_error(conn: Conn, integration_id: int) -> str | None:
+    """Error guardado ahora mismo. Bloquea la fila hasta el final de la transacción (para avisar una sola vez)."""
+    row = conn.execute("SELECT last_error FROM integrations WHERE id = ? FOR UPDATE", (integration_id,)).fetchone()
+    return row["last_error"] if row else None
+
+
+def set_last_error(conn: Conn, integration_id: int, error: str | None) -> None:
+    conn.execute("UPDATE integrations SET last_error = ? WHERE id = ?", (error, integration_id))
+
+
 def list_syncable(conn: Conn) -> list[dict]:
-    """Integraciones activas que se sincronizan en segundo plano (email y Telegram)."""
-    return rows(conn.execute(
-        "SELECT id, kind, config, last_sync_at FROM integrations WHERE enabled = 1 AND kind IN ('email', 'telegram')"))
+    """Integraciones activas que se revisan en segundo plano: email y Telegram traen lo pendiente; WhatsApp solo
+    comprueba sus credenciales (los mensajes le llegan por webhook)."""
+    return rows(conn.execute("SELECT id, kind, config, last_sync_at FROM integrations WHERE enabled = 1"))
 
 
 def find_sender_id(conn: Conn, kind: str, user_id: int, role: str) -> int | None:
