@@ -148,6 +148,18 @@ def _clean_config(kind: str, data: dict, old: dict | None = None) -> dict:
     return cfg
 
 
+WEBHOOK_URL_FILE = config.data_dir / "webhook_public_url.txt"  # lo escribe scripts/webhook-publico.ps1
+
+
+def webhook_base_url() -> str | None:
+    """Dirección pública (HTTPS) por la que Meta llega a los webhooks, si el túnel está en marcha."""
+    try:
+        url = WEBHOOK_URL_FILE.read_text(encoding="utf-8").strip()
+    except OSError:
+        return None
+    return url.rstrip("/") if url.startswith("https://") else None
+
+
 def list_integrations(owner_user_id: int | None = None) -> list[dict]:
     """Todas las integraciones (administración) o solo las de una persona (sus cuentas)."""
     with get_conn() as conn:

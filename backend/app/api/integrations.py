@@ -17,7 +17,8 @@ router = APIRouter()
 
 @router.get("/api/admin/integrations")
 def admin_integrations(_: AdminUser):
-    return {"fields": integrations.FIELDS, "items": integrations.list_integrations()}
+    return {"fields": integrations.FIELDS, "items": integrations.list_integrations(),
+            "webhook_base": integrations.webhook_base_url()}
 
 
 class IntegrationIn(BaseModel):
@@ -96,7 +97,8 @@ def _my_integration(integration_id: int, user: dict) -> dict:
 
 @router.get("/api/me/integrations")
 def my_integrations(user: CurrentUser):
-    return {"fields": integrations.FIELDS, "items": integrations.list_integrations(user["id"])}
+    return {"fields": integrations.FIELDS, "items": integrations.list_integrations(user["id"]),
+            "webhook_base": integrations.webhook_base_url()}
 
 
 @router.post("/api/me/integrations")

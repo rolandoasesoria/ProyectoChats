@@ -359,4 +359,11 @@ check("webhook con un documento que no se puede descargar: responde bien y guard
       st == 200 and json.loads(body)["imported"] == 1, body)
 check("con la nota del archivo", any(m["body"].startswith("📎 nomina.pdf\n⚠ No se pudo descargar")
                                       for m in ana.get("/api/clients/1/timeline?scope=mine&channel=whatsapp")[1]))
+
+# La puerta pública (la que publica el túnel) solo expone los webhooks, nunca el resto de la app
+from app.webhook_gateway import gateway  # noqa: E402
+
+public = {(r.path, m) for r in gateway.routes for m in getattr(r, "methods", [])}
+check("la puerta pública solo tiene los webhooks de WhatsApp",
+      public == {("/api/webhooks/whatsapp/{integration_id}", "GET"), ("/api/webhooks/whatsapp/{integration_id}", "POST")}, public)
 sys.exit(0 if results["ok"] else 1)
