@@ -59,6 +59,7 @@ class ServerConfig:
     ssl_certfile: str | None
     ssl_keyfile: str | None
     forwarded_allow_ips: str
+    webhook_port: int     # puerta solo para webhooks (app.webhook_gateway), la que publica el túnel
 
 
 @dataclass(frozen=True)
@@ -118,6 +119,7 @@ def load() -> Config:
             ssl_certfile=_text("SSL_CERTFILE") or None,
             ssl_keyfile=_text("SSL_KEYFILE") or None,
             forwarded_allow_ips=_text("FORWARDED_ALLOW_IPS", "127.0.0.1"),
+            webhook_port=_int("WEBHOOK_PORT", 8010),
         ),
         security=SecurityConfig(
             force_https=_flag("FORCE_HTTPS"),
