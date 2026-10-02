@@ -1,7 +1,10 @@
 """Conexión con los canales: buzón de email (IMAP/SMTP), bot de Telegram y WhatsApp Business (Cloud API).
 
-- Recibir: email y Telegram se sincronizan cada pocos minutos en segundo plano; WhatsApp llega por webhook.
+- Recibir: email y Telegram se sincronizan cada pocos minutos en segundo plano; WhatsApp llega por webhook (y cada
+  pocas horas se comprueba que Meta sigue aceptando sus credenciales).
 - Enviar: desde el borrador de respuesta, por la integración del canal de la conversación.
+- Si un servicio rechaza las credenciales (token revocado, contraseña cambiada...), la cuenta queda marcada en «Mis
+  cuentas» y su dueño recibe un aviso en la campana, una sola vez.
 Los mensajes entran como conversaciones de la persona dueña de la integración. La configuración
 (contraseñas, tokens) se guarda cifrada (ver secrets_store.py).
 """
@@ -25,7 +28,7 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 from email.utils import formataddr, make_msgid
 
-from . import clients, emails, insights, search, secrets_store, settings
+from . import clients, emails, insights, notes, search, secrets_store, settings
 from .config import config
 from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
@@ -71,9 +74,21 @@ SMTP_CLASS = smtplib.SMTP
 
 _locks: defaultdict[int, threading.Lock] = defaultdict(threading.Lock)
 
+# Cada cuánto se comprueba que Meta sigue aceptando las credenciales de WhatsApp (que no espera a que falle un envío).
+WHATSAPP_CHECK_MINUTES = 6 * 60
+
 
 class IntegrationError(Exception):
-    pass
+    """Fallo al hablar con un servicio externo. `status` y `error` guardan su respuesta (p. ej. el error de Meta:
+    {"code": 190, ...}); `needs_attention` indica que lo tiene que arreglar la persona (credenciales rechazadas), no un
+    fallo pasajero de red."""
+
+    def __init__(self, message: str, *, status: int | None = None, error: dict | None = None,
+                 needs_attention: bool = False):
+        super().__init__(message)
+        self.status = status
+        self.error = error or {}
+        self.needs_attention = needs_attention
 
 
 # ---------------------------------------------------------------- HTTP
@@ -87,13 +102,23 @@ def http_request(method: str, url: str, *, body: dict | None = None, headers: di
         with urllib.request.urlopen(req, timeout=timeout) as r:
             content = r.read(MAX_DOWNLOAD + 1)
     except urllib.error.HTTPError as e:
-        detail = e.read()[:500].decode(errors="replace")
-        raise IntegrationError(f"El servicio respondió {e.code}: {detail}") from e
+        detail = e.read()[:2000].decode(errors="replace")
+        raise IntegrationError(f"El servicio respondió {e.code}: {detail[:500]}", status=e.code,
+                               error=_error_body(detail)) from e
     except urllib.error.URLError as e:
         raise IntegrationError(f"No se pudo conectar: {e.reason}") from e
     if len(content) > MAX_DOWNLOAD:
         raise IntegrationError("Archivo demasiado grande.")
     return content if raw else json.loads(content or b"null")
+
+
+def _error_body(detail: str) -> dict | None:
+    """El objeto "error" de una respuesta de error en JSON (formato de la Graph API de Meta), si lo hay."""
+    try:
+        error = json.loads(detail).get("error")
+    except (ValueError, AttributeError):
+        return None
+    return error if isinstance(error, dict) else None
 
 
 # ---------------------------------------------------------------- Gestión
@@ -174,6 +199,17 @@ def delete(integration_id: int) -> None:
 def _save_state(integration_id: int, state: dict, error: str | None = None) -> None:
     with get_conn() as conn:
         repo.save_state(conn, integration_id, json.dumps(state), error)
+
+
+def _flag_problem(integ: dict, problem: str) -> None:
+    """Deja la cuenta marcada con el problema (se ve en «Mis cuentas») y, si es nuevo, avisa a su dueño en la
+    campana: una sola vez, no en cada intento fallido."""
+    with get_conn() as conn:
+        previous = repo.lock_last_error(conn, integ["id"])
+        repo.set_last_error(conn, integ["id"], problem)
+        if previous != problem:
+            notes.notify(conn, [integ["owner_user_id"]], "integration_error",
+                         f"Tu cuenta «{integ['name']}» necesita atención: {problem}", None, None)
 
 
 # ---------------------------------------------------------------- Guardar mensajes recibidos o enviados
@@ -355,6 +391,43 @@ def verify_whatsapp_signature(integ: dict, raw_body: bytes, signature: str | Non
     return bool(signature) and hmac.compare_digest(expected, signature)
 
 
+META_TOKEN_REJECTED = ("Meta no acepta el access token: ha caducado o se ha revocado. Si usaste el temporal de "
+                       "«API Setup» (dura 24 h), crea uno permanente con un usuario del sistema y pégalo en «Editar».")
+
+
+def _explain_meta(exc: IntegrationError, phone_lookup: bool = False) -> IntegrationError:
+    """Traduce un error de la Graph API de Meta a un mensaje claro y marca los de credenciales (needs_attention).
+    phone_lookup: la llamada era la consulta del número, así que un "objeto no encontrado" es el Phone number ID."""
+    if exc.status is None:  # ni siquiera se llegó a Meta (red, DNS, cortafuegos...)
+        return IntegrationError(f"No se pudo conectar con Meta ({str(exc).removeprefix('No se pudo conectar: ')}).")
+    code, message = exc.error.get("code"), str(exc.error.get("message") or "")
+    if code in (190, 102) or exc.status == 401:
+        problem = META_TOKEN_REJECTED
+    elif "appsecret_proof" in message:
+        problem = ("El app secret no corresponde a la app del access token: cópialo de tu app en Meta for Developers "
+                   "(Configuración de la app → Básica).")
+    elif code == 10 or (isinstance(code, int) and 200 <= code <= 299):
+        problem = ("Al access token le faltan permisos: genéralo con whatsapp_business_messaging y "
+                   "whatsapp_business_management.")
+    elif phone_lookup and code == 100:
+        problem = ("El Phone number ID no existe o el access token no tiene acceso a ese número: cópialo de "
+                   "WhatsApp → API Setup en Meta for Developers.")
+    else:
+        return IntegrationError(f"Meta ha respondido con un error: {message or exc}", status=exc.status, error=exc.error)
+    return IntegrationError(problem, status=exc.status, error=exc.error, needs_attention=True)
+
+
+def check_whatsapp(integ: dict) -> str:
+    """Pregunta a Meta por el número con estas credenciales. Comprueba a la vez el access token, el Phone number ID y
+    el app secret (va como appsecret_proof, que Meta valida). Devuelve el número y su nombre verificado."""
+    cfg = integ["config"]
+    proof = hmac.new(cfg["app_secret"].encode(), cfg["access_token"].encode(), hashlib.sha256).hexdigest()
+    query = urllib.parse.urlencode({"fields": "display_phone_number,verified_name", "appsecret_proof": proof})
+    info = http_request("GET", f"{GRAPH_API}/{urllib.parse.quote(cfg['phone_number_id'], safe='')}?{query}",
+                        headers={"Authorization": f"Bearer {cfg['access_token']}"}, timeout=15) or {}
+    return " · ".join(filter(None, [info.get("display_phone_number"), info.get("verified_name")]))
+
+
 def _whatsapp_media(integ: dict, media_id: str, filename: str, mime: str | None) -> dict | None:
     auth = {"Authorization": f"Bearer {integ['config']['access_token']}"}
     info = http_request("GET", f"{GRAPH_API}/{media_id}", headers=auth)
@@ -362,6 +435,19 @@ def _whatsapp_media(integ: dict, media_id: str, filename: str, mime: str | None)
         return None
     return {"filename": filename, "mime": mime or info.get("mime_type"),
             "data": http_request("GET", info["url"], headers=auth, raw=True)}
+
+
+def _download_whatsapp_media(integ: dict, media_id: str, filename: str, mime: str | None) -> dict | None:
+    """Adjunto de un mensaje recibido, o None si no se puede descargar. El mensaje se guarda igualmente; si es por las
+    credenciales, la cuenta queda marcada y se avisa a su dueño."""
+    try:
+        return _whatsapp_media(integ, media_id, filename, mime)
+    except IntegrationError as exc:
+        error = _explain_meta(exc)
+        log.warning("No se pudo descargar un adjunto de WhatsApp (integración %s): %s", integ["id"], error)
+        if error.needs_attention:
+            _flag_problem(integ, str(error))
+        return None
 
 
 def receive_whatsapp(integ: dict, payload: dict) -> int:
@@ -381,9 +467,13 @@ def receive_whatsapp(integ: dict, payload: dict) -> int:
                     media = m[kind]
                     ext = {"image": "jpg", "audio": "ogg", "video": "mp4"}.get(kind, "bin")
                     fname = media.get("filename") or f"{kind}_{m['id'][-8:]}.{ext}"
-                    f = _whatsapp_media(integ, media["id"], fname, media.get("mime_type"))
-                    files += [f] if f else []
                     body = media.get("caption") or f"📎 {fname}"
+                    f = _download_whatsapp_media(integ, media["id"], fname, media.get("mime_type"))
+                    if f:
+                        files.append(f)
+                    else:
+                        body += (f"\n⚠ No se pudo descargar «{fname}». Revisa la cuenta de WhatsApp en «Mis cuentas» "
+                                 "o pide al cliente que lo reenvíe.")
                 else:
                     body = f"[{kind}]"
                 sent = datetime.fromtimestamp(int(m.get("timestamp", time.time())), tz=timezone.utc).astimezone()
@@ -406,8 +496,26 @@ def send_whatsapp(integ: dict, handle: str, text: str) -> str:
 
 # ---------------------------------------------------------------- Sincronización y envío
 
+def _explain(kind: str, exc: Exception, phone_lookup: bool = False) -> IntegrationError:
+    """Convierte un fallo técnico en un mensaje claro. needs_attention marca los que tiene que arreglar la persona
+    (credenciales rechazadas); los demás (red, servidor caído) suelen arreglarse solos en el siguiente intento."""
+    if kind == "whatsapp" and isinstance(exc, IntegrationError):
+        return _explain_meta(exc, phone_lookup)
+    if kind == "telegram" and isinstance(exc, IntegrationError) and exc.status in (401, 404):
+        return IntegrationError("Telegram no acepta el token del bot: se ha regenerado o el bot ya no existe. Copia el "
+                                "token actual de @BotFather y pégalo en «Editar».", status=exc.status,
+                                needs_attention=True)
+    if kind == "email" and isinstance(exc, (imaplib.IMAP4.error, smtplib.SMTPAuthenticationError)) \
+            and re.search(r"auth|login|credential|password", str(exc), re.IGNORECASE):
+        return IntegrationError("El servidor de correo no acepta el usuario o la contraseña. Si has cambiado la "
+                                "contraseña de tu cuenta (Google anula entonces las contraseñas de aplicación) o la "
+                                "has revocado, crea una nueva y pégala en «Editar».", needs_attention=True)
+    return exc if isinstance(exc, IntegrationError) else IntegrationError(str(exc))
+
+
 def sync(integration_id: int) -> dict:
-    """Sincroniza una integración ahora (email y Telegram). Guarda el error si falla."""
+    """Sincroniza una integración ahora: trae lo pendiente (email y Telegram) o comprueba que Meta sigue aceptando
+    las credenciales (WhatsApp, que recibe por webhook). Guarda el error si falla."""
     with _locks[integration_id]:
         integ = get(integration_id)
         try:
@@ -416,21 +524,26 @@ def sync(integration_id: int) -> dict:
             elif integ["kind"] == "telegram":
                 n = sync_telegram(integ)
             else:
-                raise IntegrationError("WhatsApp no se sincroniza: los mensajes llegan solos por el webhook.")
+                detail = check_whatsapp(integ)
+                _save_state(integration_id, integ["state"])
+                return {"imported": 0, "detail": detail}
         except (IntegrationError, OSError, imaplib.IMAP4.error, smtplib.SMTPException, KeyError, ValueError) as exc:
-            _save_state(integration_id, integ["state"], error=str(exc)[:500])
-            raise IntegrationError(str(exc)) from exc
+            error = _explain(integ["kind"], exc, phone_lookup=True)
+            if error.needs_attention:
+                _flag_problem(integ, str(error)[:500])
+            _save_state(integration_id, integ["state"], error=str(error)[:500])
+            raise error from exc
         return {"imported": n}
 
 
 def check_connection(integration_id: int) -> dict:
-    """Prueba la cuenta recién conectada trayendo lo pendiente. No lanza: devuelve el resultado o el error."""
-    if get(integration_id)["kind"] == "whatsapp":
-        return {"ok": True, "imported": 0, "error": None}
+    """Prueba la cuenta recién conectada o editada: trae lo pendiente (correo, Telegram) o consulta el número a Meta
+    (WhatsApp). No lanza: devuelve el resultado o el error."""
     try:
-        return {"ok": True, "imported": sync(integration_id)["imported"], "error": None}
+        result = sync(integration_id)
     except IntegrationError as exc:
         return {"ok": False, "imported": 0, "error": str(exc)[:300]}
+    return {"ok": True, "error": None, **result}
 
 
 def sender_for(conversation_id: int, user: dict) -> dict | None:
@@ -462,7 +575,10 @@ def send_reply(conversation_id: int, user: dict, text: str) -> dict:
         else:
             ext = send_whatsapp(integ, idents[0], text)
     except (IntegrationError, OSError, smtplib.SMTPException) as exc:
-        raise ExternalServiceError(f"No se pudo enviar: {exc}")
+        error = _explain(integ["kind"], exc)
+        if error.needs_attention:
+            _flag_problem(integ, str(error))
+        raise ExternalServiceError(f"No se pudo enviar: {error}")
     # El mensaje enviado se guarda en la conversación (como enviado por quien lo escribió).
     with get_conn() as conn:
         message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext)
@@ -475,7 +591,9 @@ def _due(integ_row: dict) -> bool:
     if not integ_row["last_sync_at"]:
         return True
     minutes = 1
-    if integ_row["kind"] == "email":
+    if integ_row["kind"] == "whatsapp":
+        minutes = WHATSAPP_CHECK_MINUTES
+    elif integ_row["kind"] == "email":
         try:
             minutes = max(1, int(secrets_store.decrypt(integ_row["config"]).get("sync_minutes") or 5))
         except Exception:  # noqa: BLE001

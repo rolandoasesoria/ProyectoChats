@@ -36,9 +36,10 @@ class IntegrationUpdate(BaseModel):
 
 @router.post("/api/admin/integrations")
 def admin_create_integration(req: IntegrationIn, admin: AdminUser):
+    """Conecta una cuenta para alguien del equipo y la prueba al momento, como «Mis cuentas»."""
     integration_id = integrations.create(req.kind, req.name, req.owner_user_id, req.config)
     audit.log(admin["id"], "integration_change", detail=f"creó «{req.name}» ({req.kind})")
-    return {"id": integration_id}
+    return {"id": integration_id, "test": integrations.check_connection(integration_id)}
 
 
 @router.patch("/api/admin/integrations/{integration_id}")
@@ -46,7 +47,8 @@ def admin_update_integration(integration_id: int, req: IntegrationUpdate, admin:
     integrations.update(integration_id, req.name, req.owner_user_id, req.enabled, req.config)
     changed = ", ".join(k for k in req.model_fields_set) or "nada"
     audit.log(admin["id"], "integration_change", detail=f"modificó la integración {integration_id}: {changed}")
-    return {"ok": True}
+    test = integrations.check_connection(integration_id) if req.config is not None else None
+    return {"ok": True, "test": test}
 
 
 @router.delete("/api/admin/integrations/{integration_id}")
@@ -56,12 +58,18 @@ def admin_delete_integration(integration_id: int, admin: AdminUser):
     return {"ok": True}
 
 
+def _sync(integ: dict) -> dict:
+    """«↻ Revisar ahora» (correo, Telegram) o «↻ Comprobar ahora» (WhatsApp)."""
+    try:
+        return integrations.sync(integ["id"])
+    except integrations.IntegrationError as exc:
+        action = "comprobar" if integ["kind"] == "whatsapp" else "sincronizar"
+        raise ExternalServiceError(f"No se pudo {action}: {exc}")
+
+
 @router.post("/api/admin/integrations/{integration_id}/sync")
 def admin_sync_integration(integration_id: int, _: AdminUser):
-    try:
-        return integrations.sync(integration_id)
-    except integrations.IntegrationError as exc:
-        raise ExternalServiceError(f"No se pudo sincronizar: {exc}")
+    return _sync(integrations.get(integration_id))
 
 
 # Cada persona conecta sus propias cuentas (correo, bot de Telegram, WhatsApp Business): los mensajes entran como
@@ -117,11 +125,7 @@ def delete_my_integration(integration_id: int, user: CurrentUser):
 
 @router.post("/api/me/integrations/{integration_id}/sync")
 def sync_my_integration(integration_id: int, user: CurrentUser):
-    _my_integration(integration_id, user)
-    try:
-        return integrations.sync(integration_id)
-    except integrations.IntegrationError as exc:
-        raise ExternalServiceError(f"No se pudo sincronizar: {exc}")
+    return _sync(_my_integration(integration_id, user))
 
 
 @router.get("/api/webhooks/whatsapp/{integration_id}")
