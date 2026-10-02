@@ -51,7 +51,7 @@ async function openAccountsDialog() {
 }
 
 async function loadIntegrations() {
-  const { fields, items } = await api(accountsApi());
+  const { fields, items, webhook_base: webhookBase } = await api(accountsApi());
   integrationFields = fields;
   $("#if-owner-label").hidden = accountsScope !== "team";
   if (accountsScope === "team" && !$("#if-owner").options.length) {
@@ -67,7 +67,8 @@ async function loadIntegrations() {
       : `<span class="int-status">Pendiente de la primera sincronización</span>`;
     const webhook = i.kind === "whatsapp" ? `
       <div class="webhook-info">
-        <span class="muted small">URL del webhook</span><code>${escapeHtml(`${location.origin}/api/webhooks/whatsapp/${i.id}`)}</code>
+        <span class="muted small">URL del webhook</span><code>${escapeHtml(`${webhookBase || location.origin}/api/webhooks/whatsapp/${i.id}`)}</code>
+        ${webhookBase ? "" : `<span></span><span class="muted small">Esta dirección solo funciona dentro de la oficina: Meta necesita la pública (scripts/webhook-publico.ps1).</span>`}
         <span class="muted small">Verify token</span><code>${escapeHtml(i.config.verify_token)}</code>
       </div>` : "";
     return `
