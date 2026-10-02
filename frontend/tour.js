@@ -8,13 +8,13 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 19;
+const TOUR_VERSION = 20;
 
 const TOUR_STEPS = [
   {
     target: null,
     title: "Bienvenido a ProyectoChats",
-    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. Un recorrido de un minuto.",
+    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. Tres zonas: clientes, ficha y asistente; arrastra la línea entre ellas para ajustar su ancho. Un recorrido de un minuto.",
   },
   {
     target: ".clients",
