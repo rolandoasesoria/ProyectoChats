@@ -111,6 +111,12 @@ momento. Los administradores ven y gestionan las de todo el equipo («Todo el eq
 - Es la única vía de entrada de mensajes: la app no importa chats exportados, trabaja con las conversaciones
   reales y en tiempo real.
 
+**WhatsApp desde internet sin publicar la app:** Meta avisa de cada mensaje por HTTPS. Con
+`powershell -ExecutionPolicy Bypass -File scripts/webhook-publico.ps1` se publica solo una puerta que atiende
+`/api/webhooks/...` (todo lo demás da 404) mediante un túnel de Cloudflare (`cloudflared.exe` en
+`%USERPROFILE%\cloudflared`). La URL cambia cada vez que se abre el túnel; para una fija hace falta un túnel con
+nombre y dominio propio. `... webhook-publico.ps1 parar` lo cierra.
+
 ## Protección de datos
 
 - **Registro de accesos** (*Administración → Registro de accesos*): quién ha visto conversaciones de compañeros

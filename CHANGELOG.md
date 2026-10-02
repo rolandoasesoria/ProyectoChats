@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Webhooks de WhatsApp accesibles desde internet sin publicar la app: `scripts/webhook-publico.ps1` arranca una
+  puerta que solo atiende `/api/webhooks/...` (`python -m app.webhook_gateway`, en 127.0.0.1:8010) y un túnel de
+  Cloudflare hacia ella; «Mis cuentas» muestra la URL pública del webhook para copiarla en Meta.
 - WhatsApp: «Conectar y probar» pregunta a Meta por el número y dice si el access token, el Phone number ID y el app
   secret son correctos; después se comprueba sola cada 6 horas («↻ Comprobar ahora» para hacerlo al momento).
 - Si un servicio deja de aceptar las credenciales (token de WhatsApp o de Telegram caducado o revocado, contraseña de
