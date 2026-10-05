@@ -1,6 +1,8 @@
 """Cuentas conectadas (correo, Telegram, WhatsApp) y webhook de WhatsApp."""
+import hashlib
 import hmac
 import json
+import threading
 from typing import Literal
 
 from fastapi import APIRouter, Request
@@ -8,7 +10,8 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .. import audit, integrations
+from .. import audit, integrations, whatsapp_signup
+from ..config import config
 from ..errors import ExternalServiceError, Forbidden, InvalidInput, NotFound
 from .deps import AdminUser, CurrentUser
 
@@ -128,6 +131,59 @@ def delete_my_integration(integration_id: int, user: CurrentUser):
 @router.post("/api/me/integrations/{integration_id}/sync")
 def sync_my_integration(integration_id: int, user: CurrentUser):
     return _sync(_my_integration(integration_id, user))
+
+
+# Coexistencia: cada persona conecta el WhatsApp Business de su móvil con el registro insertado de Meta.
+
+@router.get("/api/meta/whatsapp-signup")
+def whatsapp_signup_settings(user: CurrentUser):
+    return whatsapp_signup.settings_for(user)
+
+
+class CoexistenceIn(BaseModel):
+    code: str = Field(min_length=1, max_length=2000)
+    waba_id: str = Field("", max_length=40)
+    phone_number_id: str = Field("", max_length=40)
+    name: str = Field("", max_length=100)
+
+
+@router.post("/api/me/integrations/whatsapp-coexistence")
+def connect_whatsapp_coexistence(req: CoexistenceIn, user: CurrentUser):
+    """Alta del WhatsApp Business del móvil (sigue funcionando en la app y además entra en ProyectoChats)."""
+    result = whatsapp_signup.connect(user, req.code, req.waba_id, req.phone_number_id, req.name)
+    audit.log(user["id"], "integration_change",
+              detail=f"conectó su WhatsApp Business {result['number'].get('display_phone_number', '')} (coexistencia)")
+    return result
+
+
+@router.get("/api/webhooks/whatsapp")
+def whatsapp_app_verify(request: Request):
+    """Verificación del webhook de la app de Meta (se configura una vez para todos los números)."""
+    p = request.query_params
+    expected = config.meta.webhook_verify_token
+    if not expected or p.get("hub.mode") != "subscribe" or not hmac.compare_digest(p.get("hub.verify_token", ""), expected):
+        raise Forbidden("Token de verificación incorrecto")
+    return PlainTextResponse(p.get("hub.challenge", ""))
+
+
+@router.post("/api/webhooks/whatsapp")
+async def whatsapp_app_webhook(request: Request):
+    """Avisos de todos los números conectados con el registro insertado. Solo se aceptan con la firma de la app."""
+    raw = await request.body()
+    secret = config.meta.app_secret
+    expected = "sha256=" + hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest() if secret else ""
+    if not secret or not hmac.compare_digest(expected, request.headers.get("x-hub-signature-256", "")):
+        raise Forbidden("Firma no válida")
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        raise InvalidInput("JSON no válido")
+    if integrations.has_history(payload):
+        # El historial puede traer miles de mensajes: se guarda en segundo plano y se contesta a Meta al momento.
+        threading.Thread(target=integrations.receive_whatsapp_app, args=(payload,), daemon=True,
+                         name="whatsapp-history").start()
+        return {"ok": True, "queued": True}
+    return {"ok": True, "imported": await run_in_threadpool(integrations.receive_whatsapp_app, payload)}
 
 
 @router.get("/api/webhooks/whatsapp/{integration_id}")
