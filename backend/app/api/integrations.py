@@ -10,7 +10,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .. import audit, integrations, whatsapp_signup
+from .. import audit, integrations, whatsapp_signup, whatsapp_templates
 from ..config import config
 from ..errors import ExternalServiceError, Forbidden, InvalidInput, NotFound
 from .deps import AdminUser, CurrentUser
@@ -131,6 +131,43 @@ def delete_my_integration(integration_id: int, user: CurrentUser):
 @router.post("/api/me/integrations/{integration_id}/sync")
 def sync_my_integration(integration_id: int, user: CurrentUser):
     return _sync(_my_integration(integration_id, user))
+
+
+# Plantillas de mensaje de WhatsApp (se crean aquí y Meta las revisa). Cada persona, las de sus cuentas; un
+# administrador, las de cualquiera.
+
+class TemplateIn(BaseModel):
+    name: str = Field(min_length=1, max_length=512)
+    category: Literal["UTILITY", "MARKETING"]
+    language: str = Field("es", max_length=10)
+    body: str = Field(min_length=1, max_length=1024)
+    examples: list[str] = Field(default_factory=list, max_length=20)
+
+
+def _create_template(integ: dict, req: TemplateIn, user: dict) -> dict:
+    result = whatsapp_templates.create_template(integ, req.name, req.category, req.language, req.body, req.examples)
+    audit.log(user["id"], "integration_change", detail=f"creó la plantilla de WhatsApp «{result['name']}» en «{integ['name']}»")
+    return result
+
+
+@router.get("/api/me/integrations/{integration_id}/templates")
+def my_templates(integration_id: int, user: CurrentUser):
+    return {"items": whatsapp_templates.list_templates(_my_integration(integration_id, user))}
+
+
+@router.post("/api/me/integrations/{integration_id}/templates")
+def create_my_template(integration_id: int, req: TemplateIn, user: CurrentUser):
+    return _create_template(_my_integration(integration_id, user), req, user)
+
+
+@router.get("/api/admin/integrations/{integration_id}/templates")
+def admin_templates(integration_id: int, _: AdminUser):
+    return {"items": whatsapp_templates.list_templates(integrations.get(integration_id))}
+
+
+@router.post("/api/admin/integrations/{integration_id}/templates")
+def admin_create_template(integration_id: int, req: TemplateIn, admin: AdminUser):
+    return _create_template(integrations.get(integration_id), req, admin)
 
 
 # Coexistencia: cada persona conecta el WhatsApp Business de su móvil con el registro insertado de Meta.
