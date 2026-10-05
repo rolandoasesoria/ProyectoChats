@@ -111,6 +111,14 @@ momento. Los administradores ven y gestionan las de todo el equipo («Todo el eq
 - Es la única vía de entrada de mensajes: la app no importa chats exportados, trabaja con las conversaciones
   reales y en tiempo real.
 
+**WhatsApp Business del móvil (coexistencia):** con la app de Meta configurada (`META_APP_ID`, `META_APP_SECRET`,
+`META_CONFIG_ID`, `META_WEBHOOK_VERIFY_TOKEN` en `.env`), «Mis cuentas» ofrece «Conectar con WhatsApp Business»: el
+registro insertado de Meta conecta el número que la persona ya usa en la app WhatsApp Business, que sigue funcionando
+en el móvil. Entran los mensajes recibidos, los enviados desde el móvil, hasta 6 meses de historial (sin lanzar la IA)
+y los nombres de la agenda. En Meta se configura una sola vez el webhook de la app: URL pública +
+`/api/webhooks/whatsapp`, con el verify token de `.env` y los campos `messages`, `smb_message_echoes`, `history`,
+`smb_app_state_sync` y `account_update`.
+
 **WhatsApp desde internet sin publicar la app:** Meta avisa de cada mensaje por HTTPS. Con
 `powershell -ExecutionPolicy Bypass -File scripts/webhook-publico.ps1` se publica solo una puerta que atiende
 `/api/webhooks/...` (todo lo demás da 404) mediante un túnel de Cloudflare (`cloudflared.exe` en

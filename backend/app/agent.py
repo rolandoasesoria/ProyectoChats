@@ -190,6 +190,15 @@ sus conversaciones se conservan. Pestaña "Registro de accesos": quién ha visto
 de un cliente con conversaciones de compañeros, bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
 exportado, borrado o unido clientes o cambiado cuentas; filtrable por persona y acción. Las consultas repetidas \
 en 10 minutos cuentan como una. Pestaña "Ajustes": el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168).
+- WhatsApp Business del móvil (coexistencia): en "Mis cuentas", tipo WhatsApp Business, el botón "Conectar con \
+WhatsApp Business" abre el inicio de sesión de Meta; se elige la cuenta y se escanea un código con la app WhatsApp \
+Business del móvil. El número sigue funcionando en el móvil y en el ordenador como siempre, y en ProyectoChats entran \
+los mensajes que se reciben, los que se envían desde el móvil y, si se autoriza, hasta 6 meses de historial (sin \
+archivos antiguos); los contactos de la agenda ponen nombre a los clientes que solo tenían su número. Hace falta la \
+app WhatsApp Business (no la normal) actualizada; los grupos no se sincronizan y, mientras esté conectada, la app no \
+permite mensajes temporales ni de "ver una vez". Si se desconecta desde el móvil, la cuenta se pausa y llega un aviso \
+a la campana. Un WhatsApp personal (no Business) no se puede conectar. La conexión con token y app secret sigue \
+disponible en "Conexión manual".
 - Menú de usuario > "Mis cuentas": cada persona conecta sus propias cuentas para que sus mensajes entren solos, en \
 tiempo real, como conversaciones suyas, y pueda responder desde la app. Al conectar, la app prueba la cuenta y dice si \
 conecta o el error. Contraseñas y tokens se guardan cifrados. Tipos: (1) Correo: se elige el proveedor (Gmail, \

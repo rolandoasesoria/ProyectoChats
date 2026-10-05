@@ -6,6 +6,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- WhatsApp Business del móvil en coexistencia: «Conectar con WhatsApp Business» (registro insertado de Meta) conecta
+  el número que cada persona ya usa en la app, que sigue funcionando en el móvil. Entran los mensajes recibidos, los
+  enviados desde el móvil, hasta 6 meses de historial (sin lanzar la IA) y los nombres de la agenda; si se desconecta
+  desde el móvil, la cuenta se pausa y su dueño recibe un aviso. Webhook único de la app en `/api/webhooks/whatsapp`.
 - Webhooks de WhatsApp accesibles desde internet sin publicar la app: `scripts/webhook-publico.ps1` arranca una
   puerta que solo atiende `/api/webhooks/...` (`python -m app.webhook_gateway`, en 127.0.0.1:8010) y un túnel de
   Cloudflare hacia ella; «Mis cuentas» muestra la URL pública del webhook para copiarla en Meta.
