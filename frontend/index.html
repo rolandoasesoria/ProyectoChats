@@ -531,6 +531,49 @@
     </form>
   </dialog>
 
+  <!-- Plantillas de mensaje de una cuenta de WhatsApp -->
+  <dialog id="templates-dialog" class="dialog wide">
+    <div class="dialog-head">
+      <h2 id="tpl-title">Plantillas de WhatsApp</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <p class="muted small">Las plantillas son los mensajes que puedes enviar a un cliente pasadas 24 h desde su último mensaje
+      (recordatorios, avisos, promociones). Meta revisa cada una antes de aprobarla; suele tardar de unos minutos a un día.</p>
+    <ul id="tpl-list" class="integrations-list"></ul>
+    <form id="tpl-form" class="form integration-form">
+      <h3>Nueva plantilla</h3>
+      <div class="form-grid">
+        <label>Nombre <input id="tpl-name" maxlength="512" required placeholder="Ej. Recordatorio de cita"></label>
+        <label>Categoría
+          <select id="tpl-category">
+            <option value="UTILITY">Servicio (avisos, recordatorios, pedidos)</option>
+            <option value="MARKETING">Marketing (promociones, novedades)</option>
+          </select>
+        </label>
+        <label>Idioma
+          <select id="tpl-language">
+            <option value="es">Español</option>
+            <option value="ca">Catalán</option>
+            <option value="en">Inglés</option>
+            <option value="fr">Francés</option>
+            <option value="pt_PT">Portugués</option>
+          </select>
+        </label>
+      </div>
+      <label class="tpl-body">Texto
+        <textarea id="tpl-body" rows="4" maxlength="1024" required
+                  placeholder="Hola {{1}}, te recordamos tu cita del {{2}}. Si no puedes venir, responde a este mensaje."></textarea>
+      </label>
+      <p class="muted small">Usa <code>{{1}}</code>, <code>{{2}}</code>… para lo que cambia en cada envío (nombre, fecha…).</p>
+      <div class="form-grid" id="tpl-examples"></div>
+      <p class="form-error" id="tpl-error" role="alert" hidden></p>
+      <p class="muted small" id="tpl-result" role="status" hidden></p>
+      <div class="dialog-actions">
+        <button type="submit" class="primary" id="tpl-submit">Enviar a revisión de Meta</button>
+      </div>
+    </form>
+  </dialog>
+
   <!-- Paleta de comandos (Ctrl+K) -->
   <dialog id="palette-dialog" class="dialog palette" aria-label="Buscar clientes y acciones">
     <input id="palette-input" type="search" placeholder="Escribe un cliente o una acción…" autocomplete="off">

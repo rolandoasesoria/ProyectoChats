@@ -558,6 +558,9 @@ dialog:not(.is-admin) .admin-only { display: none !important; }
 .integrations-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .integration { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .integration.disabled { opacity: .6; }
+.tpl-text { white-space: pre-wrap; }
+.tpl-body { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
+.tpl-body textarea { width: 100%; resize: vertical; }
 .int-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .int-status { font-size: 13px; color: var(--muted); }
 .int-status.ok { color: #0ca30c; }
