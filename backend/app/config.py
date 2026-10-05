@@ -91,6 +91,20 @@ class IntegrationsConfig:
 
 
 @dataclass(frozen=True)
+class MetaConfig:
+    """App de Meta (proveedor tecnológico) para conectar números de WhatsApp Business con el registro insertado
+    («coexistencia»: el número sigue funcionando en la app del móvil y además entra en ProyectoChats)."""
+    app_id: str
+    app_secret: str               # firma de los webhooks de la app y canje del código del alta
+    config_id: str                # configuración del registro insertado (Facebook Login for Business)
+    webhook_verify_token: str     # el que se escribe en Meta al configurar el webhook de la app
+
+    @property
+    def embedded_signup_ready(self) -> bool:
+        return bool(self.app_id and self.app_secret and self.config_id)
+
+
+@dataclass(frozen=True)
 class Config:
     data_dir: Path
     database: DatabaseConfig
@@ -98,6 +112,7 @@ class Config:
     security: SecurityConfig
     ai: AIConfig
     integrations: IntegrationsConfig
+    meta: MetaConfig
 
 
 def load() -> Config:
@@ -134,7 +149,13 @@ def load() -> Config:
         integrations=IntegrationsConfig(
             sync_disabled=_flag("DISABLE_SYNC"),
             telegram_api=_text("TELEGRAM_API", "https://api.telegram.org"),
-            graph_api=_text("GRAPH_API", "https://graph.facebook.com/v21.0"),
+            graph_api=_text("GRAPH_API", "https://graph.facebook.com/v25.0"),
+        ),
+        meta=MetaConfig(
+            app_id=_text("META_APP_ID"),
+            app_secret=_text("META_APP_SECRET"),
+            config_id=_text("META_CONFIG_ID"),
+            webhook_verify_token=_text("META_WEBHOOK_VERIFY_TOKEN"),
         ),
     )
 

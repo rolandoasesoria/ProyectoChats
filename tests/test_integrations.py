@@ -365,5 +365,6 @@ from app.webhook_gateway import gateway  # noqa: E402
 
 public = {(r.path, m) for r in gateway.routes for m in getattr(r, "methods", [])}
 check("la puerta pública solo tiene los webhooks de WhatsApp",
-      public == {("/api/webhooks/whatsapp/{integration_id}", "GET"), ("/api/webhooks/whatsapp/{integration_id}", "POST")}, public)
+      public == {(p, m) for p in ("/api/webhooks/whatsapp", "/api/webhooks/whatsapp/{integration_id}") for m in ("GET", "POST")},
+      public)
 sys.exit(0 if results["ok"] else 1)

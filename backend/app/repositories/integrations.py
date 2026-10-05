@@ -8,7 +8,7 @@ UPDATABLE = ("name", "owner_user_id", "enabled", "config")
 def list_all(conn: Conn, owner_user_id: int | None = None) -> list[dict]:
     """Todas las integraciones, o solo las de una persona si se indica."""
     return rows(conn.execute(
-        """SELECT i.id, i.kind, i.name, i.owner_user_id, u.name AS owner, i.config, i.enabled,
+        """SELECT i.id, i.kind, i.name, i.owner_user_id, u.name AS owner, i.config, i.state, i.enabled,
                   i.last_sync_at, i.last_error, i.created_at
              FROM integrations i JOIN users u ON u.id = i.owner_user_id
             WHERE ?::bigint IS NULL OR i.owner_user_id = ? ORDER BY i.id""", (owner_user_id, owner_user_id)))
@@ -41,6 +41,20 @@ def delete(conn: Conn, integration_id: int) -> None:
 def save_state(conn: Conn, integration_id: int, state: str, error: str | None) -> None:
     conn.execute("UPDATE integrations SET state = ?, last_sync_at = localtimestamp(0), last_error = ? WHERE id = ?",
                  (state, error, integration_id))
+
+
+def ids_of_kind(conn: Conn, kind: str) -> list[int]:
+    return [r["id"] for r in conn.execute("SELECT id FROM integrations WHERE kind = ? ORDER BY id", (kind,))]
+
+
+def lock_state(conn: Conn, integration_id: int) -> str | None:
+    """Estado guardado. Bloquea la fila hasta el final de la transacción (para cambiar un campo sin pisar otros)."""
+    row = conn.execute("SELECT state FROM integrations WHERE id = ? FOR UPDATE", (integration_id,)).fetchone()
+    return row["state"] if row else None
+
+
+def set_state(conn: Conn, integration_id: int, state: str) -> None:
+    conn.execute("UPDATE integrations SET state = ? WHERE id = ?", (state, integration_id))
 
 
 def lock_last_error(conn: Conn, integration_id: int) -> str | None:

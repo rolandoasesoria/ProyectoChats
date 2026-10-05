@@ -86,9 +86,13 @@ def app_error(_: Request, exc: AppError) -> JSONResponse:
 
 SECURITY_HEADERS = {
     # Solo se ejecutan scripts y estilos servidos por la propia app; la página no se puede incrustar en otra web.
+    # Única excepción: el SDK de Facebook (connect.facebook.net), que se carga solo al pulsar «Conectar con WhatsApp
+    # Business» para el registro insertado de Meta.
     "Content-Security-Policy": (
-        "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; "
-        "connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
+        "default-src 'self'; script-src 'self' https://connect.facebook.net; style-src 'self'; "
+        "img-src 'self' data: https://*.facebook.com https://*.fbcdn.net; "
+        "connect-src 'self' https://*.facebook.com https://*.facebook.net; frame-src https://*.facebook.com; "
+        "frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'"
     ),
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",

@@ -567,6 +567,15 @@ dialog:not(.is-admin) .admin-only { display: none !important; }
 .integration-form { border-top: 1px solid var(--border); padding-top: 12px; }
 .accounts-scope { margin-bottom: 10px; }
 .if-advanced { grid-column: 1 / -1; font-size: 14px; }
+/* Coexistencia: conectar el WhatsApp Business del móvil con el registro insertado de Meta */
+.coex-box { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px;
+  border: 1px solid var(--border); border-radius: 10px; background: var(--hover); }
+.coex-box p { margin: 0; }
+.coex-box .primary { align-self: flex-start; }
+.meta-webhook { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; margin-bottom: 10px; font-size: 13px; }
+.meta-webhook .webhook-info { margin-top: 6px; }
+/* El SDK de Facebook añade elementos auxiliares que espera ocultar con su propio CSS (bloqueado por la CSP) */
+#fb-root, .fb_hidden, .fb_reset > div { position: absolute; top: -10000px; width: 0; height: 0; overflow: hidden; }
 /* Mis cuentas: las mismas tres columnas en todos los bloques del formulario (aunque un bloque tenga más o menos
    campos) y las casillas alineadas por abajo aunque la etiqueta ocupe dos líneas. */
 .integration-form .form-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: end; }

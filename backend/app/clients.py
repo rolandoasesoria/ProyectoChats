@@ -23,6 +23,18 @@ def _digits(handle: str) -> str:
     return d[-9:] if len(d) >= 9 else ""
 
 
+def name_from_contact(channel: str, handle: str, name: str) -> bool:
+    """Pone el nombre de la agenda del móvil a un cliente que solo tenía su número (creado al recibir un mensaje).
+    No toca los nombres puestos a mano ni crea clientes."""
+    with get_conn() as conn:
+        client_id = clients_repo.client_id_for_identity(conn, channel, handle)
+        client = clients_repo.get_basic(conn, client_id) if client_id else None
+        if not client or not re.fullmatch(r"\+?[\d\s()-]{6,}", client["name"] or ""):
+            return False
+        clients_repo.update(conn, client_id, {"name": name[:200]})
+    return True
+
+
 def create_client(name: str, company: str | None, user_id: int) -> int:
     with get_conn() as conn:
         return clients_repo.insert(conn, name.strip(), (company or "").strip() or None, user_id)

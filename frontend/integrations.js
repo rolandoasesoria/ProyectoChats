@@ -28,6 +28,7 @@ const EMAIL_PROVIDERS = {
 
 let integrationFields = {};
 let editingIntegration = null;
+let metaSignup = null; // registro insertado de Meta (coexistencia): {ready, app_id, config_id, graph_version, webhook?}
 let accountsScope = "mine"; // mine: mis cuentas · team: todas (solo administradores)
 
 function accountsApi(path = "") {
@@ -41,9 +42,10 @@ async function openAccountsDialog() {
   accountsScope = "mine";
   document.querySelectorAll("#accounts-scope [data-accounts-scope]").forEach((b) =>
     b.classList.toggle("active", b.dataset.accountsScope === "mine"));
-  resetIntegrationForm();
   $("#accounts-dialog").showModal();
   try {
+    metaSignup = await api("/api/meta/whatsapp-signup").catch(() => null);
+    resetIntegrationForm();
     await loadIntegrations();
   } catch (err) {
     alert(err.message);
@@ -58,6 +60,7 @@ async function loadIntegrations() {
     const people = await api("/api/team");
     $("#if-owner").innerHTML = people.map((u) => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join("");
   }
+  renderMetaWebhookInfo(webhookBase);
   $("#integrations-list").innerHTML = items.length ? items.map((i) => {
     const status = i.last_error
       ? `<span class="int-status error" title="${escapeHtml(i.last_error)}">⚠ No conecta: ${escapeHtml(i.last_error.slice(0, 240))}</span>`
@@ -65,7 +68,10 @@ async function loadIntegrations() {
         ? `✓ Conectada · comprobada ${timeAgo(i.last_sync_at)} · recibe por webhook` : "Recibe por webhook"}</span>`
       : i.last_sync_at ? `<span class="int-status ok">✓ Conectada · revisada ${timeAgo(i.last_sync_at)}</span>`
       : `<span class="int-status">Pendiente de la primera sincronización</span>`;
-    const webhook = i.kind === "whatsapp" ? `
+    const coexistence = i.coexistence
+      ? `<div class="muted small">Conectado con la app WhatsApp Business del móvil (coexistencia)${i.history ? ` · historial: ${escapeHtml(i.history)}` : ""}</div>`
+      : "";
+    const webhook = i.kind === "whatsapp" && !i.coexistence ? `
       <div class="webhook-info">
         <span class="muted small">URL del webhook</span><code>${escapeHtml(`${webhookBase || location.origin}/api/webhooks/whatsapp/${i.id}`)}</code>
         ${webhookBase ? "" : `<span></span><span class="muted small">Esta dirección solo funciona dentro de la oficina: Meta necesita la pública (scripts/webhook-publico.ps1).</span>`}
@@ -80,7 +86,7 @@ async function loadIntegrations() {
           <label class="check"><input type="checkbox" data-toggle-integration ${i.enabled ? "checked" : ""}> Activa</label>
         </div>
         <div class="int-body">${status}${i.kind === "email" ? ` · ${escapeHtml(i.config.address)}` : ""}</div>
-        ${webhook}
+        ${coexistence}${webhook}
         <div class="draft-actions">
           <button class="ghost small-btn" data-sync-integration>${i.kind === "whatsapp" ? "↻ Comprobar ahora" : "↻ Revisar ahora"}</button>
           <button class="link small" data-edit-integration>Editar</button>
@@ -117,6 +123,25 @@ function renderIntegrationFields(values = {}) {
              value="${escapeHtml(values[f.key] && !f.secret ? values[f.key] : "")}">
     </label>`;
   const all = integrationFields[kind] || [];
+  if (kind === "whatsapp" && !editingIntegration && metaSignup?.ready) {
+    $("#if-help").textContent = COEXISTENCE_HELP;
+    $("#if-fields").innerHTML = `
+      <div class="coex-box">
+        <strong>Conecta el WhatsApp Business de tu móvil</strong>
+        <p class="muted small">Sigues usando WhatsApp Business en el móvil y en el ordenador como siempre. Los mensajes que
+          recibes y los que envías desde el móvil entran también aquí, con hasta 6 meses de historial si lo autorizas.</p>
+        <button type="button" class="primary" id="coex-connect">Conectar con WhatsApp Business</button>
+      </div>
+      <details class="if-advanced" id="if-manual">
+        <summary>Conexión manual (con el token y el app secret de Meta)</summary>
+        <div class="form-grid">${all.map(field).join("")}</div>
+      </details>`;
+    // «Conectar y probar» es solo para la conexión manual: aparece al desplegarla.
+    $("#if-submit").hidden = true;
+    $("#if-manual").addEventListener("toggle", (e) => { $("#if-submit").hidden = !e.target.open; });
+    return;
+  }
+  $("#if-submit").hidden = false;
   const isAdvanced = (f) => kind === "email" && EMAIL_ADVANCED.includes(f.key);
   const advanced = all.filter(isAdvanced);
   $("#if-fields").innerHTML = all.filter((f) => !isAdvanced(f)).map(field).join("") + (advanced.length ? `
@@ -231,6 +256,103 @@ async function onIntegrationsClick(e) {
   }
 }
 
+/* ---------- Coexistencia: registro insertado de Meta ---------- */
+
+const COEXISTENCE_HELP = "Pulsa el botón, inicia sesión con Facebook, elige tu cuenta de WhatsApp Business y escanea el código "
+  + "que te mostrará con la app WhatsApp Business del móvil (Ajustes → Dispositivos vinculados). Hace falta la app WhatsApp "
+  + "Business (no la normal) actualizada. Los grupos no se sincronizan y, mientras esté conectada, la app deja de permitir "
+  + "mensajes temporales y de «ver una vez».";
+
+// Datos del webhook de la app de Meta (solo administradores): se configuran una vez en Meta para todos los números.
+function renderMetaWebhookInfo(webhookBase) {
+  const box = $("#meta-webhook-info");
+  const hook = metaSignup?.webhook;
+  box.hidden = !(metaSignup?.ready && hook);
+  if (box.hidden) return;
+  const url = hook.url || `${webhookBase || location.origin}/api/webhooks/whatsapp`;
+  box.innerHTML = `
+    <strong>Webhook de la app de Meta</strong>
+    <span class="muted"> · se pone una vez en Meta (WhatsApp → Configuración) y sirve para todos los números conectados;
+      suscríbete a messages, smb_message_echoes, history, smb_app_state_sync y account_update.</span>
+    <div class="webhook-info">
+      <span class="muted small">URL</span><code>${escapeHtml(url)}</code>
+      <span class="muted small">Verify token</span><code>${escapeHtml(hook.verify_token || "(falta META_WEBHOOK_VERIFY_TOKEN)")}</code>
+    </div>
+    ${hook.url ? "" : `<p class="muted small">Esta URL solo funciona dentro de la oficina: abre el túnel (scripts/webhook-publico.ps1) para que Meta pueda llegar.</p>`}`;
+}
+
+function loadFacebookSdk() {
+  if (window.FB) return Promise.resolve(window.FB);
+  return new Promise((resolve, reject) => {
+    window.fbAsyncInit = () => {
+      window.FB.init({ appId: metaSignup.app_id, autoLogAppEvents: false, xfbml: false, version: metaSignup.graph_version });
+      resolve(window.FB);
+    };
+    const script = document.createElement("script");
+    script.src = "https://connect.facebook.net/es_ES/sdk.js";
+    script.async = true;
+    script.crossOrigin = "anonymous";
+    script.onerror = () => reject(new Error("No se ha podido cargar el inicio de sesión de Facebook. Revisa la conexión a internet."));
+    document.head.appendChild(script);
+  });
+}
+
+async function connectCoexistence() {
+  const btn = $("#coex-connect");
+  const result = $("#if-result");
+  btn.disabled = true;
+  btn.textContent = "Abriendo Facebook…";
+  showError($("#if-error"), "");
+  // Meta avisa por postMessage de la cuenta elegida (o de que se ha cancelado); el código llega por FB.login.
+  let session = {};
+  const onMessage = (event) => {
+    if (!event.origin.endsWith("facebook.com")) return;
+    try {
+      const data = typeof event.data === "string" ? JSON.parse(event.data) : event.data;
+      if (data?.type === "WA_EMBEDDED_SIGNUP") session = data;
+    } catch { /* otros mensajes de Facebook */ }
+  };
+  window.addEventListener("message", onMessage);
+  try {
+    const FB = await loadFacebookSdk();
+    const code = await new Promise((resolve) => FB.login((response) => resolve(response.authResponse?.code || null), {
+      config_id: metaSignup.config_id,
+      response_type: "code",
+      override_default_response_type: true,
+      extras: { setup: {}, featureType: "whatsapp_business_app_onboarding", sessionInfoVersion: "3" },
+    }));
+    for (let i = 0; i < 20 && !session.event; i++) await new Promise((r) => setTimeout(r, 100));
+    if (session.event === "ERROR") throw new Error(session.data?.error_message || "Meta ha devuelto un error en el alta.");
+    if (!code || session.event === "CANCEL") throw new Error("Has cerrado la ventana de Meta sin terminar la conexión.");
+    btn.textContent = "Conectando…";
+    const res = await api("/api/me/integrations/whatsapp-coexistence", {
+      method: "POST",
+      body: JSON.stringify({ code, waba_id: session.data?.waba_id || "", phone_number_id: session.data?.phone_number_id || "",
+                             name: $("#if-name").value.trim() }),
+    });
+    resetIntegrationForm();
+    const history = res.sync?.history === "solicitado"
+      ? " El historial de los últimos meses irá entrando en unos minutos."
+      : " No se ha podido pedir el historial (puedes seguir usándola igual).";
+    const number = [res.number?.display_phone_number, res.number?.verified_name].filter(Boolean).join(" · ");
+    result.textContent = res.test?.ok
+      ? `✓ Conectado tu WhatsApp Business${number ? ` (${number})` : ""}.${history}`
+      : `Conectado, pero Meta no acepta las credenciales: ${res.test?.error || ""}`;
+    result.classList.toggle("error-text", !res.test?.ok);
+    result.hidden = false;
+    await loadIntegrations();
+    loadNotifications();
+  } catch (err) {
+    showError($("#if-error"), err.message);
+  } finally {
+    window.removeEventListener("message", onMessage);
+    if (document.body.contains(btn)) {
+      btn.disabled = false;
+      btn.textContent = "Conectar con WhatsApp Business";
+    }
+  }
+}
+
 /* ---------- Enviar desde el borrador ---------- */
 
 // Último mensaje de la conversación al empezar a escribir: si llega otro antes de enviar, se avisa.
@@ -298,6 +420,7 @@ function bindIntegrationEvents() {
   $("#integration-form").addEventListener("submit", submitIntegration);
   $("#if-cancel").addEventListener("click", resetIntegrationForm);
   $("#integrations-list").addEventListener("click", onIntegrationsClick);
+  $("#if-fields").addEventListener("click", (e) => { if (e.target.closest("#coex-connect")) connectCoexistence(); });
   $("#draft-conversation").addEventListener("change", updateSendButton);
   $("#draft-send").addEventListener("click", sendDraft);
   $("#draft-write").addEventListener("click", () => {
