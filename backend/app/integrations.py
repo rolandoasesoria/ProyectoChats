@@ -57,11 +57,11 @@ FIELDS = {
         {"key": "bot_token", "label": "Token del bot (de @BotFather)", "secret": True, "required": True},
     ],
     "whatsapp": [
-        {"key": "phone_number_id", "label": "Phone number ID", "required": True},
+        {"key": "phone_number_id", "label": "Identificador del número de teléfono (Phone number ID)", "required": True},
         {"key": "access_token", "label": "Access token", "secret": True, "required": True},
         {"key": "app_secret", "label": "App secret (para verificar el webhook)", "secret": True, "required": True},
         {"key": "verify_token", "label": "Verify token del webhook (se genera solo si lo dejas vacío)"},
-        {"key": "waba_id", "label": "Identificador de la cuenta de WhatsApp Business"},
+        {"key": "waba_id", "label": "Identificador de la cuenta de WhatsApp Business (WABA ID, para las plantillas)"},
     ],
 }
 KIND_CHANNEL = {"email": "email", "telegram": "telegram", "whatsapp": "whatsapp"}
