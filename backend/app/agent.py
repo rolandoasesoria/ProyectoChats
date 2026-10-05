@@ -199,6 +199,12 @@ app WhatsApp Business (no la normal) actualizada; los grupos no se sincronizan y
 permite mensajes temporales ni de "ver una vez". Si se desconecta desde el móvil, la cuenta se pausa y llega un aviso \
 a la campana. Un WhatsApp personal (no Business) no se puede conectar. La conexión con token y app secret sigue \
 disponible en "Conexión manual".
+- Plantillas de WhatsApp: en "Mis cuentas", el enlace "Plantillas" de una cuenta de WhatsApp muestra sus plantillas \
+con su estado en Meta (aprobada, en revisión, rechazada) y permite crear una nueva: nombre, categoría (Servicio o \
+Marketing), idioma y texto, con {{1}}, {{2}}… para lo que cambia en cada envío (piden un ejemplo de cada uno). Meta \
+la revisa antes de aprobarla. Las plantillas son lo único que se puede enviar pasadas 24 h desde el último mensaje \
+del cliente. Hace falta el identificador de la cuenta de WhatsApp Business (en "Editar"; con la coexistencia se \
+rellena solo).
 - Menú de usuario > "Mis cuentas": cada persona conecta sus propias cuentas para que sus mensajes entren solos, en \
 tiempo real, como conversaciones suyas, y pueda responder desde la app. Al conectar, la app prueba la cuenta y dice si \
 conecta o el error. Contraseñas y tokens se guardan cifrados. Tipos: (1) Correo: se elige el proveedor (Gmail, \

@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 22;
+const TOUR_VERSION = 23;
 
 const TOUR_STEPS = [
   {
@@ -59,7 +59,7 @@ const TOUR_STEPS = [
   {
     target: "#user-menu-btn",
     title: "Tu cuenta",
-    text: "En «Mis cuentas» conectas tu correo, tu bot de Telegram o el WhatsApp Business de tu móvil (sigue funcionando en el móvil) para que tus mensajes entren solos. También: respuestas guardadas, contraseña, este tutorial y cerrar sesión. El botón de al lado cambia el tema.",
+    text: "En «Mis cuentas» conectas tu correo, tu bot de Telegram o el WhatsApp Business de tu móvil (sigue funcionando en el móvil) para que tus mensajes entren solos, y creas las plantillas de WhatsApp. También: respuestas guardadas, contraseña, este tutorial y cerrar sesión. El botón de al lado cambia el tema.",
   },
   {
     target: "#user-menu-btn",

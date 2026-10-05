@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Plantillas de WhatsApp: en «Mis cuentas», «Plantillas» muestra las de cada cuenta con su estado en Meta y
+  permite crear una nueva (categoría, idioma, texto con variables y sus ejemplos) y enviarla a revisión.
 - WhatsApp Business del móvil en coexistencia: «Conectar con WhatsApp Business» (registro insertado de Meta) conecta
   el número que cada persona ya usa en la app, que sigue funcionando en el móvil. Entran los mensajes recibidos, los
   enviados desde el móvil, hasta 6 meses de historial (sin lanzar la IA) y los nombres de la agenda; si se desconecta
