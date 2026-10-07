@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Administración → Ajustes: casilla «Analizar con IA a cada cliente cuando le llegan mensajes» (activada por
+  defecto). Desactivada, los mensajes no se envían a Claude hasta pulsar «✨ Actualizar con IA».
 - Plantillas de WhatsApp: en «Mis cuentas», «Plantillas» muestra las de cada cuenta con su estado en Meta y
   permite crear una nueva (categoría, idioma, texto con variables y sus ejemplos) y enviarla a revisión.
 - WhatsApp Business del móvil en coexistencia: «Conectar con WhatsApp Business» (registro insertado de Meta) conecta
@@ -118,6 +120,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Las casillas dentro de los formularios (Ajustes, respuestas guardadas) quedan alineadas con su texto.
 - Correo: la conexión con los servidores IMAP y SMTP comprueba su certificado (antes no se verificaba y la
   contraseña podía acabar en un servidor falso); si no es válido, no se envía la contraseña y se explica.
 - Correo: si la carpeta de enviados configurada no existe, se busca la que el servidor marca como enviados (o una
