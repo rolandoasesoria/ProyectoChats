@@ -1,12 +1,18 @@
 """Dependencias comunes de las rutas: usuario autenticado, administrador y cliente existente."""
 from typing import Annotated
 
-from fastapi import Depends
+from fastapi import Cookie, Depends
 
 from .. import auth, clients
 from ..errors import NotFound
 
-CurrentUser = Annotated[dict, Depends(auth.current_user)]
+
+def current_user(session: Annotated[str | None, Cookie(alias=auth.COOKIE_NAME)] = None) -> dict:
+    """Usuario autenticado (cookie de sesión) o 401."""
+    return auth.user_for_session(session)
+
+
+CurrentUser = Annotated[dict, Depends(current_user)]
 
 
 def admin_user(user: CurrentUser) -> dict:
