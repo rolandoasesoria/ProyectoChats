@@ -113,6 +113,21 @@ TOOLS = [
 _SCOPE_MAP = {"mias": "mine", "equipo": "team"}
 
 
+def _client_summary(client_id: int, user_id: int) -> dict:
+    """Herramienta resumen_cliente: ficha, resumen, datos clave, tareas abiertas y notas internas."""
+    overview = search.client_overview(client_id, user_id)
+    if not overview:
+        return {"error": "cliente no encontrado"}
+    ficha = insights.profile(client_id)
+    return {**overview, "resumen": ficha["summary"],
+            "datos_clave": [{"dato": f["label"], "valor": f["value"],
+                             "origen": "IA" if f["origin"] == "ai" else "confirmado"} for f in ficha["facts"]],
+            "tareas_abiertas": [{"tarea": t["title"], "vence": t["due_date"], "responsable": t["assignee"]}
+                                for t in insights.list_tasks(client_id=client_id, status="open")],
+            "notas_internas": [{"autor": n["author"], "fecha": n["created_at"][:10], "nota": n["body"]}
+                               for n in notes.list_notes(client_id)[:20]]}
+
+
 def _run_tool(name: str, args: dict, user_id: int) -> object:
     scope = _SCOPE_MAP.get(args.get("alcance", "mias"))
     if scope is None:
@@ -120,20 +135,9 @@ def _run_tool(name: str, args: dict, user_id: int) -> object:
     if name == "buscar_cliente":
         return search.find_clients(str(args["texto"]), limit=10)
     if name == "resumen_cliente":
-        client_id = int(args["cliente_id"])
-        overview = search.client_overview(client_id, user_id)
-        if not overview:
-            return {"error": "cliente no encontrado"}
-        ficha = insights.profile(client_id)
-        return {**overview, "resumen": ficha["summary"],
-                "datos_clave": [{"dato": f["label"], "valor": f["value"],
-                                 "origen": "IA" if f["origin"] == "ai" else "confirmado"} for f in ficha["facts"]],
-                "tareas_abiertas": [{"tarea": t["title"], "vence": t["due_date"], "responsable": t["assignee"]}
-                                    for t in insights.list_tasks(client_id=client_id, status="open")],
-                "notas_internas": [{"autor": n["author"], "fecha": n["created_at"][:10], "nota": n["body"]}
-                                   for n in notes.list_notes(client_id)[:20]]}
+        return _client_summary(int(args["cliente_id"]), user_id)
     if name == "buscar_documentos":
-        fts = search._fts_query(str(args["consulta"]))
+        fts = search.fts_query(str(args["consulta"]))
         if not fts:
             return {"resultados": 0}
         if scope == "team":

@@ -14,7 +14,7 @@ from .repositories import conversations as conversations_repo
 from .repositories import messages as messages_repo
 
 
-def _fts_query(text: str) -> str:
+def fts_query(text: str) -> str:
     """Convierte texto libre en una consulta segura para to_tsquery: términos OR con prefijo.
 
     La configuración es_unaccent quita tildes y reduce a la raíz ("entregas" -> "entreg"), así que
@@ -90,7 +90,7 @@ def search_messages(query: str, user_id: int, scope: str = "mine",
                     date_from: str | None = None, date_to: str | None = None,
                     limit: int = 20, markers: tuple[str, str] = ("[", "]")) -> list[dict]:
     """Búsqueda de texto completo. `markers` rodean los términos encontrados en el fragmento."""
-    fts = _fts_query(query)
+    fts = fts_query(query)
     if not fts:
         return []
     with get_conn() as conn:
