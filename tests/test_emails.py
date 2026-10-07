@@ -2,18 +2,10 @@
 import email
 import sys
 from email.policy import default as default_policy
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from app import emails  # noqa: E402
+from apitest import check, results
 
-ok = True
-
-
-def check(label, cond, extra=""):
-    global ok
-    ok &= bool(cond)
-    print(("OK   " if cond else "FAIL ") + label + (f"  -> {extra}" if extra and not cond else ""))
+from app import emails
 
 
 def parse(raw: bytes) -> dict | None:
@@ -51,4 +43,4 @@ m = parse(b"From: Jorge <jorge@talleresmartin.com>\nTo: ana@miempresa.com\nSubje
 check("solo adjunto: el cuerpo lo nombra y el archivo se conserva",
       m["body"] == "📎 f.pdf" and [(a["filename"], a["mime"]) for a in m["attachments"]] == [("f.pdf", "application/pdf")], m)
 check("sin remitente se ignora", parse(b"Subject: x\n\nhola\n") is None)
-sys.exit(0 if ok else 1)
+sys.exit(0 if results["ok"] else 1)

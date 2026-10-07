@@ -1,11 +1,8 @@
 """Búsqueda por palabras (API, con resaltado) y por significado (lógica con Claude simulado + API sin clave)."""
 import json
 import sys
-from pathlib import Path
-from types import SimpleNamespace
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from apitest import Session, check, results  # noqa: E402
+from apitest import Session, check, claude_reply, results
 
 ana = Session("ana")
 st, r = ana.get("/api/search?q=direccion&scope=mine&client_id=1")
@@ -25,8 +22,7 @@ replies = []
 
 def fake_create(**params):
     calls.append(params)
-    return SimpleNamespace(stop_reason="end_turn",
-                           content=[SimpleNamespace(type="text", text=json.dumps(replies.pop(0)))])
+    return claude_reply(json.dumps(replies.pop(0)))
 
 
 agent._create = fake_create
@@ -61,10 +57,9 @@ check("respeta el alcance: sin resultados de Carlos con 'mine'",
       all(r["owner"] == "Ana Ruiz" for r in res["results"]))
 
 smartsearch._structured = orig_structured
-agent._create = lambda **p: SimpleNamespace(stop_reason="end_turn", content=[SimpleNamespace(
-    type="text", text=json.dumps({"keywords": ["zzzzqqq"]}))])
+agent._create = lambda **p: claude_reply(json.dumps({"keywords": ["zzzzqqq"]}))
 check("sin candidatos no hace la segunda llamada", smartsearch.smart_search("algo", 1, "mine", 1) == {"keywords": ["zzzzqqq"], "results": []})
-agent._create = lambda **p: SimpleNamespace(stop_reason="refusal", content=[])
+agent._create = lambda **p: claude_reply(stop_reason="refusal")
 try:
     smartsearch.smart_search("algo", 1, "mine", 1)
     check("rechazo da error claro", False)

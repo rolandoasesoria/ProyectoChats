@@ -1,4 +1,5 @@
-// Borradores de respuesta con IA (pestaña Mensajes de la ficha y botón "Responder" de la bandeja).
+// Borradores de respuesta con IA (pestaña Mensajes de la ficha y botón "Responder" de la bandeja), y su envío
+// por la cuenta conectada del canal.
 
 
 function fillDraftConversations(conversations, selectedId) {
@@ -147,6 +148,73 @@ async function replyFromInbox(clientId, conversationId) {
   openDraftPanel(conversationId);
 }
 
+/* ---------- Enviar por la cuenta conectada ---------- */
+
+// Último mensaje de la conversación al empezar a escribir: si llega otro antes de enviar, se avisa.
+let draftBaseline = null;
+
+async function updateSendButton() {
+  const btn = $("#draft-send");
+  btn.hidden = true;
+  draftBaseline = null;
+  const convId = $("#draft-conversation").value;
+  if (!convId) return;
+  try {
+    const s = await api(`/api/conversations/${convId}/sender`);
+    if ($("#draft-conversation").value !== convId) return;
+    draftBaseline = s.last_message_id;
+    btn.hidden = !s.can_send;
+    btn.textContent = `Enviar por ${s.via || ""}`.trim();
+  } catch { /* sin envío */ }
+}
+
+async function sendDraft() {
+  const text = $("#draft-text").value.trim();
+  const convId = $("#draft-conversation").value;
+  if (!text) return;
+  const option = $("#draft-conversation").selectedOptions[0]?.textContent || "";
+  if (!confirm(`¿Enviar este mensaje al cliente?\n\n${option}`)) return;
+  const btn = $("#draft-send");
+  btn.disabled = true;
+  try {
+    const send = (force) => api(`/api/conversations/${convId}/send`, {
+      method: "POST", body: JSON.stringify({ text, after_message_id: draftBaseline, force }),
+    });
+    try {
+      await send(false);
+    } catch (err) {
+      if (err.status !== 409) throw err;
+      if (!confirm(`${err.message}
+
+¿Enviar de todos modos?`)) return;
+      await send(true);
+    }
+    const note = await scheduleFollowUp(convId);
+    closeDraftPanel();
+    $("#draft-sent-note").textContent = `Enviado.${note ? ` ${note}` : ""}`;
+    $("#draft-sent-note").hidden = false;
+    await loadTimeline();
+    refreshInboxCount();
+  } catch (err) {
+    alert(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+// Antes de copiar el borrador: ¿ha llegado algo a la conversación desde que se empezó a escribir?
+async function confirmNoNews(conversationId) {
+  if (draftBaseline === null) return true;
+  try {
+    const s = await api(`/api/conversations/${conversationId}/sender`);
+    if (s.last_message_id > draftBaseline) {
+      if (!confirm("Mientras escribías ha llegado un mensaje nuevo a esta conversación (del cliente o de un compañero).\n\n¿Copiar la respuesta igualmente?")) return false;
+      draftBaseline = s.last_message_id;
+    }
+  } catch { /* sin comprobación */ }
+  return true;
+}
+
 function bindDraftEvents() {
   $("#draft-open").addEventListener("click", () => openDraftPanel());
   $("#draft-close").addEventListener("click", closeDraftPanel);
@@ -156,5 +224,12 @@ function bindDraftEvents() {
   $("#draft-undo").addEventListener("click", undoRewrite);
   $("#draft-instructions").addEventListener("keydown", (e) => {
     if (e.key === "Enter") { e.preventDefault(); generateDraft(); }
+  });
+  $("#draft-conversation").addEventListener("change", updateSendButton);
+  $("#draft-send").addEventListener("click", sendDraft);
+  $("#draft-write").addEventListener("click", () => {
+    $("#draft-text").hidden = false;
+    $("#draft-result-actions").hidden = false;
+    $("#draft-text").focus();
   });
 }

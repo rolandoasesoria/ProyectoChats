@@ -257,23 +257,29 @@ def analyze_in_background(client_id: int) -> None:
     threading.Thread(target=run, daemon=True).start()
 
 
+def _ask_text(system: str, content: str, refusal: str) -> str:
+    """Pide a Claude un texto breve (esfuerzo bajo) y lo devuelve limpio; si se niega, AnalysisError(refusal)."""
+    response = agent._create(system=system, messages=[{"role": "user", "content": content}],
+                             output_config={"effort": "low"})
+    if response.stop_reason == "refusal":
+        raise AnalysisError(refusal)
+    return "\n".join(b.text for b in response.content if b.type == "text").strip()
+
+
+def _message_line(m: dict, channel: str | None = None) -> str:
+    """Un mensaje en el contexto de un prompt: «fecha[ · canal] · quién (cliente|equipo): texto»."""
+    who = f"{m['sender']} (cliente)" if m["direction"] == "in" else f"{m['sender']} (equipo)"
+    return f"{m['sent_at'][:16].replace('T', ' ')}{' · ' + channel if channel else ''} · {who}: {m['body'][:MAX_MESSAGE_CHARS]}"
+
+
 def summarize_new_messages(client_name: str, messages: list[dict]) -> str:
     """Resumen breve de los mensajes llegados desde la última visita (no se guarda)."""
-    lines = [f"Cliente: {client_name}", "Mensajes nuevos (fecha · canal · quién escribe):"]
-    for m in messages:
-        who = f"{m['sender']} (cliente)" if m["direction"] == "in" else f"{m['sender']} (equipo)"
-        body = m["body"][:MAX_MESSAGE_CHARS]
-        lines.append(f"{m['sent_at'][:16].replace('T', ' ')} · {m['channel']} · {who}: {body}")
-    response = agent._create(
-        system="Resume en español, en 1 a 4 viñetas cortas, qué ha pasado en estos mensajes nuevos entre el "
-               "equipo y el cliente: peticiones, cambios, acuerdos y lo que queda pendiente de responder. "
-               "Sin introducción ni despedida.",
-        messages=[{"role": "user", "content": "\n".join(lines)}],
-        output_config={"effort": "low"},
-    )
-    if response.stop_reason == "refusal":
-        raise AnalysisError("La IA no ha podido resumir estos mensajes.")
-    return "\n".join(b.text for b in response.content if b.type == "text").strip()
+    lines = [f"Cliente: {client_name}", "Mensajes nuevos (fecha · canal · quién escribe):",
+             *[_message_line(m, m["channel"]) for m in messages]]
+    return _ask_text("Resume en español, en 1 a 4 viñetas cortas, qué ha pasado en estos mensajes nuevos entre el "
+                     "equipo y el cliente: peticiones, cambios, acuerdos y lo que queda pendiente de responder. "
+                     "Sin introducción ni despedida.",
+                     "\n".join(lines), "La IA no ha podido resumir estos mensajes.")
 
 
 CHANNEL_STYLE = {
@@ -296,10 +302,6 @@ def draft_reply(conversation_id: int, author: dict, instructions: str = "") -> d
     ficha = profile(conv["client_id"])
     open_tasks = list_tasks(client_id=conv["client_id"], status="open")
 
-    def fmt(m, channel=None):
-        who = f"{m['sender']} (cliente)" if m["direction"] == "in" else f"{m['sender']} (equipo)"
-        return f"{m['sent_at'][:16].replace('T', ' ')}{' · ' + channel if channel else ''} · {who}: {m['body'][:MAX_MESSAGE_CHARS]}"
-
     lines = [f"Fecha de hoy: {date.today().isoformat()}",
              f"Escribe: {author['name']} (del equipo)",
              f"Cliente: {conv['client']}",
@@ -313,24 +315,19 @@ def draft_reply(conversation_id: int, author: dict, instructions: str = "") -> d
         lines += ["Tareas pendientes con este cliente:", *[f"- {t['title']}" + (f" (vence {t['due_date']})" if t["due_date"] else "")
                                                            for t in open_tasks], ""]
     if other:
-        lines += ["Mensajes recientes por otros canales (contexto):", *[fmt(m, m["channel"]) for m in other], ""]
-    lines += ["Conversación a la que hay que responder:", *[fmt(m) for m in thread], ""]
+        lines += ["Mensajes recientes por otros canales (contexto):", *[_message_line(m, m["channel"]) for m in other], ""]
+    lines += ["Conversación a la que hay que responder:", *[_message_line(m) for m in thread], ""]
     if instructions.strip():
         lines += [f"Indicaciones de {author['name']} para esta respuesta: {instructions.strip()}"]
 
-    response = agent._create(
-        system="Redactas borradores de respuesta para que una persona del equipo los revise y los envíe al cliente. "
-               "Responde a lo último que ha escrito el cliente teniendo en cuenta todo el contexto. Escribe en el idioma "
-               "del cliente y con el tono que ya se usa en la conversación. No inventes datos (precios, fechas, "
-               "disponibilidad) que no aparezcan en el contexto: si hacen falta, deja un hueco entre corchetes, "
-               "p. ej. [precio]. Devuelve solo el texto del mensaje, listo para copiar, sin comentarios.\n\n"
-               + CHANNEL_STYLE.get(conv["channel"], "Mensaje claro y breve."),
-        messages=[{"role": "user", "content": "\n".join(lines)}],
-        output_config={"effort": "low"},
-    )
-    if response.stop_reason == "refusal":
-        raise AnalysisError("La IA no ha podido redactar esta respuesta.")
-    draft = "\n".join(b.text for b in response.content if b.type == "text").strip()
+    draft = _ask_text(
+        "Redactas borradores de respuesta para que una persona del equipo los revise y los envíe al cliente. "
+        "Responde a lo último que ha escrito el cliente teniendo en cuenta todo el contexto. Escribe en el idioma "
+        "del cliente y con el tono que ya se usa en la conversación. No inventes datos (precios, fechas, "
+        "disponibilidad) que no aparezcan en el contexto: si hacen falta, deja un hueco entre corchetes, "
+        "p. ej. [precio]. Devuelve solo el texto del mensaje, listo para copiar, sin comentarios.\n\n"
+        + CHANNEL_STYLE.get(conv["channel"], "Mensaje claro y breve."),
+        "\n".join(lines), "La IA no ha podido redactar esta respuesta.")
     return {"draft": draft, "channel": conv["channel"], "subject": conv["subject"], "client_id": conv["client_id"]}
 
 
@@ -350,17 +347,12 @@ def rewrite_draft(text: str, action: str, language: str = "", channel: str | Non
     if action == "translate" and not language.strip():
         raise AnalysisError("Indica a qué idioma traducirlo.")
     task = REWRITE_ACTIONS[action] + (f" Idioma: {language.strip()}." if action == "translate" else "")
-    response = agent._create(
-        system="Retocas borradores de mensajes que una persona del equipo va a enviar a un cliente. "
-               f"{task} Conserva los datos (precios, fechas, nombres) y los huecos entre corchetes como [precio]; "
-               "no añadas información nueva. Devuelve solo el texto retocado, sin comentarios.\n\n"
-               + CHANNEL_STYLE.get(channel or "", ""),
-        messages=[{"role": "user", "content": text}],
-        output_config={"effort": "low"},
-    )
-    if response.stop_reason == "refusal":
-        raise AnalysisError("La IA no ha podido retocar este texto.")
-    return "\n".join(b.text for b in response.content if b.type == "text").strip()
+    return _ask_text(
+        "Retocas borradores de mensajes que una persona del equipo va a enviar a un cliente. "
+        f"{task} Conserva los datos (precios, fechas, nombres) y los huecos entre corchetes como [precio]; "
+        "no añadas información nueva. Devuelve solo el texto retocado, sin comentarios.\n\n"
+        + CHANNEL_STYLE.get(channel or "", ""),
+        text, "La IA no ha podido retocar este texto.")
 
 
 # ---------------------------------------------------------------- Ficha (tareas: tasks.py; datos a mano: facts.py)

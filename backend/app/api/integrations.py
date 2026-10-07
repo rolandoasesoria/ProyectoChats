@@ -1,5 +1,4 @@
 """Cuentas conectadas (correo, Telegram, WhatsApp) y webhook de WhatsApp."""
-import hashlib
 import hmac
 import json
 import threading
@@ -193,14 +192,25 @@ def connect_whatsapp_coexistence(req: CoexistenceIn, user: CurrentUser):
     return result
 
 
-@router.get("/api/webhooks/whatsapp")
-def whatsapp_app_verify(request: Request):
-    """Verificación del webhook de la app de Meta (se configura una vez para todos los números)."""
+def _challenge(request: Request, expected: str | None) -> PlainTextResponse:
+    """Responde al reto con el que Meta comprueba el webhook al configurarlo (si el verify token coincide)."""
     p = request.query_params
-    expected = config.meta.webhook_verify_token
     if not expected or p.get("hub.mode") != "subscribe" or not hmac.compare_digest(p.get("hub.verify_token", ""), expected):
         raise Forbidden("Token de verificación incorrecto")
     return PlainTextResponse(p.get("hub.challenge", ""))
+
+
+def _payload(raw: bytes) -> dict:
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        raise InvalidInput("JSON no válido")
+
+
+@router.get("/api/webhooks/whatsapp")
+def whatsapp_app_verify(request: Request):
+    """Verificación del webhook de la app de Meta (se configura una vez para todos los números)."""
+    return _challenge(request, config.meta.webhook_verify_token)
 
 
 @router.post("/api/webhooks/whatsapp")
@@ -208,13 +218,9 @@ async def whatsapp_app_webhook(request: Request):
     """Avisos de todos los números conectados con el registro insertado. Solo se aceptan con la firma de la app."""
     raw = await request.body()
     secret = config.meta.app_secret
-    expected = "sha256=" + hmac.new(secret.encode(), raw, hashlib.sha256).hexdigest() if secret else ""
-    if not secret or not hmac.compare_digest(expected, request.headers.get("x-hub-signature-256", "")):
+    if not secret or not integrations.verify_whatsapp_signature(secret, raw, request.headers.get("x-hub-signature-256")):
         raise Forbidden("Firma no válida")
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
-        raise InvalidInput("JSON no válido")
+    payload = _payload(raw)
     if integrations.has_history(payload):
         # El historial puede traer miles de mensajes: se guarda en segundo plano y se contesta a Meta al momento.
         threading.Thread(target=integrations.receive_whatsapp_app, args=(payload,), daemon=True,
@@ -227,11 +233,9 @@ async def whatsapp_app_webhook(request: Request):
 def whatsapp_verify(integration_id: int, request: Request):
     """Verificación del webhook que hace Meta al configurarlo."""
     integ = integrations.get(integration_id)
-    p = request.query_params
-    if integ["kind"] != "whatsapp" or p.get("hub.mode") != "subscribe" \
-            or not hmac.compare_digest(p.get("hub.verify_token", ""), integ["config"]["verify_token"]):
+    if integ["kind"] != "whatsapp":
         raise Forbidden("Token de verificación incorrecto")
-    return PlainTextResponse(p.get("hub.challenge", ""))
+    return _challenge(request, integ["config"]["verify_token"])
 
 
 @router.post("/api/webhooks/whatsapp/{integration_id}")
@@ -240,11 +244,8 @@ async def whatsapp_webhook(integration_id: int, request: Request):
     integ = integrations.get(integration_id)
     raw = await request.body()
     if integ["kind"] != "whatsapp" or not integ["enabled"] \
-            or not integrations.verify_whatsapp_signature(integ, raw, request.headers.get("x-hub-signature-256")):
+            or not integrations.verify_whatsapp_signature(integ["config"]["app_secret"], raw,
+                                                          request.headers.get("x-hub-signature-256")):
         raise Forbidden("Firma no válida")
-    try:
-        payload = json.loads(raw)
-    except json.JSONDecodeError:
-        raise InvalidInput("JSON no válido")
-    n = await run_in_threadpool(integrations.receive_whatsapp, integ, payload)
+    n = await run_in_threadpool(integrations.receive_whatsapp, integ, _payload(raw))
     return {"ok": True, "imported": n}

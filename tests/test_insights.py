@@ -1,24 +1,13 @@
 """Prueba del análisis con IA usando una respuesta simulada de Claude (sin llamar a la API)."""
 import json
 import sys
-from pathlib import Path
-from types import SimpleNamespace
 
-SCRATCH = Path(__file__).resolve().parent / ".tmp"
-SCRATCH.mkdir(exist_ok=True)
-import testdb  # noqa: F401,E402  (base de datos de pruebas; antes que la app)
+from apitest import check, claude_reply, results  # base de datos de pruebas; antes que la app
 
-from app import agent, insights, seed  # noqa: E402
-from app.db import get_conn  # noqa: E402
+from app import agent, insights, seed
+from app.db import get_conn
 
 seed.seed(reset=True, basico=True)
-ok = True
-
-
-def check(label, cond, extra=""):
-    global ok
-    ok &= bool(cond)
-    print(("OK   " if cond else "FAIL ") + label + (f"  -> {extra}" if extra and not cond else ""))
 
 
 prompts = []
@@ -27,8 +16,7 @@ fake_result = {}
 
 def fake_create(**params):
     prompts.append(params)
-    return SimpleNamespace(stop_reason="end_turn",
-                           content=[SimpleNamespace(type="text", text=json.dumps(fake_result))])
+    return claude_reply(json.dumps(fake_result))
 
 
 agent._create = fake_create
@@ -150,10 +138,10 @@ try:
     check("cliente sin mensajes da error", False)
 except insights.AnalysisError as e:
     check(f"cliente sin mensajes: {e}", True)
-agent._create = lambda **_: SimpleNamespace(stop_reason="refusal", content=[])
+agent._create = lambda **_: claude_reply(stop_reason="refusal")
 try:
     insights.analyze_client(1)
     check("rechazo de la IA da error", False)
 except insights.AnalysisError as e:
     check(f"rechazo de la IA: {e}", True)
-sys.exit(0 if ok else 1)
+sys.exit(0 if results["ok"] else 1)

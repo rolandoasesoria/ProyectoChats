@@ -36,10 +36,8 @@ def settings_for(user: dict) -> dict:
 
 
 def _graph(method: str, path: str, token: str | None = None, body: dict | None = None) -> dict:
-    headers = {"Authorization": f"Bearer {token}"} if token else None
     try:
-        return integrations.http_request(method, f"{integrations.GRAPH_API}{path}", body=body, headers=headers,
-                                         timeout=20) or {}
+        return integrations.graph_request(method, path, token, body=body, timeout=20) or {}
     except integrations.IntegrationError as exc:
         error = exc.error.get("message") or str(exc)
         raise ExternalServiceError(f"Meta ha rechazado la conexión: {error}") from exc

@@ -3,6 +3,7 @@ import http.cookiejar
 import json
 import urllib.error
 import urllib.request
+from types import SimpleNamespace
 
 import testdb  # noqa: F401  (DATABASE_URL de pruebas)
 
@@ -13,6 +14,12 @@ results = {"ok": True}
 def check(label, cond, extra=""):
     results["ok"] &= bool(cond)
     print(("OK   " if cond else "FAIL ") + label + (f"  -> {extra}" if extra and not cond else ""))
+
+
+def claude_reply(text: str | None = None, *, stop_reason: str = "end_turn") -> SimpleNamespace:
+    """Respuesta simulada de la API de Claude (lo que devuelve agent._create): un bloque de texto, o ninguno."""
+    return SimpleNamespace(stop_reason=stop_reason,
+                           content=[SimpleNamespace(type="text", text=text)] if text is not None else [])
 
 
 class Session:

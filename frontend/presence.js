@@ -27,19 +27,6 @@ function renderPresence(others) {
   bar.hidden = !parts.length;
 }
 
-// Antes de copiar el borrador: ¿ha llegado algo a la conversación desde que se empezó a escribir?
-async function confirmNoNews(conversationId) {
-  if (draftBaseline === null) return true;
-  try {
-    const s = await api(`/api/conversations/${conversationId}/sender`);
-    if (s.last_message_id > draftBaseline) {
-      if (!confirm("Mientras escribías ha llegado un mensaje nuevo a esta conversación (del cliente o de un compañero).\n\n¿Copiar la respuesta igualmente?")) return false;
-      draftBaseline = s.last_message_id;
-    }
-  } catch { /* sin comprobación */ }
-  return true;
-}
-
 function bindPresenceEvents() {
   setInterval(() => { if (!document.hidden) heartbeat(); }, PRESENCE_INTERVAL);
   // Al cerrar la pestaña deja de figurar en el cliente (si el navegador no lo envía, caduca solo).
