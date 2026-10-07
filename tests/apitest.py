@@ -58,11 +58,11 @@ def receive(channel: str, handle: str, body: str, *, owner: int = 1, client_name
     Con client_id se guarda en ese cliente aunque el identificador sea nuevo."""
     from datetime import datetime
 
-    from app import integrations, search
+    from app import conversations, integrations
     message = {"direction": direction, "sender": sender or client_name or handle, "body": body,
                "sent_at": sent_at or datetime.now().strftime("%Y-%m-%dT%H:%M:%S"), "attachments": attachments or []}
     if client_id is not None:
-        return search.import_conversation({"owner_user_id": owner, "channel": channel, "handle": handle,
+        return conversations.import_conversation({"owner_user_id": owner, "channel": channel, "handle": handle,
                                            "client_id": client_id, "client_name": client_name, "messages": [message]})
     return integrations.ingest({"kind": channel, "owner_user_id": owner}, handle=handle,
                                client_name=client_name or handle, direction=direction, sender=message["sender"],

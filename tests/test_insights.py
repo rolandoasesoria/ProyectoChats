@@ -71,9 +71,9 @@ check("resumen guardado", prof["summary"].startswith("Cliente habitual"))
 check("prioridad y tono guardados", (prof["priority"], prof["mood"], prof["priority_reason"])
       == ("alta", "molesto", "Espera la reposición de 3 cajas defectuosas"), prof)
 check("el esquema pide prioridad y tono", {"priority", "mood"} <= set(p["output_config"]["format"]["schema"]["required"]))
-from app import search  # noqa: E402
+from app import inbox  # noqa: E402
 
-laura_inbox = [i for i in search.unanswered(0, "team") if i["client_id"] == 1]
+laura_inbox = [i for i in inbox.unanswered(0, "team") if i["client_id"] == 1]
 check("la bandeja muestra la prioridad del cliente", laura_inbox and all(i["priority"] == "alta" and i["mood"] == "molesto"
                                                                      for i in laura_inbox), laura_inbox)
 check("sin mensajes nuevos tras analizar", prof["new_messages_since_analysis"] == 0)

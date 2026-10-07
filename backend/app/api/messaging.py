@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, integrations, presence, search
+from .. import audit, conversations, integrations, presence
 from ..errors import Conflict
 from .deps import CurrentUser, client_or_404
 
@@ -15,7 +15,7 @@ def conversation_sender(conversation_id: int, user: CurrentUser):
     avisar después si llega otro (del cliente o de un compañero) mientras se escribe la respuesta."""
     integ = integrations.sender_for(conversation_id, user)
     return {"can_send": bool(integ), "via": integ["name"] if integ else None,
-            "last_message_id": search.last_message_id(conversation_id)}
+            "last_message_id": conversations.last_message_id(conversation_id)}
 
 
 class SendRequest(BaseModel):
@@ -27,12 +27,12 @@ class SendRequest(BaseModel):
 @router.post("/api/conversations/{conversation_id}/send")
 def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
     if req.after_message_id is not None and not req.force:
-        newer = search.newer_messages(conversation_id, req.after_message_id)
+        newer = conversations.newer_messages(conversation_id, req.after_message_id)
         if newer:
             who = "un compañero ha respondido" if any(m["direction"] == "out" for m in newer) else "el cliente ha escrito"
             raise Conflict(f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
     result = integrations.send_reply(conversation_id, user, req.text.strip())
-    audit.log(user["id"], "message_sent", search.conversation_client_id(conversation_id), detail=f"por {result['via']}")
+    audit.log(user["id"], "message_sent", conversations.conversation_client_id(conversation_id), detail=f"por {result['via']}")
     return result
 
 

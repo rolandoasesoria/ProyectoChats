@@ -2,7 +2,7 @@
 from collections import defaultdict
 from datetime import date, datetime, timedelta
 
-from . import search, settings
+from . import inbox, settings
 from .db import Conn, get_conn
 from .repositories import metrics as repo
 
@@ -94,7 +94,7 @@ def dashboard(days: int, include_people: bool) -> dict:
     }
     if include_people:
         waiting = defaultdict(int)
-        for item in search.unanswered(0, "team"):
+        for item in inbox.unanswered(0, "team"):
             waiting[item["owner"]] += 1
         per_user_times = defaultdict(list)
         for t in times:
