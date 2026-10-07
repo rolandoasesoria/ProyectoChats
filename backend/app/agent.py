@@ -6,6 +6,7 @@ import anthropic
 
 from . import attachments, audit, insights, notes, search
 from .config import config
+from .errors import ExternalServiceError, ServiceUnavailable, TooManyAttempts
 
 MODEL = config.ai.model
 MAX_TOOL_ROUNDS = 10
@@ -112,6 +113,21 @@ TOOLS = [
 _SCOPE_MAP = {"mias": "mine", "equipo": "team"}
 
 
+def _client_summary(client_id: int, user_id: int) -> dict:
+    """Herramienta resumen_cliente: ficha, resumen, datos clave, tareas abiertas y notas internas."""
+    overview = search.client_overview(client_id, user_id)
+    if not overview:
+        return {"error": "cliente no encontrado"}
+    ficha = insights.profile(client_id)
+    return {**overview, "resumen": ficha["summary"],
+            "datos_clave": [{"dato": f["label"], "valor": f["value"],
+                             "origen": "IA" if f["origin"] == "ai" else "confirmado"} for f in ficha["facts"]],
+            "tareas_abiertas": [{"tarea": t["title"], "vence": t["due_date"], "responsable": t["assignee"]}
+                                for t in insights.list_tasks(client_id=client_id, status="open")],
+            "notas_internas": [{"autor": n["author"], "fecha": n["created_at"][:10], "nota": n["body"]}
+                               for n in notes.list_notes(client_id)[:20]]}
+
+
 def _run_tool(name: str, args: dict, user_id: int) -> object:
     scope = _SCOPE_MAP.get(args.get("alcance", "mias"))
     if scope is None:
@@ -119,20 +135,9 @@ def _run_tool(name: str, args: dict, user_id: int) -> object:
     if name == "buscar_cliente":
         return search.find_clients(str(args["texto"]), limit=10)
     if name == "resumen_cliente":
-        client_id = int(args["cliente_id"])
-        overview = search.client_overview(client_id, user_id)
-        if not overview:
-            return {"error": "cliente no encontrado"}
-        ficha = insights.profile(client_id)
-        return {**overview, "resumen": ficha["summary"],
-                "datos_clave": [{"dato": f["label"], "valor": f["value"],
-                                 "origen": "IA" if f["origin"] == "ai" else "confirmado"} for f in ficha["facts"]],
-                "tareas_abiertas": [{"tarea": t["title"], "vence": t["due_date"], "responsable": t["assignee"]}
-                                    for t in insights.list_tasks(client_id=client_id, status="open")],
-                "notas_internas": [{"autor": n["author"], "fecha": n["created_at"][:10], "nota": n["body"]}
-                                   for n in notes.list_notes(client_id)[:20]]}
+        return _client_summary(int(args["cliente_id"]), user_id)
     if name == "buscar_documentos":
-        fts = search._fts_query(str(args["consulta"]))
+        fts = search.fts_query(str(args["consulta"]))
         if not fts:
             return {"resultados": 0}
         if scope == "team":
@@ -291,8 +296,11 @@ el menú de usuario > "Mis cuentas" (correo, bot de Telegram y WhatsApp Business
 Responde en español, en tono cercano y breve (2-5 frases o una lista corta). Si no sabes algo de la app, dilo."""
 
 
-class MissingCredentialsError(Exception):
+class MissingCredentialsError(ServiceUnavailable):
     """No hay clave de API ni otra credencial de Anthropic configurada."""
+
+    def __init__(self):
+        super().__init__("El asistente no está disponible: falta configurar ANTHROPIC_API_KEY en backend/.env.")
 
 
 _client: anthropic.Anthropic | None = None
@@ -315,6 +323,7 @@ def _get_client() -> anthropic.Anthropic:
 
 
 def _create(**params):
+    """Llamada a Claude. Los fallos de la API se convierten en errores de dominio con un mensaje en español."""
     try:
         return _get_client().beta.messages.create(
             model=MODEL,
@@ -330,6 +339,14 @@ def _create(**params):
         if "authentication method" in str(exc):
             raise MissingCredentialsError() from exc
         raise
+    except anthropic.AuthenticationError as exc:
+        raise ServiceUnavailable("Clave de API de Claude inválida o ausente (revisa backend/.env).") from exc
+    except anthropic.RateLimitError as exc:
+        raise TooManyAttempts("Límite de uso de la API alcanzado. Inténtalo en unos segundos.") from exc
+    except anthropic.APIConnectionError as exc:
+        raise ExternalServiceError("No se pudo conectar con la API de Claude.") from exc
+    except anthropic.APIStatusError as exc:
+        raise ExternalServiceError(f"Error de la API de Claude: {exc.message}") from exc
 
 
 def _assistant_turn(response) -> dict:

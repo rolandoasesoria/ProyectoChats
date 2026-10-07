@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from .. import agent, chats
-from .deps import CurrentUser, claude_errors, client_or_404
+from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
 
@@ -41,27 +41,16 @@ class ChatRequest(BaseModel):
     client_id: int | None = None
 
 
-def _run_and_save(user: dict, kind: str, client_id: int | None, text: str, run) -> dict:
-    session = chats.active_session(user["id"], kind, client_id)
-    with chats.locked(session["id"]):
-        messages = chats.reload_messages(session["id"])
-        with claude_errors():
-            result = run(messages)
-        # Solo se guarda si Claude respondió; si falló, el historial queda como estaba.
-        chats.save_exchange(session["id"], messages, text, result["reply"], result["tool_calls"])
-    return result
-
-
 @router.post("/api/chat")
 def chat(req: ChatRequest, user: CurrentUser):
     """Asistente de datos. Cada conversación pertenece a un cliente (o a ninguno = general)."""
     client = client_or_404(req.client_id)
-    return _run_and_save(user, "agent", req.client_id, req.message,
-                         lambda messages: agent.chat(messages, user, req.message, client))
+    return chats.exchange(user["id"], "agent", req.client_id, req.message,
+                          lambda messages: agent.chat(messages, user, req.message, client))
 
 
 @router.post("/api/help")
 def help_chat(req: ChatRequest, user: CurrentUser):
     """Mascota de ayuda: dudas generales sobre el uso de la app."""
-    return _run_and_save(user, "help", None, req.message,
-                         lambda messages: agent.help_chat(messages, req.message))
+    return chats.exchange(user["id"], "help", None, req.message,
+                          lambda messages: agent.help_chat(messages, req.message))

@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from .. import insights
-from .deps import CurrentUser, claude_errors
+from .deps import CurrentUser
 
 router = APIRouter()
 
@@ -17,8 +17,7 @@ class DraftRequest(BaseModel):
 @router.post("/api/conversations/{conversation_id}/draft")
 def draft(conversation_id: int, req: DraftRequest, user: CurrentUser):
     """Borrador de respuesta con IA para revisar, editar y copiar."""
-    with claude_errors():
-        return insights.draft_reply(conversation_id, user, req.instructions)
+    return insights.draft_reply(conversation_id, user, req.instructions)
 
 
 class RewriteRequest(BaseModel):
@@ -31,5 +30,4 @@ class RewriteRequest(BaseModel):
 @router.post("/api/drafts/rewrite")
 def rewrite(req: RewriteRequest, _: CurrentUser):
     """Retoca con IA un borrador ya escrito: más formal, más cercano, más corto, corregido o traducido."""
-    with claude_errors():
-        return {"text": insights.rewrite_draft(req.text, req.action, req.language, req.channel)}
+    return {"text": insights.rewrite_draft(req.text, req.action, req.language, req.channel)}

@@ -344,6 +344,26 @@ def _sent_folder(imap, configured: str) -> str | None:
     return None
 
 
+def _new_uids(imap, last: int, first_sync_days: int) -> list[int]:
+    """UID de los correos de la carpeta abierta que aún no se han importado: los posteriores al último visto o, la
+    primera vez, los de los últimos `first_sync_days` días."""
+    if last:
+        _, data = imap.uid("SEARCH", None, f"UID {last + 1}:*")
+    else:
+        since = date.today() - timedelta(days=first_sync_days)
+        _, data = imap.uid("SEARCH", None, f"SINCE {_imap_date(since)}")
+    return sorted(int(u) for u in (data[0] or b"").split() if int(u) > last)
+
+
+def _email_counterpart(msg: dict, direction: str, address: str) -> tuple[str, str] | None:
+    """Con quién es la conversación: el remitente de lo recibido o el primer destinatario de lo enviado (sin contar
+    la propia dirección). None si el correo es de uno mismo a sí mismo."""
+    if direction == "in":
+        return None if msg["key"] == address else (msg["key"], msg["name"])
+    others = [r for r in msg["recipients"] if r != address]
+    return (others[0], others[0]) if others else None
+
+
 def sync_email(integ: dict) -> int:
     cfg, state = integ["config"], integ["state"]
     address = cfg["address"].lower()
@@ -358,36 +378,21 @@ def sync_email(integ: dict) -> int:
             status, _ = imap.select(f'"{folder}"', readonly=True)
             if status != "OK":
                 continue
-            last = int(state.get(folder, 0))
-            if last:
-                status, data = imap.uid("SEARCH", None, f"UID {last + 1}:*")
-            else:
-                since = date.today() - timedelta(days=int(cfg.get("first_sync_days") or 30))
-                status, data = imap.uid("SEARCH", None, f"SINCE {_imap_date(since)}")
-            uids = [int(u) for u in (data[0] or b"").split() if int(u) > last]
-            for uid in sorted(uids):
-                status, parts = imap.uid("FETCH", str(uid), "(RFC822)")
+            for uid in _new_uids(imap, int(state.get(folder, 0)), int(cfg.get("first_sync_days") or 30)):
+                _, parts = imap.uid("FETCH", str(uid), "(RFC822)")
                 raw = next((p[1] for p in parts if isinstance(p, tuple)), None)
                 state[folder] = uid
-                if not raw:
-                    continue
-                msg = emails.parse_message(email.message_from_bytes(raw, policy=default_policy))
+                msg = emails.parse_message(email.message_from_bytes(raw, policy=default_policy)) if raw else None
                 if not msg or msg["bulk"]:
-                    continue  # boletines, notificaciones automáticas...
-                if direction == "in":
-                    if msg["key"] == address:
-                        continue
-                    handle, client_name = msg["key"], msg["name"]
-                else:
-                    others = [r for r in msg["recipients"] if r != address]
-                    if not others:
-                        continue
-                    handle, client_name = others[0], others[0]
-                res = ingest(integ, handle=handle, client_name=client_name, direction=direction,
-                             sender=msg["name"], body=msg["body"], sent_at=msg["sent_at"],
-                             external_id=msg["external_id"], subject=msg["subject"],
-                             attachments=msg["attachments"])
-                imported += res["messages"]
+                    continue  # vacío, boletines, notificaciones automáticas...
+                counterpart = _email_counterpart(msg, direction, address)
+                if not counterpart:
+                    continue
+                handle, client_name = counterpart
+                imported += ingest(integ, handle=handle, client_name=client_name, direction=direction,
+                                   sender=msg["name"], body=msg["body"], sent_at=msg["sent_at"],
+                                   external_id=msg["external_id"], subject=msg["subject"],
+                                   attachments=msg["attachments"])["messages"]
     finally:
         try:
             imap.logout()

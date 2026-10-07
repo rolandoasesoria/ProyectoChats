@@ -59,7 +59,7 @@ def smart_search(question: str, user_id: int, scope: str, client_id: int | None 
     fts_text = " ".join(keywords)
     messages = search.search_messages(fts_text, user_id, scope, client_id=client_id, limit=MAX_CANDIDATES,
                                       markers=("", ""))
-    fts = search._fts_query(fts_text)
+    fts = search.fts_query(fts_text)
     docs = attachments.search(fts, user_id, scope, client_id=client_id, limit=10) if fts else []
     candidates = {f"m{m['message_id']}": m for m in messages} | {f"d{d['documento_id']}": d for d in docs}
     if not candidates:
