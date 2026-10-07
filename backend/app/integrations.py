@@ -474,6 +474,15 @@ def verify_whatsapp_signature(integ: dict, raw_body: bytes, signature: str | Non
 
 META_TOKEN_REJECTED = ("Meta no acepta el access token: ha caducado o se ha revocado. Si usaste el temporal de "
                        "«API Setup» (dura 24 h), crea uno permanente con un usuario del sistema y pégalo en «Editar».")
+# Envíos que WhatsApp no permite (no son fallos de la cuenta: no se marca ni se avisa en la campana).
+META_SEND_LIMITS = {
+    131047: "Han pasado más de 24 h desde el último mensaje del cliente: WhatsApp solo deja escribirle con una "
+            "plantilla aprobada. Si tu número está en coexistencia, respóndele desde la app del móvil; si no, espera a "
+            "que vuelva a escribir.",
+    131030: "Ese número no está en la lista de destinatarios permitidos del número de prueba de Meta: añádelo en "
+            "WhatsApp → API Setup («Para»).",
+    131026: "No se puede entregar el mensaje: ese número no tiene WhatsApp o no acepta mensajes de empresas.",
+}
 
 
 def _explain_meta(exc: IntegrationError, phone_lookup: bool = False) -> IntegrationError:
@@ -493,6 +502,11 @@ def _explain_meta(exc: IntegrationError, phone_lookup: bool = False) -> Integrat
     elif phone_lookup and code == 100:
         problem = ("El Phone number ID no existe o el access token no tiene acceso a ese número: cópialo de "
                    "WhatsApp → API Setup en Meta for Developers.")
+    elif code == 131005:
+        problem = ("Meta no deja enviar con este access token (acceso denegado): genera uno nuevo con el permiso "
+                   "whatsapp_business_messaging y pégalo en «Editar».")
+    elif code in META_SEND_LIMITS:
+        return IntegrationError(META_SEND_LIMITS[code], status=exc.status, error=exc.error)
     else:
         return IntegrationError(f"Meta ha respondido con un error: {message or exc}", status=exc.status, error=exc.error)
     return IntegrationError(problem, status=exc.status, error=exc.error, needs_attention=True)

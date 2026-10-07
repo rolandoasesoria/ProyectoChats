@@ -354,6 +354,11 @@ integrations.http_request = meta_error(500, 2, "Service temporarily unavailable"
 n = notices()
 r = integrations.check_connection(wa_id)
 check("un fallo pasajero de Meta: lo dice, pero no avisa", r["error"].startswith("Meta ha respondido con un error") and notices() == n, r)
+for code, text, flagged in ((131047, "más de 24 h", False), (131030, "destinatarios permitidos", False),
+                            (131005, "genera uno nuevo", True)):
+    e = integrations._explain_meta(integrations.IntegrationError("x", status=400, error={"code": code, "message": "x"}))
+    check(f"error {code} de Meta explicado ({'marca la cuenta' if flagged else 'sin marcar la cuenta'})",
+          text in str(e) and e.needs_attention == flagged, str(e))
 
 
 def no_network(method, url, **kw):
