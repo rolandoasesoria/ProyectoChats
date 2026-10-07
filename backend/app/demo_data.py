@@ -10,7 +10,7 @@ import io
 import random
 from datetime import date, datetime, timedelta
 
-from . import attachments, notes, search
+from . import attachments, conversations, inbox, notes
 from .auth import hash_password
 from .db import get_conn
 
@@ -225,7 +225,7 @@ def cerrar_conversaciones(g: "Generador", r: random.Random, nombres: dict[int, s
     """Las conversaciones que acaban con un mensaje del cliente reciben respuesta del equipo en la mayoría de
     los casos. Quedan sin responder unas pocas (sobre todo recientes), para que la bandeja sea realista."""
     respondidas = 0
-    for item in search.unanswered(0, "team"):
+    for item in inbox.unanswered(0, "team"):
         c = fichas.get(item["client_id"])
         if c is None:
             continue  # no es de los datos generados
@@ -298,7 +298,7 @@ def generar(hoy: date | None = None, clientes: int = 80) -> dict:
                 if not mensajes:
                     break
                 handle = {"email": c["email"], "whatsapp": c["telefono"], "telegram": c["telegram"]}[canal]
-                res = search.import_conversation({
+                res = conversations.import_conversation({
                     "owner_user_id": owner, "channel": canal, "handle": handle, "client_id": client_id,
                     "client_name": c["persona"], "subject": asunto if canal == "email" else None, "messages": mensajes})
                 if client_id is None or canal == "email":
@@ -341,7 +341,7 @@ def generar(hoy: date | None = None, clientes: int = 80) -> dict:
     con_whatsapp = [(cid, c, canales) for cid, c, canales in creados if "whatsapp" in canales]
     for n, (client_id, c, _) in enumerate(r.sample(con_whatsapp, min(2, len(con_whatsapp)))):
         nombre = c["persona"] if n == 0 else f"{c['nombre']} ({c['empresa']})"
-        dup = search.import_conversation({
+        dup = conversations.import_conversation({
             "owner_user_id": r.choice(equipo), "channel": "whatsapp", "handle": f"+346{r.randint(10000000, 99999999)}",
             "client_name": nombre, "subject": None,
             "messages": [{"direction": "in", "sender": c["nombre"],

@@ -8,7 +8,7 @@ Sin --basico se añaden además los datos de prueba abundantes de demo_data.py (
 """
 import sys
 
-from . import demo_data, search
+from . import conversations, demo_data
 from .auth import hash_password
 from .db import get_conn, init_db, reset_db
 
@@ -100,7 +100,7 @@ def seed(reset: bool = False, basico: bool = False) -> None:
                 client_id = conn.execute(
                     "SELECT client_id FROM client_identities WHERE handle = ?", (conv["link_to"],)
                 ).fetchone()["client_id"]
-        search.import_conversation({
+        conversations.import_conversation({
             **conv,
             "client_id": client_id,
             "messages": [{"direction": d, "sender": s, "body": b, "sent_at": t} for d, s, b, t in conv["messages"]],

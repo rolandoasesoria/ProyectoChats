@@ -11,7 +11,7 @@ al usarla se aplican al cliente y a la conversación.
 """
 import re
 
-from . import clients, search
+from . import clients, inbox
 from .clients import STATUSES, _norm_name
 from .db import Conn, get_conn
 from .errors import Forbidden, InvalidInput, NotFound
@@ -129,6 +129,6 @@ def use(reply_id: int, client_id: int, conversation_id: int | None, user: dict) 
     if reply["mark_done"] and conversation_id:
         with get_conn() as conn:
             last_in_id = repo.last_incoming_message_id(conn, conversation_id, client_id)
-        if last_in_id and search.dismiss_unanswered(conversation_id, last_in_id):
+        if last_in_id and inbox.dismiss_unanswered(conversation_id, last_in_id):
             applied.append("conversación marcada como atendida")
     return {"text": fill(reply["body"], client, facts, user), "applied": applied}

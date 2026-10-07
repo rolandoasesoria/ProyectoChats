@@ -43,45 +43,6 @@ def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, s
     return result
 
 
-def unanswered(user_id: int, scope: str = "mine", snoozed: bool = False) -> list[dict]:
-    """Conversaciones cuyo último mensaje es del cliente (esperan respuesta), la más antigua primero.
-
-    Se excluyen las marcadas como atendidas y las pospuestas, salvo que el cliente haya escrito algo después.
-    Con snoozed=True devuelve justo las pospuestas.
-    """
-    with get_conn() as conn:
-        return conversations_repo.unanswered(conn, user_id, scope, snoozed)
-
-
-def dismiss_unanswered(conversation_id: int, message_id: int) -> bool:
-    with get_conn() as conn:
-        return conversations_repo.set_dismissed(conn, conversation_id, message_id)
-
-
-def snooze(conversation_id: int, until: str | None, message_id: int | None = None) -> bool:
-    """Pospone la conversación hasta `until` (UTC). Si el cliente escribe después de `message_id`, vuelve antes."""
-    with get_conn() as conn:
-        return conversations_repo.set_snooze(conn, conversation_id, until, message_id if until else None)
-
-
-def last_message_id(conversation_id: int) -> int:
-    """Id del último mensaje de la conversación (0 si no tiene)."""
-    with get_conn() as conn:
-        return messages_repo.last_id_in_conversation(conn, conversation_id)
-
-
-def newer_messages(conversation_id: int, after_message_id: int) -> list[dict]:
-    """Quién ha escrito (direction, sender) en la conversación después de `after_message_id`."""
-    with get_conn() as conn:
-        return messages_repo.newer_in_conversation(conn, conversation_id, after_message_id)
-
-
-def conversation_client_id(conversation_id: int) -> int | None:
-    """Cliente al que pertenece la conversación (None si no existe)."""
-    with get_conn() as conn:
-        return conversations_repo.client_id_of(conn, conversation_id)
-
-
 def record_visit(user_id: int, client_id: int) -> dict:
     """Registra que el usuario abre el cliente. Devuelve lo que ha llegado desde la visita anterior."""
     with get_conn() as conn:
@@ -158,52 +119,3 @@ def message_context(message_id: int, user_id: int, scope: str = "mine",
         "owner": target["owner"],
         "messages": list(reversed(before)) + after,
     }
-
-
-def import_conversation(payload: dict) -> dict:
-    """Guarda mensajes de una conversación (los que traen las integraciones). Crea el cliente/identidad si no existen.
-
-    payload = {
-      "owner_user_id": 1,
-      "channel": "whatsapp",
-      "handle": "+34600111222",
-      "client_name": "Laura Gómez",     # usado si la identidad es nueva
-      "client_id": null,                # opcional: forzar a qué cliente asociar
-      "subject": "...",
-      "messages": [{"direction": "in", "sender": "Laura", "body": "...", "sent_at": "2026-09-01T10:00:00"}]
-    }
-    """
-    with get_conn() as conn:
-        ident_client_id = clients_repo.client_id_for_identity(conn, payload["channel"], payload["handle"])
-        client_id = payload.get("client_id") or ident_client_id
-        if not client_id:
-            client_id = clients_repo.insert_named(conn, payload.get("client_name") or payload["handle"])
-        if ident_client_id is None:
-            clients_repo.insert_identity(conn, client_id, payload["channel"], payload["handle"])
-        # Recibir el mismo mensaje dos veces es seguro: se reutiliza la conversación existente (mismo cliente, dueño, canal y asunto)
-        # y se saltan los mensajes que ya estaban (misma fecha y mismo texto).
-        conv_id = conversations_repo.find(conn, client_id, payload["owner_user_id"], payload["channel"],
-                                          payload.get("subject"))
-        if conv_id is None:
-            conv_id = conversations_repo.insert(conn, client_id, payload["owner_user_id"], payload["channel"],
-                                                payload.get("subject"))
-        seen = messages_repo.existing_keys(conn, conv_id)
-        seen_ext = messages_repo.existing_external_ids(conn, conv_id)
-        new, files = 0, 0
-        for m in payload["messages"]:
-            key = (m["sent_at"], m["body"])
-            ext = m.get("external_id")
-            if key in seen or (ext and ext in seen_ext):
-                continue
-            seen.add(key)
-            if ext:
-                seen_ext.add(ext)
-            message_id = messages_repo.insert(conn, conv_id, m["direction"], m["sender"], m["body"], m["sent_at"],
-                                              ext)
-            new += 1
-            for f in m.get("attachments") or []:
-                attachments.save(conn, client_id, f["filename"], f["data"], f.get("mime"), message_id,
-                                 payload["owner_user_id"])
-                files += 1
-    return {"client_id": client_id, "conversation_id": conv_id, "messages": new,
-            "duplicates": len(payload["messages"]) - new, "attachments": files}

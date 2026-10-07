@@ -5,7 +5,8 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, followups, search
+from .. import audit, followups
+from .. import inbox as unanswered_inbox
 from ..errors import InvalidInput, NotFound
 from .deps import CurrentUser
 
@@ -15,7 +16,7 @@ router = APIRouter()
 @router.get("/api/inbox/counts")
 def inbox_counts(user: CurrentUser):
     """Cuántas conversaciones esperan respuesta: mías y de todo el equipo (solo números, sin contenido)."""
-    return {"mine": len(search.unanswered(user["id"], "mine")), "team": len(search.unanswered(user["id"], "team"))}
+    return {"mine": len(unanswered_inbox.unanswered(user["id"], "mine")), "team": len(unanswered_inbox.unanswered(user["id"], "team"))}
 
 
 @router.get("/api/inbox")
@@ -23,7 +24,7 @@ def inbox(user: CurrentUser, scope: Literal["mine", "team"] = "mine", snoozed: b
     """Bandeja "Sin responder": conversaciones cuyo último mensaje es del cliente (o las pospuestas)."""
     if scope == "team":
         audit.log(user["id"], "team_inbox", throttle=True)
-    return search.unanswered(user["id"], scope, snoozed)
+    return unanswered_inbox.unanswered(user["id"], scope, snoozed)
 
 
 class SnoozeRequest(BaseModel):
@@ -37,14 +38,14 @@ def snooze(conversation_id: int, req: SnoozeRequest, _: CurrentUser):
     until = req.until.astimezone(timezone.utc).replace(tzinfo=None) if req.until.tzinfo else req.until
     if until <= datetime.now(timezone.utc).replace(tzinfo=None):
         raise InvalidInput("La fecha tiene que ser futura.")
-    if not search.snooze(conversation_id, until.isoformat(timespec="seconds"), req.message_id):
+    if not unanswered_inbox.snooze(conversation_id, until.isoformat(timespec="seconds"), req.message_id):
         raise NotFound("Conversación no encontrada")
     return {"ok": True}
 
 
 @router.delete("/api/conversations/{conversation_id}/snooze")
 def unsnooze(conversation_id: int, _: CurrentUser):
-    if not search.snooze(conversation_id, None):
+    if not unanswered_inbox.snooze(conversation_id, None):
         raise NotFound("Conversación no encontrada")
     return {"ok": True}
 
@@ -78,6 +79,6 @@ class DismissRequest(BaseModel):
 @router.post("/api/conversations/{conversation_id}/dismiss")
 def dismiss(conversation_id: int, req: DismissRequest, _: CurrentUser):
     """Marca como atendido (no necesita respuesta). Si el cliente vuelve a escribir, reaparece."""
-    if not search.dismiss_unanswered(conversation_id, req.message_id):
+    if not unanswered_inbox.dismiss_unanswered(conversation_id, req.message_id):
         raise NotFound("Conversación no encontrada")
     return {"ok": True}

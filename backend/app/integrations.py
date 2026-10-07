@@ -30,7 +30,7 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 from email.utils import formataddr, make_msgid
 
-from . import clients, emails, insights, notes, search, secrets_store, settings
+from . import clients, conversations, emails, insights, notes, secrets_store, settings
 from .config import config
 from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
@@ -292,7 +292,7 @@ def store(integ: dict, handle: str, client_name: str, messages: list[dict], subj
     """Guarda mensajes de una conversación como de la persona dueña de la integración. analyze=False para lo antiguo
     (historial importado): ni reactiva al cliente ni lanza el análisis con IA."""
     channel = KIND_CHANNEL[integ["kind"]]
-    result = search.import_conversation({
+    result = conversations.import_conversation({
         "owner_user_id": integ["owner_user_id"], "channel": channel,
         "handle": existing_handle(channel, handle), "client_name": client_name, "subject": subject,
         "messages": messages,
