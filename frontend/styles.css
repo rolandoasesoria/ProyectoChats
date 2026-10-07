@@ -248,6 +248,8 @@ kbd {
 /* Formularios y diálogos */
 .form { display: flex; flex-direction: column; gap: 12px; }
 .form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; }
+/* Casilla dentro de un formulario: en fila con su texto, alineada a la izquierda */
+.form label.check { flex-direction: row; align-items: center; gap: 8px; white-space: normal; }
 .form input, .form select { padding: 8px 10px; }
 .form-error { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--danger-bg); color: var(--danger-text); font-size: 14px; }
 .form-error[hidden] { display: none; }

@@ -194,7 +194,8 @@ respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de 
 sus conversaciones se conservan. Pestaña "Registro de accesos": quién ha visto mensajes del equipo (historial \
 de un cliente con conversaciones de compañeros, bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
 exportado, borrado o unido clientes o cambiado cuentas; filtrable por persona y acción. Las consultas repetidas \
-en 10 minutos cuentan como una. Pestaña "Ajustes": el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168).
+en 10 minutos cuentan como una. Pestaña "Ajustes": el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168) y la casilla "Analizar con IA a cada cliente cuando le llegan mensajes" (activada por \
+defecto; desactivada, la IA solo analiza al pulsar "✨ Actualizar con IA").
 - WhatsApp Business del móvil (coexistencia): en "Mis cuentas", tipo WhatsApp Business, el botón "Conectar con \
 WhatsApp Business" abre el inicio de sesión de Meta; se elige la cuenta y se escanea un código con la app WhatsApp \
 Business del móvil. El número sigue funcionando en el móvil y en el ordenador como siempre, y en ProyectoChats entran \

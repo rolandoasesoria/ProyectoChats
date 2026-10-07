@@ -4,12 +4,13 @@ from datetime import date, timedelta
 
 from apitest import Session, check, results
 
-from app import metrics
+from app import agent, insights, metrics
 from app.db import get_conn
 
 ana, carlos = Session("ana"), Session("carlos")
 
-check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0, "inactive_days": 90})
+check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0, "inactive_days": 90,
+                                                                   "auto_analysis": 1})
 check("solo administradores lo cambian = 403", carlos.patch("/api/admin/settings", {"sla_hours": 4})[0] == 403)
 check("fuera de rango = 422", ana.patch("/api/admin/settings", {"sla_hours": 0})[0] == 422
       and ana.patch("/api/admin/settings", {"sla_hours": 500})[0] == 422)
@@ -28,4 +29,16 @@ check("el panel calcula el % respondido en plazo", d["totals"]["within_sla_pct"]
 check("y por persona", all("within_sla_pct" in p for p in d["people"]))
 ana.patch("/api/admin/settings", {"sla_hours": 168})
 check("con un plazo amplio, todo en plazo", ana.get("/api/dashboard?days=365")[1]["totals"]["within_sla_pct"] == 100)
+
+# Análisis automático con IA al entrar mensajes (con «clave» simulada; no se llega a llamar a Claude)
+agent.credentials_configured = lambda: True
+check("análisis automático: solo administradores, 0 o 1",
+      carlos.patch("/api/admin/settings", {"auto_analysis": 0})[0] == 403
+      and ana.patch("/api/admin/settings", {"auto_analysis": 2})[0] == 422)
+check("desactivado: no se programa al entrar mensajes",
+      ana.patch("/api/admin/settings", {"auto_analysis": 0})[1]["auto_analysis"] == 0
+      and insights.schedule_analysis(1) is False)
+ana.patch("/api/admin/settings", {"auto_analysis": 1})
+check("activado: se programa", insights.schedule_analysis(1, delay=3600) is True)
+insights._scheduled.pop(1).cancel()
 sys.exit(0 if results["ok"] else 1)

@@ -106,6 +106,7 @@ async function loadSettingsForm() {
   $("#set-sla").value = s.sla_hours;
   $("#set-retention").value = s.retention_months;
   $("#set-inactive").value = s.inactive_days;
+  $("#set-auto-analysis").checked = Boolean(s.auto_analysis);
   $("#retention-apply").hidden = !s.retention_months;
   updateRetentionPreview();
 }
@@ -145,6 +146,7 @@ async function submitSettings(e) {
         sla_hours: Number($("#set-sla").value),
         retention_months: Number($("#set-retention").value),
         inactive_days: Number($("#set-inactive").value),
+        auto_analysis: $("#set-auto-analysis").checked ? 1 : 0,
       }),
     });
     slaHours = res.sla_hours;

@@ -8,7 +8,7 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 23;
+const TOUR_VERSION = 24;
 
 const TOUR_STEPS = [
   {
@@ -64,7 +64,7 @@ const TOUR_STEPS = [
   {
     target: "#user-menu-btn",
     title: "Administración",
-    text: "En este menú gestionas los usuarios y consultas el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
+    text: "En este menú gestionas los usuarios y consultas el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta y si la IA analiza sola a los clientes. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
     when: () => currentUser?.role === "admin",
   },
   {

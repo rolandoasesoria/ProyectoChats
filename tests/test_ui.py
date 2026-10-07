@@ -360,6 +360,7 @@ try:
     b.js("document.querySelector('#settings-form').requestSubmit()")
     b.wait("!document.querySelector('#set-saved').hidden")
     check("cambiar el plazo de respuesta", b.js("slaHours") == 2)
+    check("el análisis automático con IA aparece activado", b.js("document.querySelector('#set-auto-analysis').checked"))
     b.fill("#set-retention", "1")
     b.wait("document.querySelector('#retention-preview').textContent.includes('se borrarían')")
     check("la retención avisa de cuántos mensajes borraría", True)
