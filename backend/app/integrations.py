@@ -478,8 +478,9 @@ def send_telegram(integ: dict, handle: str, text: str) -> str:
 
 # ---------------------------------------------------------------- WhatsApp Business (Cloud API)
 
-def verify_whatsapp_signature(integ: dict, raw_body: bytes, signature: str | None) -> bool:
-    expected = "sha256=" + hmac.new(integ["config"]["app_secret"].encode(), raw_body, hashlib.sha256).hexdigest()
+def verify_whatsapp_signature(app_secret: str, raw_body: bytes, signature: str | None) -> bool:
+    """¿Viene el aviso firmado por Meta con el app secret (cabecera X-Hub-Signature-256)?"""
+    expected = "sha256=" + hmac.new(app_secret.encode(), raw_body, hashlib.sha256).hexdigest()
     return bool(signature) and hmac.compare_digest(expected, signature)
 
 
