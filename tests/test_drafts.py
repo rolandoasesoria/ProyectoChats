@@ -1,20 +1,14 @@
 """Borradores: prompt y contexto con una respuesta simulada de Claude; y la API sin clave."""
 import sys
-from pathlib import Path
-from types import SimpleNamespace
 
-SCRATCH = Path(__file__).resolve().parent / ".tmp"
-SCRATCH.mkdir(exist_ok=True)
-import testdb  # noqa: F401,E402  (base de datos de pruebas; antes que la app)
-from apitest import Session, check, results  # noqa: E402
+from apitest import Session, check, claude_reply, results  # base de datos de pruebas; antes que la app
 
-from app import agent, insights, seed  # noqa: E402
-from app.db import get_conn  # noqa: E402
+from app import agent, insights, seed
+from app.db import get_conn
 
 seed.seed(reset=True, basico=True)
 calls = []
-agent._create = lambda **p: calls.append(p) or SimpleNamespace(
-    stop_reason="end_turn", content=[SimpleNamespace(type="text", text="Hola Laura, ...")])
+agent._create = lambda **p: calls.append(p) or claude_reply("Hola Laura, ...")
 
 with get_conn() as conn:
     wa = conn.execute("SELECT id FROM conversations WHERE client_id = 1 AND channel = 'whatsapp'").fetchone()["id"]

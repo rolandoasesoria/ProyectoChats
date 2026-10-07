@@ -6,10 +6,8 @@ import os
 import sys
 import urllib.request
 from pathlib import Path
-from types import SimpleNamespace
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from apitest import BASE, Session, check, receive, results  # noqa: E402
+from apitest import BASE, Session, check, claude_reply, receive, results
 
 
 def make_pdf(text: str) -> bytes:
@@ -105,8 +103,7 @@ check("con 'equipo' sí", found and found[0]["filename"] == "presupuesto.pdf", f
 
 # Lectura con IA (respuesta simulada)
 calls = []
-agent._create = lambda **p: calls.append(p) or SimpleNamespace(
-    stop_reason="end_turn", content=[SimpleNamespace(type="text", text="Albarán nº 5541 · 350 cajas entregadas")])
+agent._create = lambda **p: calls.append(p) or claude_reply("Albarán nº 5541 · 350 cajas entregadas")
 att = attachments.read_with_ai(img["id"])
 block = calls[-1]["messages"][0]["content"][0]
 check("la imagen se envía como bloque de imagen", block["type"] == "image" and block["source"]["media_type"] == "image/png")
