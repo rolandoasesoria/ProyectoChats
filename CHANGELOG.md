@@ -110,6 +110,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Correo: la conexión con los servidores IMAP y SMTP comprueba su certificado (antes no se verificaba y la
+  contraseña podía acabar en un servidor falso); si no es válido, no se envía la contraseña y se explica.
+- Correo: si la carpeta de enviados configurada no existe, se busca la que el servidor marca como enviados (o una
+  de nombre habitual), así entran también los correos enviados aunque el nombre no coincida.
 - Tras actualizar la app, recargar con F5 podía mezclar archivos viejos y nuevos y dejar la lista de clientes
   vacía: ahora el navegador comprueba siempre si hay versión nueva de la interfaz.
 - La lista de clientes mostraba como mucho 50.
