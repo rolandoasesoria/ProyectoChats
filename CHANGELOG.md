@@ -43,6 +43,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   alta de mensajes fuera de `search.py` (`inbox.py`, `conversations.py`); un único acceso a la API de Meta, a la
   verificación de webhooks y a las llamadas de texto a Claude; el envío desde el borrador en `drafts.js`; un
   autocompletado común para @menciones y /atajos; y utilidades de pruebas compartidas.
+- Más reorganización sin cambios de comportamiento: los errores de la API de Claude se traducen en un solo sitio
+  (`agent._create`); el turno con el asistente y las reglas de editar un cliente pasan a sus servicios; exportar y
+  borrar un cliente pasan a `privacy.py`; la cookie de sesión se lee en `api/deps.py`; `sync_email` dividido; sin
+  consultas del cliente duplicadas en los repositorios; un único flujo de chat para el asistente y Chispa.
 - Si una foto o un documento de WhatsApp no se puede descargar, el mensaje se guarda igualmente con una nota (antes
   se perdía el mensaje entero).
 - Un administrador que conecta o edita la cuenta de otra persona también la prueba al momento.
