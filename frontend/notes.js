@@ -93,56 +93,19 @@ async function onNotesSubmit(e) {
 /* ---------- Autocompletado de @menciones ---------- */
 
 function attachMentions(textarea, list) {
-  let matches = [];
-  let active = 0;
-
-  const close = () => { list.hidden = true; matches = []; };
-  const query = () => {
-    const before = textarea.value.slice(0, textarea.selectionStart);
-    const m = before.match(/(^|\s)@([\wÀ-ÿ]*)$/);
-    return m ? m[2] : null;
-  };
-  const render = () => {
-    list.innerHTML = matches.map((u, i) =>
-      `<li role="option" class="${i === active ? "active" : ""}" data-i="${i}">@${escapeHtml(u.name)}</li>`).join("");
-    list.hidden = !matches.length;
-  };
-  const choose = (u) => {
-    const pos = textarea.selectionStart;
-    const before = textarea.value.slice(0, pos).replace(/@([\wÀ-ÿ]*)$/, `@${u.name} `);
-    textarea.value = before + textarea.value.slice(pos);
-    textarea.selectionStart = textarea.selectionEnd = before.length;
-    close();
-    textarea.focus();
-  };
-
-  textarea.addEventListener("input", () => {
-    const q = query();
-    if (q === null) return close();
-    const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
-    matches = team.filter((u) => u.id !== currentUser.id && norm(u.name).split(" ").some((w) => w.startsWith(norm(q))));
-    active = 0;
-    render();
+  const norm = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase();
+  attachAutocomplete(textarea, list, {
+    pattern: /(^|\s)@([\wÀ-ÿ]*)$/,
+    search: (q) => team.filter((u) => u.id !== currentUser.id && norm(u.name).split(" ").some((w) => w.startsWith(norm(q)))),
+    render: (u, i, active) => `<li role="option" class="${i === active ? "active" : ""}" data-i="${i}">@${escapeHtml(u.name)}</li>`,
+    choose: (u) => {
+      const pos = textarea.selectionStart;
+      const before = textarea.value.slice(0, pos).replace(/@([\wÀ-ÿ]*)$/, `@${u.name} `);
+      textarea.value = before + textarea.value.slice(pos);
+      textarea.selectionStart = textarea.selectionEnd = before.length;
+      textarea.focus();
+    },
   });
-  textarea.addEventListener("keydown", (e) => {
-    if (list.hidden) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      active = (active + (e.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length;
-      render();
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      choose(matches[active]);
-    } else if (e.key === "Escape") {
-      e.stopPropagation();
-      close();
-    }
-  });
-  list.addEventListener("mousedown", (e) => {
-    const li = e.target.closest("li[data-i]");
-    if (li) { e.preventDefault(); choose(matches[Number(li.dataset.i)]); }
-  });
-  textarea.addEventListener("blur", () => setTimeout(close, 150));
 }
 
 /* ---------- Campana de avisos ---------- */
