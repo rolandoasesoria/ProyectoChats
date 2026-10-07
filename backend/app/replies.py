@@ -15,6 +15,8 @@ from . import clients, inbox
 from .clients import STATUSES, _norm_name
 from .db import Conn, get_conn
 from .errors import Forbidden, InvalidInput, NotFound
+from .repositories import clients as clients_repo
+from .repositories import facts as facts_repo
 from .repositories import replies as repo
 
 VARIABLE = re.compile(r"\{(nombre|cliente|empresa|yo|dato:([^{}]{1,100}))\}", re.IGNORECASE)
@@ -114,11 +116,11 @@ def use(reply_id: int, client_id: int, conversation_id: int | None, user: dict) 
     """Texto listo para el borrador y, si es una macro, aplica sus acciones. Devuelve qué se ha hecho."""
     reply = get_reply(reply_id)
     with get_conn() as conn:
-        client = repo.client(conn, client_id)
+        client = clients_repo.get(conn, client_id)
         if not client:
             raise NotFound("Cliente no encontrado")
-        facts = repo.client_facts(conn, client_id)
-        tags = repo.client_tags(conn, client_id)
+        facts = facts_repo.list_visible(conn, client_id)
+        tags = clients_repo.tags_of(conn, client_id)
     applied = []
     if reply["set_status"]:
         clients.update_client(client_id, {"status": reply["set_status"]}, user["id"])

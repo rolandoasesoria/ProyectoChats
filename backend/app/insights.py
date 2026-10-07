@@ -13,6 +13,7 @@ from . import agent, attachments, clients, notes
 from .db import get_conn
 from .errors import AppError, NotFound
 from .repositories import analysis as analysis_repo
+from .repositories import clients as clients_repo
 from .repositories import facts as facts_repo
 from .repositories import tasks as tasks_repo
 
@@ -97,7 +98,7 @@ class AnalysisSubjectNotFound(AnalysisError, NotFound):
 
 def _load_context(client_id: int) -> dict | None:
     with get_conn() as conn:
-        client = analysis_repo.client(conn, client_id)
+        client = clients_repo.get(conn, client_id)
         if not client:
             return None
         messages = analysis_repo.recent_client_messages(conn, client_id, MAX_MESSAGES)
