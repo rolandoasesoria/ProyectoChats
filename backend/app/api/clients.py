@@ -40,18 +40,7 @@ class ClientUpdate(BaseModel):
 
 @router.patch("/api/clients/{client_id}")
 def update_client(client_id: int, req: ClientUpdate, user: CurrentUser):
-    before = search.client_overview(client_id, user["id"])
-    if not before:
-        raise NotFound("Cliente no encontrado")
-    fields = {k: getattr(req, k) for k in req.model_fields_set}
-    if "company" in fields:
-        fields["company"] = (fields["company"] or "").strip() or None
-    if fields.pop("status_auto", None):
-        clients.release_status(client_id)
-    clients.update_client(client_id, fields, user["id"])
-    new_assignee = fields.get("assignee_user_id")
-    if new_assignee and new_assignee != before["assignee_user_id"]:
-        clients.notify_assigned(client_id, before["name"], new_assignee, user)
+    clients.edit(client_id, {k: getattr(req, k) for k in req.model_fields_set}, user)
     return search.client_overview(client_id, user["id"])
 
 

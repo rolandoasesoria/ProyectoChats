@@ -66,17 +66,26 @@ def update_client(client_id: int, fields: dict, user_id: int | None = None) -> N
         clients_repo.update(conn, client_id, fields, manual_status)
 
 
-def notify_assigned(client_id: int, client_name: str, assignee_id: int, actor: dict) -> None:
-    """Avisa a quien pasa a ser responsable del cliente."""
+def edit(client_id: int, fields: dict, actor: dict) -> None:
+    """Edición de la ficha desde la app. Además de update_client: la empresa vacía queda sin empresa, status_auto
+    deshace el estado «fijado a mano» (vuelve a decidirlo la IA o la regla de inactividad) y quien pasa a ser
+    responsable del cliente recibe un aviso."""
     with get_conn() as conn:
-        notes.notify(conn, [assignee_id], "client_assigned",
-                     f"{actor['name']} te ha hecho responsable de {client_name}", client_id, actor["id"])
-
-
-def release_status(client_id: int) -> None:
-    """Deshace el «fijado a mano»: el estado se queda como está hasta que lo decida la IA o la regla de inactividad."""
-    with get_conn() as conn:
-        clients_repo.release_status(conn, client_id)
+        before = clients_repo.get_overview(conn, client_id)
+    if not before:
+        raise NotFound("Cliente no encontrado")
+    fields = dict(fields)
+    if "company" in fields:
+        fields["company"] = (fields["company"] or "").strip() or None
+    if fields.pop("status_auto", None):
+        with get_conn() as conn:
+            clients_repo.release_status(conn, client_id)
+    update_client(client_id, fields, actor["id"])
+    new_assignee = fields.get("assignee_user_id")
+    if new_assignee and new_assignee != before["assignee_user_id"]:
+        with get_conn() as conn:
+            notes.notify(conn, [new_assignee], "client_assigned",
+                         f"{actor['name']} te ha hecho responsable de {before['name']}", client_id, actor["id"])
 
 
 def set_auto_status(conn, client_id: int, status: str, reason: str) -> str | None:
