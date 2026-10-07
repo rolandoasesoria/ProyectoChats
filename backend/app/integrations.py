@@ -116,6 +116,17 @@ def http_request(method: str, url: str, *, body: dict | None = None, headers: di
     return content if raw else json.loads(content or b"null")
 
 
+def bearer(token: str) -> dict:
+    return {"Authorization": f"Bearer {token}"}
+
+
+def graph_request(method: str, path: str, token: str | None = None, *, body: dict | None = None, timeout: int = 30):
+    """Llamada a la Graph API de Meta: `path` es relativo a la versión (p. ej. "/123/messages") y, si hay token, va
+    en la cabecera Authorization."""
+    return http_request(method, f"{GRAPH_API}{path}", body=body, headers=bearer(token) if token else None,
+                        timeout=timeout)
+
+
 def _error_body(detail: str) -> dict | None:
     """El objeto "error" de una respuesta de error en JSON (formato de la Graph API de Meta), si lo hay."""
     try:
@@ -485,7 +496,7 @@ META_SEND_LIMITS = {
 }
 
 
-def _explain_meta(exc: IntegrationError, phone_lookup: bool = False) -> IntegrationError:
+def explain_meta(exc: IntegrationError, phone_lookup: bool = False) -> IntegrationError:
     """Traduce un error de la Graph API de Meta a un mensaje claro y marca los de credenciales (needs_attention).
     phone_lookup: la llamada era la consulta del número, así que un "objeto no encontrado" es el Phone number ID."""
     if exc.status is None:  # ni siquiera se llegó a Meta (red, DNS, cortafuegos...)
@@ -518,18 +529,18 @@ def check_whatsapp(integ: dict) -> str:
     cfg = integ["config"]
     proof = hmac.new(cfg["app_secret"].encode(), cfg["access_token"].encode(), hashlib.sha256).hexdigest()
     query = urllib.parse.urlencode({"fields": "display_phone_number,verified_name", "appsecret_proof": proof})
-    info = http_request("GET", f"{GRAPH_API}/{urllib.parse.quote(cfg['phone_number_id'], safe='')}?{query}",
-                        headers={"Authorization": f"Bearer {cfg['access_token']}"}, timeout=15) or {}
+    info = graph_request("GET", f"/{urllib.parse.quote(cfg['phone_number_id'], safe='')}?{query}",
+                         cfg["access_token"], timeout=15) or {}
     return " · ".join(filter(None, [info.get("display_phone_number"), info.get("verified_name")]))
 
 
 def _whatsapp_media(integ: dict, media_id: str, filename: str, mime: str | None) -> dict | None:
-    auth = {"Authorization": f"Bearer {integ['config']['access_token']}"}
-    info = http_request("GET", f"{GRAPH_API}/{media_id}", headers=auth)
+    token = integ["config"]["access_token"]
+    info = graph_request("GET", f"/{media_id}", token)
     if not info or not info.get("url"):
         return None
     return {"filename": filename, "mime": mime or info.get("mime_type"),
-            "data": http_request("GET", info["url"], headers=auth, raw=True)}
+            "data": http_request("GET", info["url"], headers=bearer(token), raw=True)}
 
 
 def _download_whatsapp_media(integ: dict, media_id: str, filename: str, mime: str | None) -> dict | None:
@@ -538,7 +549,7 @@ def _download_whatsapp_media(integ: dict, media_id: str, filename: str, mime: st
     try:
         return _whatsapp_media(integ, media_id, filename, mime)
     except IntegrationError as exc:
-        error = _explain_meta(exc)
+        error = explain_meta(exc)
         log.warning("No se pudo descargar un adjunto de WhatsApp (integración %s): %s", integ["id"], error)
         if error.needs_attention:
             _flag_problem(integ, str(error))
@@ -699,9 +710,8 @@ def send_whatsapp(integ: dict, handle: str, text: str) -> str:
     if len(to) < 8:
         raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
     cfg = integ["config"]
-    resp = http_request("POST", f"{GRAPH_API}/{cfg['phone_number_id']}/messages",
-                        headers={"Authorization": f"Bearer {cfg['access_token']}"},
-                        body={"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}})
+    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
+                         body={"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}})
     return f"wa:{resp['messages'][0]['id']}"
 
 
@@ -711,7 +721,7 @@ def _explain(kind: str, exc: Exception, phone_lookup: bool = False) -> Integrati
     """Convierte un fallo técnico en un mensaje claro. needs_attention marca los que tiene que arreglar la persona
     (credenciales rechazadas); los demás (red, servidor caído) suelen arreglarse solos en el siguiente intento."""
     if kind == "whatsapp" and isinstance(exc, IntegrationError):
-        return _explain_meta(exc, phone_lookup)
+        return explain_meta(exc, phone_lookup)
     if kind == "telegram" and isinstance(exc, IntegrationError) and exc.status in (401, 404):
         return IntegrationError("Telegram no acepta el token del bot: se ha regenerado o el bot ya no existe. Copia el "
                                 "token actual de @BotFather y pégalo en «Editar».", status=exc.status,

@@ -27,10 +27,9 @@ def _account(integ: dict) -> str:
 
 def _graph(integ: dict, method: str, path: str, body: dict | None = None) -> dict:
     try:
-        return integrations.http_request(method, f"{integrations.GRAPH_API}{path}", body=body, timeout=20,
-                                         headers={"Authorization": f"Bearer {integ['config']['access_token']}"}) or {}
+        return integrations.graph_request(method, path, integ["config"]["access_token"], body=body, timeout=20) or {}
     except integrations.IntegrationError as exc:
-        raise ExternalServiceError(str(integrations._explain_meta(exc))) from exc
+        raise ExternalServiceError(str(integrations.explain_meta(exc))) from exc
 
 
 def list_templates(integ: dict) -> list[dict]:
