@@ -29,16 +29,38 @@ function badge(channel) {
   return `<span class="badge ${escapeHtml(channel)}">${escapeHtml(IDENTITY_LABELS[channel] || channel)}</span>`;
 }
 
-function appendBubble(container, role, html) {
+// Añade una burbuja al chat (al final, o antes de `before`).
+function appendBubble(container, role, html, before = null) {
   container.querySelector(".empty-chat")?.remove();
   const div = document.createElement("div");
   div.className = `msg ${role}`;
   div.innerHTML = html;
-  container.appendChild(div);
+  container.insertBefore(div, before);
   return div;
 }
 
 const TYPING = `<span class="typing"><i></i><i></i><i></i></span>`;
+
+// Un turno guardado del asistente o de Chispa: lo del usuario como texto, la respuesta en Markdown con su traza.
+function turnHtml(t) {
+  return t.role === "user" ? escapeHtml(t.text) : renderMarkdown(t.text) + renderTrace(t.tool_calls);
+}
+
+// Pregunta y respuesta en un chat: burbuja del usuario, burbuja de «escribiendo…» y, al llegar, la respuesta
+// (o el error en su lugar). `answer()` hace la petición y devuelve el HTML. Devuelve si hubo respuesta.
+async function askBot(log, text, answer, scroll) {
+  appendBubble(log, "user", escapeHtml(text));
+  const pending = appendBubble(log, "bot", TYPING);
+  scroll();
+  try {
+    pending.innerHTML = await answer();
+    return true;
+  } catch (err) {
+    pending.className = "msg error";
+    pending.textContent = err.message;
+    return false;
+  }
+}
 
 /* ---------- Clientes ---------- */
 
@@ -213,14 +235,7 @@ async function loadThreadHistory(clientId, thread) {
     const { turns } = await api(`/api/conversations/agent${params}`);
     // Si el usuario ya escribió algo mientras cargaba, se coloca el historial antes.
     const pendingNodes = [...thread.el.querySelectorAll(".msg")];
-    if (turns.length) thread.el.querySelector(".empty-chat")?.remove();
-    turns.forEach((t) => {
-      const html = t.role === "user" ? escapeHtml(t.text) : renderMarkdown(t.text) + renderTrace(t.tool_calls);
-      const div = document.createElement("div");
-      div.className = `msg ${t.role === "user" ? "user" : "bot"}`;
-      div.innerHTML = html;
-      thread.el.insertBefore(div, pendingNodes[0] || null);
-    });
+    turns.forEach((t) => appendBubble(thread.el, t.role === "user" ? "user" : "bot", turnHtml(t), pendingNodes[0] || null));
     thread.loaded = true;
     if (state.threads.get(state.clientId ?? GENERAL) === thread) scrollChat();
   } catch (err) {
@@ -289,19 +304,12 @@ async function sendMessage(text) {
   if (thread.busy) return;
   thread.busy = true;
   $("#send-btn").disabled = true;
-  appendBubble(thread.el, "user", escapeHtml(text));
-  const pending = appendBubble(thread.el, "bot", TYPING);
-  scrollChat();
   try {
-    const res = await api("/api/chat", {
-      method: "POST",
-      body: JSON.stringify({ message: text, client_id: clientId }),
-    });
-    pending.innerHTML = renderMarkdown(res.reply) + renderTrace(res.tool_calls);
-    setThreadDot(clientId, true);
-  } catch (err) {
-    pending.className = "msg error";
-    pending.textContent = err.message;
+    const answered = await askBot(thread.el, text, async () => {
+      const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: text, client_id: clientId }) });
+      return renderMarkdown(res.reply) + renderTrace(res.tool_calls);
+    }, scrollChat);
+    if (answered) setThreadDot(clientId, true);
   } finally {
     thread.busy = false;
     if (state.threads.get(state.clientId ?? GENERAL) === thread) {
@@ -329,8 +337,7 @@ async function loadHelpHistory() {
   try {
     const { turns } = await api("/api/conversations/help");
     const log = $("#help-log");
-    turns.forEach((t) => appendBubble(log, t.role === "user" ? "user" : "bot",
-      t.role === "user" ? escapeHtml(t.text) : renderMarkdown(t.text)));
+    turns.forEach((t) => appendBubble(log, t.role === "user" ? "user" : "bot", turnHtml(t)));
     log.scrollTop = log.scrollHeight;
   } catch { state.helpLoaded = false; }
 }
@@ -338,16 +345,12 @@ async function loadHelpHistory() {
 async function sendHelp(text) {
   if (!text.trim()) return;
   const log = $("#help-log");
-  appendBubble(log, "user", escapeHtml(text));
-  const pending = appendBubble(log, "bot", TYPING);
-  log.scrollTop = log.scrollHeight;
   $("#help-send").disabled = true;
   try {
-    const res = await api("/api/help", { method: "POST", body: JSON.stringify({ message: text }) });
-    pending.innerHTML = renderMarkdown(res.reply);
-  } catch (err) {
-    pending.className = "msg error";
-    pending.textContent = err.message;
+    await askBot(log, text, async () => {
+      const res = await api("/api/help", { method: "POST", body: JSON.stringify({ message: text }) });
+      return renderMarkdown(res.reply);
+    }, () => { log.scrollTop = log.scrollHeight; });
   } finally {
     $("#help-send").disabled = false;
     log.scrollTop = log.scrollHeight;
