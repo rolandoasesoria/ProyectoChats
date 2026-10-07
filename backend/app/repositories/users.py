@@ -40,11 +40,6 @@ def list_active_for_mentions(conn: Conn) -> list[dict]:
     return rows(conn.execute("SELECT id, name, username FROM users WHERE active = 1"))
 
 
-def list_contacts(conn: Conn) -> list[dict]:
-    """Todos los usuarios con id, nombre y email, por orden alfabético."""
-    return rows(conn.execute("SELECT id, name, email FROM users ORDER BY name"))
-
-
 def id_by_username(conn: Conn, username: str) -> int | None:
     row = conn.execute("SELECT id FROM users WHERE lower(username) = lower(?)", (username,)).fetchone()
     return row["id"] if row else None

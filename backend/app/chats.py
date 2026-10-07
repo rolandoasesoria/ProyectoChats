@@ -8,8 +8,6 @@ from contextlib import contextmanager
 from .db import get_conn
 from .repositories import chats as repo
 
-KINDS = ("agent", "help")
-
 # Evita que dos peticiones simultáneas de la misma conversación se pisen el historial.
 _locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
 

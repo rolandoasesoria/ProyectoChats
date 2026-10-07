@@ -12,9 +12,6 @@ from .db import get_conn
 from .repositories import clients as clients_repo
 from .repositories import conversations as conversations_repo
 from .repositories import messages as messages_repo
-from .repositories import users as users_repo
-
-SCOPES = conversations_repo.SCOPES
 
 
 def _fts_query(text: str) -> str:
@@ -32,11 +29,6 @@ def _fts_query(text: str) -> str:
 def _markers(snippet: str | None, markers: tuple[str, str]) -> str:
     """ts_headline marca las coincidencias con ⟦ ⟧; se cambian por las marcas pedidas."""
     return (snippet or "").replace("⟦", markers[0]).replace("⟧", markers[1])
-
-
-def list_users() -> list[dict]:
-    with get_conn() as conn:
-        return users_repo.list_contacts(conn)
 
 
 def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, status: str | None = None,
