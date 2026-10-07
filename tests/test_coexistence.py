@@ -9,7 +9,7 @@ import urllib.request
 
 from apitest import BASE, Session, check, results
 
-from app import insights, integrations, whatsapp_signup
+from app import insights, integrations, whatsapp, whatsapp_signup
 from app.db import get_conn
 from app.errors import Conflict
 
@@ -145,7 +145,7 @@ history = change("history", {"history": [{"metadata": {"phase": 0, "chunk_order"
          "history_context": {"status": "READ"}},
         {"from": "34611222333", "id": "wamid.h3", "timestamp": "1785000600", "type": "image",
          "image": {"id": "m1", "mime_type": "image/jpeg", "caption": "La factura"}}]}]}]})
-check("el historial se importa", integrations.receive_whatsapp_app(history) == 3)
+check("el historial se importa", whatsapp.receive_whatsapp_app(history) == 3)
 client = next(c for c in carlos.get("/api/clients?q=611222333")[1])
 tl = carlos.get(f"/api/clients/{client['id']}/timeline?scope=mine")[1]
 check("con cada mensaje en su sentido (cliente / Carlos)", [(m["direction"], m["sender"]) for m in tl]
@@ -155,19 +155,19 @@ check("y no lanza análisis con IA (es historia, no mensajes nuevos)", analyses 
 check("el progreso queda en la cuenta", integrations.list_integrations(2)[0]["history"] == "importado")
 st, res = webhook(history)
 check("por el webhook, el historial se guarda en segundo plano", st == 200 and res.get("queued"), res)
-integrations.receive_whatsapp_app(change("history", {"history": [{"errors": [{"code": 2593109, "title": "History sync is turned off"}]}]}))
+whatsapp.receive_whatsapp_app(change("history", {"history": [{"errors": [{"code": 2593109, "title": "History sync is turned off"}]}]}))
 check("si la empresa no comparte el historial, se indica", integrations.list_integrations(2)[0]["history"] == "rechazado en el móvil")
 
 # Desconexión desde el móvil
 with get_conn() as conn:
     before = conn.execute("SELECT count(*) FROM notifications WHERE user_id = 2 AND kind = 'integration_error'").fetchone()[0]
-integrations.receive_whatsapp_app({"entry": [{"id": "waba-1", "changes": [{"field": "account_update", "value": {
+whatsapp.receive_whatsapp_app({"entry": [{"id": "waba-1", "changes": [{"field": "account_update", "value": {
     "event": "PARTNER_REMOVED", "disconnection_info": {"reason": "user_action", "initiated_by": "business"}}}]}]})
 integ = integrations.get(r["id"])
 with get_conn() as conn:
     after = conn.execute("SELECT count(*) FROM notifications WHERE user_id = 2 AND kind = 'integration_error'").fetchone()[0]
 check("si se desconecta desde el móvil, la cuenta se pausa y lo explica",
-      not integ["enabled"] and integ["last_error"] == integrations.WHATSAPP_DISCONNECTED)
+      not integ["enabled"] and integ["last_error"] == whatsapp.WHATSAPP_DISCONNECTED)
 check("y Carlos recibe un aviso", after == before + 1)
 check("pausada, ya no recibe mensajes", webhook(change("messages", {"messages": [
     {"from": "34600999888", "id": "wamid.in2", "timestamp": "1790000900", "type": "text", "text": {"body": "¿Hola?"}}]}))[1]["imported"] == 0)

@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 from apitest import BASE, Session, check, results  # noqa: E402
 
-from app import integrations  # noqa: E402
+from app import integrations, whatsapp  # noqa: E402
 from app.db import get_conn  # noqa: E402
 
 ana, carlos = Session("ana"), Session("carlos")
@@ -383,7 +383,7 @@ photo = {"entry": [{"changes": [{"value": {
     "contacts": [{"wa_id": "34600111222", "profile": {"name": "Laura"}}],
     "messages": [{"from": "34600111222", "id": "wamid.foto1", "timestamp": "1790000500", "type": "image",
                   "image": {"id": "media1", "mime_type": "image/jpeg", "caption": "La factura"}}]}}]}]}
-check("foto con el token caducado: el mensaje no se pierde", integrations.receive_whatsapp(integrations.get(wa_id), photo) == 1)
+check("foto con el token caducado: el mensaje no se pierde", whatsapp.receive_whatsapp(integrations.get(wa_id), photo) == 1)
 tl = ana.get("/api/clients/1/timeline?scope=mine&channel=whatsapp")[1]
 foto = next((m for m in tl if m["body"].startswith("La factura")), {})
 check("sin el archivo y con una nota", "⚠ No se pudo descargar" in foto.get("body", "") and not foto.get("attachments"), foto)

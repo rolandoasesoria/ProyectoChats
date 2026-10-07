@@ -9,7 +9,7 @@ from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 
-from .. import audit, integrations, whatsapp_signup, whatsapp_templates
+from .. import audit, integrations, whatsapp, whatsapp_signup, whatsapp_templates
 from ..config import config
 from ..errors import ExternalServiceError, Forbidden, InvalidInput, NotFound
 from .deps import AdminUser, CurrentUser
@@ -218,15 +218,15 @@ async def whatsapp_app_webhook(request: Request):
     """Avisos de todos los números conectados con el registro insertado. Solo se aceptan con la firma de la app."""
     raw = await request.body()
     secret = config.meta.app_secret
-    if not secret or not integrations.verify_whatsapp_signature(secret, raw, request.headers.get("x-hub-signature-256")):
+    if not secret or not whatsapp.verify_whatsapp_signature(secret, raw, request.headers.get("x-hub-signature-256")):
         raise Forbidden("Firma no válida")
     payload = _payload(raw)
-    if integrations.has_history(payload):
+    if whatsapp.has_history(payload):
         # El historial puede traer miles de mensajes: se guarda en segundo plano y se contesta a Meta al momento.
-        threading.Thread(target=integrations.receive_whatsapp_app, args=(payload,), daemon=True,
+        threading.Thread(target=whatsapp.receive_whatsapp_app, args=(payload,), daemon=True,
                          name="whatsapp-history").start()
         return {"ok": True, "queued": True}
-    return {"ok": True, "imported": await run_in_threadpool(integrations.receive_whatsapp_app, payload)}
+    return {"ok": True, "imported": await run_in_threadpool(whatsapp.receive_whatsapp_app, payload)}
 
 
 @router.get("/api/webhooks/whatsapp/{integration_id}")
@@ -244,8 +244,8 @@ async def whatsapp_webhook(integration_id: int, request: Request):
     integ = integrations.get(integration_id)
     raw = await request.body()
     if integ["kind"] != "whatsapp" or not integ["enabled"] \
-            or not integrations.verify_whatsapp_signature(integ["config"]["app_secret"], raw,
+            or not whatsapp.verify_whatsapp_signature(integ["config"]["app_secret"], raw,
                                                           request.headers.get("x-hub-signature-256")):
         raise Forbidden("Firma no válida")
-    n = await run_in_threadpool(integrations.receive_whatsapp, integ, _payload(raw))
+    n = await run_in_threadpool(whatsapp.receive_whatsapp, integ, _payload(raw))
     return {"ok": True, "imported": n}
