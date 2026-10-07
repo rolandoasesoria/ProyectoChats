@@ -34,9 +34,3 @@ def update_body(conn: Conn, note_id: int, body: str) -> None:
 
 def delete(conn: Conn, note_id: int) -> None:
     conn.execute("DELETE FROM client_notes WHERE id = ?", (note_id,))
-
-
-def client_name(conn: Conn, client_id: int) -> str | None:
-    """Nombre del cliente de la nota, para el texto de los avisos."""
-    row = conn.execute("SELECT name FROM clients WHERE id = ?", (client_id,)).fetchone()
-    return row["name"] if row else None

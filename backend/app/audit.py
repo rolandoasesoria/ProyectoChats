@@ -1,5 +1,4 @@
-"""Registro de accesos y acciones delicadas, y derechos de protección de datos (exportar y borrar un cliente)."""
-from . import attachments
+"""Registro de accesos y acciones delicadas."""
 from .db import get_conn
 from .repositories import audit as repo
 
@@ -37,38 +36,3 @@ def entries(limit: int = 300, user_id: int | None = None, action: str | None = N
     for r in result:
         r["action_label"] = ACTIONS.get(r["action"], r["action"])
     return result
-
-
-def export_client(client_id: int) -> dict | None:
-    """Todos los datos guardados de un cliente (derecho de acceso / portabilidad)."""
-    with get_conn() as conn:
-        client = repo.get_client(conn, client_id)
-        if not client:
-            return None
-        conversations = repo.client_conversations(conn, client_id)
-        for conv in conversations:
-            conv["messages"] = repo.conversation_messages(conn, conv["id"])
-        return {
-            "client": client,
-            "identities": repo.client_identities(conn, client_id),
-            "tags": repo.client_tags(conn, client_id),
-            "facts": repo.client_facts(conn, client_id),
-            "summary": repo.client_summary(conn, client_id),
-            "tasks": repo.client_tasks(conn, client_id),
-            "notes": repo.client_notes(conn, client_id),
-            "conversations": conversations,
-            "documents": repo.client_documents(conn, client_id),
-        }
-
-
-def delete_client(client_id: int) -> dict:
-    """Borra el cliente y, en cascada, sus conversaciones, mensajes, datos, tareas, notas, avisos y
-    conversaciones con el asistente (derecho de supresión)."""
-    attachments.delete_files_for_client(client_id)
-    with get_conn() as conn:
-        counts = {
-            "conversations": repo.count_conversations(conn, client_id),
-            "messages": repo.count_messages(conn, client_id),
-        }
-        repo.delete_client(conn, client_id)
-    return counts

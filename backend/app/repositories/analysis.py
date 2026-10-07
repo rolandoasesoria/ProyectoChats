@@ -37,11 +37,6 @@ def count_messages_after(conn: Conn, client_id: int, message_id: int) -> int:
 
 # ---------------------------------------------------------------- Contexto para la IA
 
-def client(conn: Conn, client_id: int) -> dict | None:
-    row = conn.execute("SELECT id, name, company FROM clients WHERE id = ?", (client_id,)).fetchone()
-    return dict(row) if row else None
-
-
 def client_notice_target(conn: Conn, client_id: int) -> dict | None:
     """Nombre del cliente y su responsable, para avisarle."""
     row = conn.execute("SELECT name, assignee_user_id FROM clients WHERE id = ?", (client_id,)).fetchone()

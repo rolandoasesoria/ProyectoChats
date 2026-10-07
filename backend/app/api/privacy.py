@@ -20,7 +20,7 @@ def audit_log(_: AdminUser, user_id: int | None = None, action: str | None = Non
 @router.get("/api/clients/{client_id}/export")
 def export_client(client_id: int, admin: AdminUser):
     """Todos los datos de un cliente en JSON (derecho de acceso y portabilidad)."""
-    data = audit.export_client(client_id)
+    data = privacy.export_client(client_id)
     if not data:
         raise NotFound("Cliente no encontrado")
     audit.log(admin["id"], "client_export", client_id)
@@ -73,4 +73,4 @@ def delete_client(client_id: int, admin: AdminUser, confirm: str = ""):
     if confirm.strip().lower() != client["name"].strip().lower():
         raise InvalidInput("Para confirmar, escribe exactamente el nombre del cliente.")
     audit.log(admin["id"], "client_delete", client_id)  # antes de borrar, para guardar el nombre
-    return audit.delete_client(client_id)
+    return privacy.delete_client(client_id)

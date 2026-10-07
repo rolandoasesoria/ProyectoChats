@@ -44,21 +44,6 @@ def delete(conn: Conn, reply_id: int) -> None:
 
 # ---------------------------------------------------------------- Datos del cliente para rellenar las variables
 
-def client(conn: Conn, client_id: int) -> dict | None:
-    row = conn.execute("SELECT id, name, company FROM clients WHERE id = ?", (client_id,)).fetchone()
-    return dict(row) if row else None
-
-
-def client_facts(conn: Conn, client_id: int) -> list[dict]:
-    """Datos clave de la ficha (sin los descartados)."""
-    return rows(conn.execute(
-        "SELECT label, value FROM client_facts WHERE client_id = ? AND origin != 'dismissed'", (client_id,)))
-
-
-def client_tags(conn: Conn, client_id: int) -> list[str]:
-    return [r["tag"] for r in conn.execute("SELECT tag FROM client_tags WHERE client_id = ?", (client_id,))]
-
-
 def last_incoming_message_id(conn: Conn, conversation_id: int, client_id: int) -> int | None:
     """Último mensaje del cliente en esa conversación (que debe ser suya)."""
     row = conn.execute(

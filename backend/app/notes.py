@@ -2,6 +2,7 @@
 import re
 
 from .db import get_conn
+from .repositories import clients as clients_repo
 from .repositories import notes as repo
 from .repositories import notifications as notifications_repo
 from .repositories import users as users_repo
@@ -56,7 +57,7 @@ def get_note(note_id: int) -> dict | None:
 def add_note(client_id: int, author: dict, body: str) -> dict:
     with get_conn() as conn:
         note_id = repo.insert(conn, client_id, author["id"], body)
-        client_name = repo.client_name(conn, client_id)
+        client_name = (clients_repo.get_basic(conn, client_id) or {}).get("name")
         mentioned = find_mentions(body, users_repo.list_active_for_mentions(conn))
         notify(conn, mentioned, "mention", _mention_text(author, client_name, body), client_id, author["id"])
     return get_note(note_id)
@@ -69,7 +70,7 @@ def update_note(note_id: int, author: dict, body: str) -> dict:
         repo.update_body(conn, note_id, body)
         users = users_repo.list_active_for_mentions(conn)
         new_mentions = find_mentions(body, users) - find_mentions(old["body"], users)
-        client_name = repo.client_name(conn, old["client_id"])
+        client_name = (clients_repo.get_basic(conn, old["client_id"]) or {}).get("name")
         notify(conn, new_mentions, "mention", _mention_text(author, client_name, body), old["client_id"],
                author["id"])
     return get_note(note_id)

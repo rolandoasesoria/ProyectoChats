@@ -1,4 +1,4 @@
-"""Protección de datos en los mensajes: ocultar datos sensibles y borrar los mensajes antiguos.
+"""Protección de datos: ocultar datos sensibles, borrar los mensajes antiguos y exportar o borrar un cliente.
 
 - Datos sensibles: IBAN, DNI/NIE y números de tarjeta. Se detectan en los mensajes de un cliente y se sustituyen
   por una marca ("[IBAN oculto]"). El texto original no se guarda en ningún sitio (tampoco en el índice de búsqueda,
@@ -6,6 +6,7 @@
 - Retención: si un administrador fija un plazo (meses), los mensajes más antiguos se borran, junto con sus adjuntos
   y las conversaciones que queden vacías. Se aplica al arrancar y una vez al día, junto con la regla que pasa a
   Inactivo a los clientes sin actividad (clients.mark_inactive).
+- Derechos de acceso y supresión: exportar todos los datos de un cliente o borrarlo con todo lo que cuelga de él.
 """
 import logging
 import re
@@ -14,6 +15,7 @@ import time
 
 from . import attachments, clients, settings
 from .db import get_conn
+from .repositories import clients as clients_repo
 from .repositories import privacy as repo
 
 log = logging.getLogger(__name__)
@@ -101,6 +103,43 @@ def apply_retention(months: int | None = None) -> dict:
     for path in files:
         (attachments.STORAGE / path).unlink(missing_ok=True)
     return {"months": months, "messages": deleted, "conversations": convs}
+
+
+# ---------------------------------------------------------------- Derechos de acceso y supresión
+
+def export_client(client_id: int) -> dict | None:
+    """Todos los datos guardados de un cliente (derecho de acceso / portabilidad)."""
+    with get_conn() as conn:
+        client = clients_repo.get(conn, client_id)
+        if not client:
+            return None
+        conversations = repo.client_conversations(conn, client_id)
+        for conv in conversations:
+            conv["messages"] = repo.conversation_messages(conn, conv["id"])
+        return {
+            "client": client,
+            "identities": repo.client_identities(conn, client_id),
+            "tags": repo.client_tags(conn, client_id),
+            "facts": repo.client_facts(conn, client_id),
+            "summary": repo.client_summary(conn, client_id),
+            "tasks": repo.client_tasks(conn, client_id),
+            "notes": repo.client_notes(conn, client_id),
+            "conversations": conversations,
+            "documents": repo.client_documents(conn, client_id),
+        }
+
+
+def delete_client(client_id: int) -> dict:
+    """Borra el cliente y, en cascada, sus conversaciones, mensajes, datos, tareas, notas, avisos y
+    conversaciones con el asistente (derecho de supresión)."""
+    attachments.delete_files_for_client(client_id)
+    with get_conn() as conn:
+        counts = {
+            "conversations": repo.count_conversations(conn, client_id),
+            "messages": repo.count_messages(conn, client_id),
+        }
+        clients_repo.delete(conn, client_id)
+    return counts
 
 
 def start_daily_jobs() -> None:
