@@ -9,7 +9,7 @@ import threading
 from collections import defaultdict
 from datetime import date
 
-from . import agent, attachments, clients, notes
+from . import agent, attachments, clients, notes, settings
 from .db import get_conn
 from .errors import AppError, NotFound
 from .repositories import analysis as analysis_repo
@@ -228,8 +228,9 @@ _scheduled_lock = threading.Lock()
 
 
 def schedule_analysis(client_id: int, delay: float = AUTO_ANALYSIS_DELAY) -> bool:
-    """Programa el análisis del cliente (si hay clave de API y no está ya programado)."""
-    if not agent.credentials_configured():
+    """Programa el análisis del cliente (si hay clave de API, el análisis automático está activado en los ajustes y no
+    está ya programado)."""
+    if not agent.credentials_configured() or not settings.get("auto_analysis"):
         return False
     with _scheduled_lock:
         if client_id in _scheduled:
