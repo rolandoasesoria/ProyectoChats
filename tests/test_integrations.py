@@ -7,13 +7,11 @@ import ssl
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
-from apitest import BASE, Session, check, results  # noqa: E402
+from apitest import BASE, Session, check, results
 
-from app import integrations, whatsapp  # noqa: E402
-from app.db import get_conn  # noqa: E402
+from app import integrations, whatsapp
+from app.db import get_conn
 
 ana, carlos = Session("ana"), Session("carlos")
 

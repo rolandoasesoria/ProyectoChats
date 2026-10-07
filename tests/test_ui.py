@@ -1,8 +1,9 @@
 """Recorrido de la interfaz en Edge: login, tutorial, cliente, pestañas, notas, tareas, diálogos, tema, Chispa."""
 import sys
 
-from apitest import check, results
+from apitest import BASE, check, results
 from browser import Browser
+from testdb import TMP
 
 from app.db import get_conn
 
@@ -15,7 +16,6 @@ with get_conn() as conn:
                     SELECT id, 'in', 'Laura', ?, '2026-07-01T10:00:00' FROM conversations WHERE client_id = 1 ORDER BY id LIMIT 1""",
                  ("Para domiciliar: ES91 2100 0418 4502 0005 1332",))
 
-BASE = "http://127.0.0.1:8001"
 b = Browser()
 try:
     # Sin sesión: redirige al login
@@ -101,8 +101,8 @@ try:
     check("sección de documentos vacía al principio", "Sin documentos" in b.js("document.querySelector('#documents').textContent"))
     node = b.send("DOM.getDocument")["root"]["nodeId"]
     inp = b.send("DOM.querySelector", nodeId=node, selector="#doc-upload")["nodeId"]
-    sample = str(__import__("pathlib").Path(__file__).resolve().parent / ".tmp" / "sample.txt")
-    __import__("pathlib").Path(sample).write_text("Contrato de suministro 2026", encoding="utf-8")
+    sample = str(TMP / "sample.txt")
+    (TMP / "sample.txt").write_text("Contrato de suministro 2026", encoding="utf-8")
     b.send("DOM.setFileInputFiles", nodeId=inp, files=[sample])
     b.js("document.querySelector('#doc-upload').dispatchEvent(new Event('change'))")
     b.wait("document.querySelector('#documents').textContent.includes('sample.txt')")
