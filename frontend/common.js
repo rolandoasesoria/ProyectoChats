@@ -56,3 +56,49 @@ function escapeHtml(text) {
 }
 
 const $ = (sel) => document.querySelector(sel);
+
+// Autocompletado en un cuadro de texto: al escribir el disparador (`pattern`, cuyo grupo 2 es lo escrito tras él,
+// p. ej. @nombre o /atajo) muestra en `list` las opciones de `search(texto)`; se recorren con las flechas y se eligen
+// con Enter, Tab o el ratón. `render(opción, i, activa)` pinta cada <li data-i> y `choose(opción, inicio)` la aplica
+// (inicio = posición del disparador en el texto).
+function attachAutocomplete(textarea, list, { pattern, search, render, choose }) {
+  let matches = [];
+  let active = 0;
+  let from = 0;
+
+  const close = () => { list.hidden = true; matches = []; };
+  const show = () => {
+    list.innerHTML = matches.map((item, i) => render(item, i, active)).join("");
+    list.hidden = !matches.length;
+  };
+  const pick = (item) => { close(); choose(item, from); };
+
+  textarea.addEventListener("input", () => {
+    const before = textarea.value.slice(0, textarea.selectionStart);
+    const m = before.match(pattern);
+    if (!m) return close();
+    from = before.length - m[2].length - 1;
+    matches = search(m[2]);
+    active = 0;
+    show();
+  });
+  textarea.addEventListener("keydown", (e) => {
+    if (list.hidden) return;
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      active = (active + (e.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length;
+      show();
+    } else if (e.key === "Enter" || e.key === "Tab") {
+      e.preventDefault();
+      pick(matches[active]);
+    } else if (e.key === "Escape") {
+      e.stopPropagation();
+      close();
+    }
+  });
+  textarea.addEventListener("blur", () => setTimeout(close, 150));
+  list.addEventListener("mousedown", (e) => {
+    const li = e.target.closest("li[data-i]");
+    if (li) { e.preventDefault(); pick(matches[Number(li.dataset.i)]); }
+  });
+}

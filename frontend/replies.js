@@ -89,53 +89,11 @@ async function toggleReplyPicker(open) {
 /* ---------- Escribir /atajo en el borrador ---------- */
 
 function attachReplyShortcuts(textarea, list) {
-  let matches = [];
-  let active = 0;
-  let from = 0;
-
-  const close = () => { list.hidden = true; matches = []; };
-  const render = () => {
-    list.innerHTML = matches.map((r, i) => replyOption(r, i, active)).join("");
-    list.hidden = !matches.length;
-  };
-  const choose = async (r) => {
-    close();
-    try {
-      await useSavedReply(r, from);
-    } catch (err) {
-      alert(err.message);
-    }
-  };
-
-  textarea.addEventListener("input", () => {
-    const before = textarea.value.slice(0, textarea.selectionStart);
-    const m = before.match(/(^|\s)\/([\w-]*)$/);
-    if (!m) return close();
-    from = before.length - m[2].length - 1;
-    matches = replyMatches(m[2]).slice(0, 8);
-    active = 0;
-    render();
-  });
-  textarea.addEventListener("keydown", (e) => {
-    if (list.hidden) return;
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-      e.preventDefault();
-      active = (active + (e.key === "ArrowDown" ? 1 : matches.length - 1)) % matches.length;
-      render();
-    } else if (e.key === "Enter" || e.key === "Tab") {
-      e.preventDefault();
-      choose(matches[active]);
-    } else if (e.key === "Escape") {
-      e.stopPropagation();
-      close();
-    }
-  });
-  textarea.addEventListener("blur", () => setTimeout(close, 150));
-  list.addEventListener("mousedown", (e) => {
-    const li = e.target.closest("li[data-i]");
-    if (!li) return;
-    e.preventDefault();
-    choose(matches[Number(li.dataset.i)]);
+  attachAutocomplete(textarea, list, {
+    pattern: /(^|\s)\/([\w-]*)$/,
+    search: (q) => replyMatches(q).slice(0, 8),
+    render: replyOption,
+    choose: (r, from) => useSavedReply(r, from).catch((err) => alert(err.message)),
   });
 }
 
