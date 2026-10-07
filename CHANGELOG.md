@@ -39,6 +39,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- Código reorganizado sin cambiar el comportamiento: la recepción de WhatsApp en `whatsapp.py`; la bandeja y el
+  alta de mensajes fuera de `search.py` (`inbox.py`, `conversations.py`); un único acceso a la API de Meta, a la
+  verificación de webhooks y a las llamadas de texto a Claude; el envío desde el borrador en `drafts.js`; un
+  autocompletado común para @menciones y /atajos; y utilidades de pruebas compartidas.
 - Si una foto o un documento de WhatsApp no se puede descargar, el mensaje se guarda igualmente con una nota (antes
   se perdía el mensaje entero).
 - Un administrador que conecta o edita la cuenta de otra persona también la prueba al momento.
