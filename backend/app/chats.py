@@ -3,19 +3,12 @@ import json
 import threading
 import uuid
 from collections import defaultdict
-from contextlib import contextmanager
 
 from .db import get_conn
 from .repositories import chats as repo
 
 # Evita que dos peticiones simultáneas de la misma conversación se pisen el historial.
 _locks: defaultdict[str, threading.Lock] = defaultdict(threading.Lock)
-
-
-@contextmanager
-def locked(session_id: str):
-    with _locks[session_id]:
-        yield
 
 
 def active_session(user_id: int, kind: str, client_id: int | None = None, create: bool = True) -> dict | None:
@@ -31,14 +24,25 @@ def active_session(user_id: int, kind: str, client_id: int | None = None, create
     return {"id": session_id, "api_messages": []}
 
 
-def reload_messages(session_id: str) -> list:
+def exchange(user_id: int, kind: str, client_id: int | None, text: str, run) -> dict:
+    """Un turno con el asistente: `run(historial)` llama a Claude (añadiendo al historial lo nuevo) y devuelve
+    {"reply", "tool_calls", ...}. Se guarda solo si Claude respondió; si falla, el historial queda como estaba."""
+    session = active_session(user_id, kind, client_id)
+    with _locks[session["id"]]:
+        messages = _reload_messages(session["id"])
+        result = run(messages)
+        _save_exchange(session["id"], messages, text, result["reply"], result["tool_calls"])
+    return result
+
+
+def _reload_messages(session_id: str) -> list:
     """Relee el historial dentro del bloqueo, por si otra petición lo cambió mientras esperábamos."""
     with get_conn() as conn:
         stored = repo.api_messages(conn, session_id)
     return json.loads(stored) if stored is not None else []
 
 
-def save_exchange(session_id: str, api_messages: list, user_text: str, reply: str,
+def _save_exchange(session_id: str, api_messages: list, user_text: str, reply: str,
                   tool_calls: list | None = None) -> None:
     """Guarda el historial de la API y los dos turnos visibles (pregunta y respuesta) en una transacción."""
     with get_conn() as conn:
