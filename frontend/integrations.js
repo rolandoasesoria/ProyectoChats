@@ -1,5 +1,5 @@
-// Cuentas conectadas («Mis cuentas»: correo, bot de Telegram, WhatsApp Business) y envío de respuestas desde el
-// borrador. Cada persona gestiona las suyas; un administrador puede ver y gestionar las de todo el equipo.
+// Cuentas conectadas («Mis cuentas»: correo, bot de Telegram, WhatsApp Business) y sus plantillas de WhatsApp.
+// Cada persona gestiona las suyas; un administrador puede ver y gestionar las de todo el equipo.
 
 const KIND_LABELS = { email: "Correo", telegram: "Telegram", whatsapp: "WhatsApp Business" };
 const KIND_HELP = {
@@ -429,60 +429,6 @@ async function connectCoexistence() {
   }
 }
 
-/* ---------- Enviar desde el borrador ---------- */
-
-// Último mensaje de la conversación al empezar a escribir: si llega otro antes de enviar, se avisa.
-let draftBaseline = null;
-
-async function updateSendButton() {
-  const btn = $("#draft-send");
-  btn.hidden = true;
-  draftBaseline = null;
-  const convId = $("#draft-conversation").value;
-  if (!convId) return;
-  try {
-    const s = await api(`/api/conversations/${convId}/sender`);
-    if ($("#draft-conversation").value !== convId) return;
-    draftBaseline = s.last_message_id;
-    btn.hidden = !s.can_send;
-    btn.textContent = `Enviar por ${s.via || ""}`.trim();
-  } catch { /* sin envío */ }
-}
-
-async function sendDraft() {
-  const text = $("#draft-text").value.trim();
-  const convId = $("#draft-conversation").value;
-  if (!text) return;
-  const option = $("#draft-conversation").selectedOptions[0]?.textContent || "";
-  if (!confirm(`¿Enviar este mensaje al cliente?\n\n${option}`)) return;
-  const btn = $("#draft-send");
-  btn.disabled = true;
-  try {
-    const send = (force) => api(`/api/conversations/${convId}/send`, {
-      method: "POST", body: JSON.stringify({ text, after_message_id: draftBaseline, force }),
-    });
-    try {
-      await send(false);
-    } catch (err) {
-      if (err.status !== 409) throw err;
-      if (!confirm(`${err.message}
-
-¿Enviar de todos modos?`)) return;
-      await send(true);
-    }
-    const note = await scheduleFollowUp(convId);
-    closeDraftPanel();
-    $("#draft-sent-note").textContent = `Enviado.${note ? ` ${note}` : ""}`;
-    $("#draft-sent-note").hidden = false;
-    await loadTimeline();
-    refreshInboxCount();
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    btn.disabled = false;
-  }
-}
-
 function bindIntegrationEvents() {
   $("#menu-accounts").addEventListener("click", openAccountsDialog);
   $("#if-provider").addEventListener("change", applyEmailProvider);
@@ -499,11 +445,4 @@ function bindIntegrationEvents() {
   $("#if-fields").addEventListener("click", (e) => { if (e.target.closest("#coex-connect")) connectCoexistence(); });
   $("#tpl-body").addEventListener("input", renderTemplateExamples);
   $("#tpl-form").addEventListener("submit", submitTemplate);
-  $("#draft-conversation").addEventListener("change", updateSendButton);
-  $("#draft-send").addEventListener("click", sendDraft);
-  $("#draft-write").addEventListener("click", () => {
-    $("#draft-text").hidden = false;
-    $("#draft-result-actions").hidden = false;
-    $("#draft-text").focus();
-  });
 }
