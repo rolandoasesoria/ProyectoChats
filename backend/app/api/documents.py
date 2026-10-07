@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from .. import attachments
 from ..errors import InvalidInput, NotFound
-from .deps import CurrentUser, claude_errors, client_or_404
+from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
 
@@ -65,8 +65,7 @@ def attachment_text(attachment_id: int, _: CurrentUser):
 def read_attachment(attachment_id: int, _: CurrentUser):
     """Lee una imagen o PDF con IA y guarda el texto para buscarlo."""
     _attachment_or_404(attachment_id)
-    with claude_errors():
-        att = attachments.read_with_ai(attachment_id)
+    att = attachments.read_with_ai(attachment_id)
     return att | {"path": None}
 
 

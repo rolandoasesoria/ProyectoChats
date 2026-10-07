@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from .. import audit, search, smartsearch
-from .deps import CurrentUser, claude_errors, client_or_404
+from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
 
@@ -32,5 +32,4 @@ def smart_search_endpoint(req: SmartSearchRequest, user: CurrentUser):
         client_or_404(req.client_id)
     if req.scope == "team":
         audit.log(user["id"], "team_search", req.client_id, detail=f"por significado: {req.question}"[:200])
-    with claude_errors():
-        return smartsearch.smart_search(req.question, user["id"], req.scope, req.client_id)
+    return smartsearch.smart_search(req.question, user["id"], req.scope, req.client_id)

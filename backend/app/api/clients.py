@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field
 
 from .. import audit, clients, insights, search
 from ..errors import NotFound
-from .deps import CurrentUser, claude_errors, client_or_404
+from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
 
@@ -124,8 +124,7 @@ def whats_new(client_id: int, req: WhatsNewRequest, _: CurrentUser):
     messages = search.messages_since(client_id, req.since_message_id)
     if not messages:
         return {"summary": "No hay mensajes nuevos."}
-    with claude_errors():
-        return {"summary": insights.summarize_new_messages(client["name"], messages)}
+    return {"summary": insights.summarize_new_messages(client["name"], messages)}
 
 
 @router.get("/api/clients/{client_id}")

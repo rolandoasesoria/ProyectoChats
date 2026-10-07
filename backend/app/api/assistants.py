@@ -5,7 +5,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from .. import agent, chats
-from .deps import CurrentUser, claude_errors, client_or_404
+from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
 
@@ -45,8 +45,7 @@ def _run_and_save(user: dict, kind: str, client_id: int | None, text: str, run) 
     session = chats.active_session(user["id"], kind, client_id)
     with chats.locked(session["id"]):
         messages = chats.reload_messages(session["id"])
-        with claude_errors():
-            result = run(messages)
+        result = run(messages)
         # Solo se guarda si Claude respondió; si falló, el historial queda como estaba.
         chats.save_exchange(session["id"], messages, text, result["reply"], result["tool_calls"])
     return result

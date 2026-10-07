@@ -3,7 +3,7 @@ from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from .. import facts, insights
-from .deps import CurrentUser, claude_errors, client_or_404
+from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
 
@@ -18,8 +18,7 @@ def client_profile(client_id: int, _: CurrentUser):
 def analyze_client(client_id: int, _: CurrentUser):
     """Actualiza ficha, tareas y resumen con IA."""
     client_or_404(client_id)
-    with claude_errors():
-        changes = insights.analyze_client(client_id)
+    changes = insights.analyze_client(client_id)
     return {"changes": changes, **insights.profile(client_id)}
 
 

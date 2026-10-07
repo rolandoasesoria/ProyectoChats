@@ -6,6 +6,7 @@ import anthropic
 
 from . import attachments, audit, insights, notes, search
 from .config import config
+from .errors import ExternalServiceError, ServiceUnavailable, TooManyAttempts
 
 MODEL = config.ai.model
 MAX_TOOL_ROUNDS = 10
@@ -291,8 +292,11 @@ el menú de usuario > "Mis cuentas" (correo, bot de Telegram y WhatsApp Business
 Responde en español, en tono cercano y breve (2-5 frases o una lista corta). Si no sabes algo de la app, dilo."""
 
 
-class MissingCredentialsError(Exception):
+class MissingCredentialsError(ServiceUnavailable):
     """No hay clave de API ni otra credencial de Anthropic configurada."""
+
+    def __init__(self):
+        super().__init__("El asistente no está disponible: falta configurar ANTHROPIC_API_KEY en backend/.env.")
 
 
 _client: anthropic.Anthropic | None = None
@@ -315,6 +319,7 @@ def _get_client() -> anthropic.Anthropic:
 
 
 def _create(**params):
+    """Llamada a Claude. Los fallos de la API se convierten en errores de dominio con un mensaje en español."""
     try:
         return _get_client().beta.messages.create(
             model=MODEL,
@@ -330,6 +335,14 @@ def _create(**params):
         if "authentication method" in str(exc):
             raise MissingCredentialsError() from exc
         raise
+    except anthropic.AuthenticationError as exc:
+        raise ServiceUnavailable("Clave de API de Claude inválida o ausente (revisa backend/.env).") from exc
+    except anthropic.RateLimitError as exc:
+        raise TooManyAttempts("Límite de uso de la API alcanzado. Inténtalo en unos segundos.") from exc
+    except anthropic.APIConnectionError as exc:
+        raise ExternalServiceError("No se pudo conectar con la API de Claude.") from exc
+    except anthropic.APIStatusError as exc:
+        raise ExternalServiceError(f"Error de la API de Claude: {exc.message}") from exc
 
 
 def _assistant_turn(response) -> dict:
