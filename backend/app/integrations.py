@@ -18,6 +18,7 @@ import logging
 import re
 import secrets
 import smtplib
+import ssl
 import threading
 import time
 import urllib.error
@@ -303,17 +304,50 @@ def _imap_date(d: date) -> str:
     return f"{d.day:02d}-{['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.month - 1]}-{d.year}"
 
 
+def _tls() -> ssl.SSLContext:
+    """Conexión cifrada que comprueba el certificado y el nombre del servidor (imaplib y smtplib, por defecto, no lo
+    comprueban: cualquiera en medio podría hacerse pasar por el servidor y quedarse con la contraseña)."""
+    return ssl.create_default_context()
+
+
+# Nombres habituales de la carpeta de enviados, por si el servidor no la marca como tal (\Sent).
+SENT_FOLDER_NAMES = ("sent", "sent items", "sent messages", "sent mail", "enviados", "elementos enviados",
+                     "correo enviado", "mensajes enviados", "inbox.sent", "[gmail]/enviados", "[gmail]/sent mail")
+_LIST_LINE = re.compile(r'^\((?P<flags>[^)]*)\) (?:"[^"]*"|NIL) (?P<name>.+)$')
+
+
+def _sent_folder(imap, configured: str) -> str | None:
+    """La carpeta de enviados: la configurada si existe y, si no, la que el servidor marca como \\Sent o una de
+    nombre habitual (cada proveedor la llama de una forma y en «Otro» es fácil no acertar)."""
+    if imap.select(f'"{configured}"', readonly=True)[0] == "OK":
+        return configured
+    status, lines = imap.list()
+    folders = []
+    for raw in (lines or []) if status == "OK" else []:
+        m = _LIST_LINE.match(raw.decode(errors="replace") if isinstance(raw, bytes) else str(raw))
+        if m:
+            folders.append((m["flags"].lower().split(), m["name"].strip().strip('"')))
+    found = next((name for flags, name in folders if "\\sent" in flags), None) \
+        or next((name for _, name in folders if name.lower() in SENT_FOLDER_NAMES), None)
+    if found and imap.select(f'"{found}"', readonly=True)[0] == "OK":
+        return found
+    return None
+
+
 def sync_email(integ: dict) -> int:
     cfg, state = integ["config"], integ["state"]
     address = cfg["address"].lower()
     imported = 0
-    imap = IMAP_CLASS(cfg["imap_host"], int(cfg["imap_port"]))
+    imap = IMAP_CLASS(cfg["imap_host"], int(cfg["imap_port"]), ssl_context=_tls())
     try:
         imap.login(cfg.get("username") or cfg["address"], cfg["password"])
-        for folder, direction in (("INBOX", "in"), (cfg.get("sent_folder") or "Sent", "out")):
+        sent = _sent_folder(imap, cfg.get("sent_folder") or "Sent")
+        for folder, direction in (("INBOX", "in"), (sent, "out")):
+            if folder is None:
+                continue  # el servidor no tiene carpeta de enviados reconocible
             status, _ = imap.select(f'"{folder}"', readonly=True)
             if status != "OK":
-                continue  # p. ej. la carpeta de enviados tiene otro nombre en este servidor
+                continue
             last = int(state.get(folder, 0))
             if last:
                 status, data = imap.uid("SEARCH", None, f"UID {last + 1}:*")
@@ -365,10 +399,12 @@ def send_email(integ: dict, to: str, text: str, subject: str | None, in_reply_to
         msg["References"] = in_reply_to
     msg.set_content(text)
     port = int(cfg["smtp_port"])
-    server = SMTP_SSL_CLASS(cfg["smtp_host"], port, timeout=30) if port == 465 else SMTP_CLASS(cfg["smtp_host"], port, timeout=30)
+    context = _tls()
+    server = SMTP_SSL_CLASS(cfg["smtp_host"], port, timeout=30, context=context) if port == 465 \
+        else SMTP_CLASS(cfg["smtp_host"], port, timeout=30)
     try:
         if port != 465:
-            server.starttls()
+            server.starttls(context=context)
         server.login(cfg.get("username") or cfg["address"], cfg["password"])
         server.send_message(msg)
     finally:
@@ -671,6 +707,10 @@ def _explain(kind: str, exc: Exception, phone_lookup: bool = False) -> Integrati
         return IntegrationError("El servidor de correo no acepta el usuario o la contraseña. Si has cambiado la "
                                 "contraseña de tu cuenta (Google anula entonces las contraseñas de aplicación) o la "
                                 "has revocado, crea una nueva y pégala en «Editar».", needs_attention=True)
+    if kind == "email" and isinstance(exc, ssl.SSLCertVerificationError):
+        return IntegrationError("El certificado del servidor de correo no es válido para ese nombre (o ha caducado): "
+                                "por seguridad no se envía la contraseña. Revisa el servidor IMAP/SMTP en «Editar» "
+                                "(debe ser el nombre exacto que da tu proveedor).", needs_attention=True)
     return exc if isinstance(exc, IntegrationError) else IntegrationError(str(exc))
 
 
