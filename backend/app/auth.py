@@ -8,8 +8,6 @@ import hmac
 import secrets
 from datetime import datetime, timedelta, timezone
 
-from fastapi import Cookie
-
 from .config import config
 from .db import get_conn
 from .errors import Conflict, Forbidden, InvalidInput, NotAuthenticated, NotFound, TooManyAttempts
@@ -132,12 +130,12 @@ def end_all_sessions(user_id: int, except_token: str | None = None) -> None:
         sessions_repo.delete_for_user(conn, user_id, keep)
 
 
-def current_user(pc_session: str | None = Cookie(None)) -> dict:
-    """Dependencia de FastAPI: usuario autenticado o 401."""
-    if not pc_session:
+def user_for_session(token: str | None) -> dict:
+    """Usuario de la sesión (el token de la cookie) o NotAuthenticated si no hay sesión o ha caducado."""
+    if not token:
         raise NotAuthenticated("Inicia sesión para continuar.")
     with get_conn() as conn:
-        user = sessions_repo.active_user(conn, _token_hash(pc_session), _now())
+        user = sessions_repo.active_user(conn, _token_hash(token), _now())
     if not user:
         raise NotAuthenticated("La sesión ha caducado. Vuelve a iniciar sesión.")
     return user
