@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import imaplib
 import json
+import ssl
 import sys
 import urllib.request
 from datetime import datetime, timedelta, timezone
@@ -60,8 +61,8 @@ log = []
 
 
 class FakeIMAP:
-    def __init__(self, host, port):
-        log.append(("connect", host, port))
+    def __init__(self, host, port, ssl_context=None):
+        log.append(("connect", host, port, ssl_context))
         self.folder = None
 
     def login(self, user, password):
@@ -83,6 +84,12 @@ class FakeIMAP:
             return "OK", [" ".join(map(str, uids)).encode()]
         return "OK", [(f"{args[0]} (RFC822 {{}}".encode(), box[int(args[0])]), b")"]
 
+    def list(self):
+        def line(name):
+            flags = r"\HasNoChildren \Sent" if name in ("Sent", "Elementos enviados") else r"\HasNoChildren"
+            return f'({flags}) "/" "{name}"'.encode()
+        return "OK", [line(name) for name in MAILBOX]
+
     def logout(self):
         pass
 
@@ -91,6 +98,9 @@ integrations.IMAP_CLASS = FakeIMAP
 r = integrations.sync(email_id)
 check("sincronizar: importa 3 (el boletín se descarta)", r == {"imported": 3}, r)
 check("usa la contraseña descifrada", ("login", "ana@miempresa.com", "secreta123") in log)
+tls = next(e[3] for e in log if e[0] == "connect")
+check("IMAP comprueba el certificado y el nombre del servidor",
+      tls.verify_mode == ssl.CERT_REQUIRED and tls.check_hostname, tls)
 check("primera vez: busca desde hace N días", any(e[0] == "search" and e[2].startswith("SINCE") for e in log))
 clients = {c["name"]: c for c in ana.get("/api/clients")[1]}
 check("crea el cliente nuevo", "Pedro Sanz" in clients and "Ofertas" not in clients, list(clients))
@@ -106,6 +116,34 @@ check("segunda sincronización: solo lo nuevo, desde el último UID", r == {"imp
       and any(e[0] == "search" and e[2] == "UID 4:*" for e in log), (r, log))
 check("tercera: nada nuevo (sin duplicados)", integrations.sync(email_id) == {"imported": 0})
 
+# Carpeta de enviados con otro nombre (p. ej. Outlook en español): se encuentra sola por la marca \Sent.
+MAILBOX["Elementos enviados"] = MAILBOX.pop("Sent")
+MAILBOX["Elementos enviados"][9] = mail("Ana <ana@miempresa.com>", "pedro@nuevo.com", "Re: Presupuesto cajas",
+                                        "Mañana te llamo", "<s9@miempresa.com>")
+log.clear()
+r = integrations.sync(email_id)
+check("si la carpeta de enviados se llama distinto, la busca y trae lo enviado", r["imported"] >= 1
+      and any(e[0] == "search" and e[1] == "Elementos enviados" for e in log), (r, log))
+MAILBOX["Sent"] = MAILBOX.pop("Elementos enviados")
+MAILBOX["Sent"].pop(9)
+
+
+class Unverified(FakeIMAP):
+    def login(self, user, password):
+        raise ssl.SSLCertVerificationError("certificate verify failed: Hostname mismatch")
+
+
+integrations.IMAP_CLASS = Unverified
+try:
+    integrations.sync(email_id)
+except integrations.IntegrationError:
+    pass
+check("certificado no válido: no se envía la contraseña y se explica",
+      "certificado del servidor de correo" in integrations.get(email_id)["last_error"])
+integrations.IMAP_CLASS = FakeIMAP
+integrations.sync(email_id)
+notices_before = notices()
+
 class Broken(FakeIMAP):
     def login(self, user, password):
         raise OSError("Autenticación fallida")
@@ -115,7 +153,7 @@ try:
     check("error de conexión", False)
 except integrations.IntegrationError:
     check("un error de conexión se guarda en la integración", "Autenticación fallida" in integrations.get(email_id)["last_error"])
-check("un fallo de red no avisa en la campana (suele ser pasajero)", notices() == 0)
+check("un fallo de red no avisa en la campana (suele ser pasajero)", notices() == notices_before)
 
 
 class Rejected(FakeIMAP):
@@ -131,7 +169,7 @@ for _ in range(2):
         pass
 check("contraseña de correo rechazada: lo explica en la cuenta",
       "no acepta el usuario o la contraseña" in integrations.get(email_id)["last_error"])
-check("y avisa a su dueña una sola vez, aunque falle en cada revisión", notices() == 1)
+check("y avisa a su dueña una sola vez, aunque falle en cada revisión", notices() == notices_before + 1)
 integrations.IMAP_CLASS = FakeIMAP
 integrations.sync(email_id)
 check("cuando vuelve a funcionar se quita la marca", integrations.get(email_id)["last_error"] is None)
@@ -141,8 +179,9 @@ sent = []
 
 
 class FakeSMTP:
-    def __init__(self, host, port, timeout=None):
+    def __init__(self, host, port, timeout=None, context=None):
         self.host, self.port = host, port
+        sent.append(("connect", port, context))
 
     def login(self, user, pw):
         sent.append(("login", user, pw))
@@ -150,8 +189,8 @@ class FakeSMTP:
     def send_message(self, msg):
         sent.append(msg)
 
-    def starttls(self):
-        sent.append("starttls")
+    def starttls(self, context=None):
+        sent.append(("starttls", context))
 
     def quit(self):
         pass
@@ -166,6 +205,9 @@ check("Ana puede enviar en esa conversación", sender["can_send"] and sender["vi
 check("Carlos no tiene integración de email", carlos.get(f"/api/conversations/{conv}/sender")[1]["can_send"] is False)
 res = integrations.send_reply(conv, {"id": 1, "name": "Ana Ruiz", "role": "admin"}, "Son 0,40 € por caja.")
 msg = next(m for m in sent if not isinstance(m, (tuple, str)))
+contexts = [e[-1] for e in sent if isinstance(e, tuple) and e[0] in ("connect", "starttls") and e[-1] is not None]
+check("SMTP comprueba el certificado del servidor", contexts and all(
+    c.verify_mode == ssl.CERT_REQUIRED and c.check_hostname for c in contexts), sent)
 check("envía al cliente, respondiendo en el hilo", msg["To"] == "pedro@nuevo.com" and msg["In-Reply-To"] == "<p2@nuevo.com>"
       and msg["Subject"] == "Re: Presupuesto cajas" and "0,40" in msg.get_content(), dict(msg))
 tl = ana.get(f"/api/clients/{clients['Pedro Sanz']['id']}/timeline?scope=mine")[1]
