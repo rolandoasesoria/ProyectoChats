@@ -121,9 +121,11 @@ y los nombres de la agenda. En Meta se configura una sola vez el webhook de la a
 
 **WhatsApp desde internet sin publicar la app:** Meta avisa de cada mensaje por HTTPS. Con
 `powershell -ExecutionPolicy Bypass -File scripts/webhook-publico.ps1` se publica solo una puerta que atiende
-`/api/webhooks/...` (todo lo demás da 404) mediante un túnel de Cloudflare (`cloudflared.exe` en
-`%USERPROFILE%\cloudflared`). La URL cambia cada vez que se abre el túnel; para una fija hace falta un túnel con
-nombre y dominio propio. `... webhook-publico.ps1 parar` lo cierra.
+`/api/webhooks/...` (todo lo demás da 404) mediante un túnel. Con **ngrok** instalado y `NGROK_AUTHTOKEN` (y
+`NGROK_DOMAIN`, el dominio gratuito de la cuenta) en `backend/.env`, la URL es fija: se pone una sola vez en Meta y
+`scripts/arrancar.ps1` abre el túnel solo al iniciar sesión. Sin ngrok se usa un túnel rápido de Cloudflare
+(`cloudflared.exe` en `%USERPROFILE%\cloudflared`), cuya URL cambia cada vez que se abre.
+`... webhook-publico.ps1 parar` lo cierra.
 
 ## Protección de datos
 
