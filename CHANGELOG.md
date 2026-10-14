@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Nueva marca: la app se llama **Hilvana Chat** («Todas tus conversaciones, en un solo hilo»), con logo propio en la
+  cabecera, la pantalla de entrada y la pestaña del navegador.
 - Túnel fijo para los webhooks de WhatsApp con ngrok (`NGROK_AUTHTOKEN` y `NGROK_DOMAIN` en `.env`): la URL no
   cambia, se pone una sola vez en Meta y el túnel se abre solo al iniciar sesión junto con la app.
 - Administración → Ajustes: casilla «Analizar con IA a cada cliente cuando le llegan mensajes» (activada por
