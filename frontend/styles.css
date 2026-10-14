@@ -165,11 +165,8 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .topbar .menu { color: var(--text); }
 .topbar :focus-visible { outline-color: var(--lavanda-5); }
 .brand { font-weight: 600; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
-.brand-dot {
-  width: 18px; height: 18px; border-radius: 5px;
-  background: linear-gradient(135deg, var(--lavanda-1), var(--lavanda-3) 45%, var(--lavanda-5) 75%, var(--indigo));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--indigo) 25%, transparent);
-}
+.brand-logo { width: 24px; height: 24px; display: block; }
+.login-card .brand-logo { width: 40px; height: 40px; }
 select, input[type="search"], .form input {
   background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
 }
