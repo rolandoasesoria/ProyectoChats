@@ -93,7 +93,7 @@ class IntegrationsConfig:
 @dataclass(frozen=True)
 class MetaConfig:
     """App de Meta (proveedor tecnológico) para conectar números de WhatsApp Business con el registro insertado
-    («coexistencia»: el número sigue funcionando en la app del móvil y además entra en ProyectoChats)."""
+    («coexistencia»: el número sigue funcionando en la app del móvil y además entra en Hilvana Chat)."""
     app_id: str
     app_secret: str               # firma de los webhooks de la app y canje del código del alta
     config_id: str                # configuración del registro insertado (Facebook Login for Business)

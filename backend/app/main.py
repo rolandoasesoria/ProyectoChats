@@ -66,7 +66,7 @@ async def lifespan(_: FastAPI):
 
 
 app = FastAPI(
-    title="ProyectoChats",
+    title="Hilvana Chat",
     docs_url="/docs" if ENABLE_DOCS else None,
     redoc_url=None,
     openapi_url="/openapi.json" if ENABLE_DOCS else None,

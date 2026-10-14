@@ -141,7 +141,7 @@ def _wa_contacts(integ: dict, value: dict) -> int:
     return named
 
 
-WHATSAPP_DISCONNECTED = ("Este WhatsApp Business se ha desconectado de ProyectoChats (desde la app del móvil o desde "
+WHATSAPP_DISCONNECTED = ("Este WhatsApp Business se ha desconectado de Hilvana Chat (desde la app del móvil o desde "
                          "Meta). Para volver a recibir sus mensajes, conéctalo de nuevo en «Mis cuentas».")
 
 

@@ -1,4 +1,4 @@
-// ProyectoChats — pantalla principal. Utilidades comunes en common.js; cuenta en account.js; tutorial en tour.js.
+// Hilvana Chat — pantalla principal. Utilidades comunes en common.js; cuenta en account.js; tutorial en tour.js.
 
 const GENERAL = "general"; // clave del hilo sin cliente seleccionado
 
