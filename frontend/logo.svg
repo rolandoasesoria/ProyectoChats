@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t">
+  <title id="t">Hilvana Chat</title>
+  <!-- Fondo: índigo de ProyectoChats -->
+  <rect width="512" height="512" rx="116" fill="#4f4e96"/>
+  <!-- Bocadillo de conversación «hilvanado»: el contorno son puntadas -->
+  <path d="M136 150 h240 a44 44 0 0 1 44 44 v104 a44 44 0 0 1 -44 44 h-118 l-66 54 v-54 h-56 a44 44 0 0 1 -44 -44 v-104 a44 44 0 0 1 44 -44 z"
+        fill="none" stroke="#f8ebf6" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"
+        stroke-dasharray="34 26"/>
+  <!-- El hilo que une las puntadas y entra en el bocadillo -->
+  <path d="M92 400 C 150 360, 196 300, 222 248" fill="none" stroke="#b2bfde" stroke-width="10" stroke-linecap="round"/>
+  <!-- La chispa (Chispa, la mascota) dentro del bocadillo -->
+  <path d="M300 186 C 304 220, 314 230, 348 234 C 314 238, 304 248, 300 282 C 296 248, 286 238, 252 234 C 286 230, 296 220, 300 186 Z"
+        fill="#f8ebf6"/>
+</svg>

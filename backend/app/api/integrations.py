@@ -185,7 +185,7 @@ class CoexistenceIn(BaseModel):
 
 @router.post("/api/me/integrations/whatsapp-coexistence")
 def connect_whatsapp_coexistence(req: CoexistenceIn, user: CurrentUser):
-    """Alta del WhatsApp Business del móvil (sigue funcionando en la app y además entra en ProyectoChats)."""
+    """Alta del WhatsApp Business del móvil (sigue funcionando en la app y además entra en Hilvana Chat)."""
     result = whatsapp_signup.connect(user, req.code, req.waba_id, req.phone_number_id, req.name)
     audit.log(user["id"], "integration_change",
               detail=f"conectó su WhatsApp Business {result['number'].get('display_phone_number', '')} (coexistencia)")

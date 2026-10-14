@@ -1,4 +1,6 @@
-# ProyectoChats
+# Hilvana Chat
+
+*Todas tus conversaciones, en un solo hilo.* (El repositorio y el código siguen llamándose ProyectoChats.)
 
 Asistente IA para equipos que atienden clientes por varios canales. Unifica las conversaciones de un
 mismo cliente (email, WhatsApp, Telegram…) y permite preguntar por un dato concreto sin leer los hilos.

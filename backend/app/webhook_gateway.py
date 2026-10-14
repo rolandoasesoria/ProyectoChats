@@ -13,7 +13,7 @@ from .config import config
 from .errors import AppError
 from .main import app_error
 
-gateway = FastAPI(title="ProyectoChats · webhooks", docs_url=None, redoc_url=None, openapi_url=None)
+gateway = FastAPI(title="Hilvana Chat · webhooks", docs_url=None, redoc_url=None, openapi_url=None)
 gateway.add_exception_handler(AppError, app_error)
 gateway.add_api_route("/api/webhooks/whatsapp", integrations_api.whatsapp_app_verify, methods=["GET"])
 gateway.add_api_route("/api/webhooks/whatsapp", integrations_api.whatsapp_app_webhook, methods=["POST"])

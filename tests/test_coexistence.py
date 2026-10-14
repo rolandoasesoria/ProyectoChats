@@ -113,7 +113,7 @@ echo = change("smb_message_echoes", {"message_echoes": [
      "text": {"body": "Te envío el presupuesto"}}]})
 check("con otra firma = 403", webhook(echo, b"otra")[0] == 403)
 st, res = webhook(echo)
-check("lo enviado desde el móvil entra en ProyectoChats", st == 200 and res["imported"] == 1, res)
+check("lo enviado desde el móvil entra en Hilvana Chat", st == 200 and res["imported"] == 1, res)
 pedro = next((c for c in carlos.get("/api/clients?q=600999888")[1]), None)
 tl = carlos.get(f"/api/clients/{pedro['id']}/timeline?scope=mine")[1] if pedro else []
 check("como mensaje enviado por Carlos, en la conversación del cliente",

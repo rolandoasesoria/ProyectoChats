@@ -8,12 +8,12 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 24;
+const TOUR_VERSION = 25;
 
 const TOUR_STEPS = [
   {
     target: null,
-    title: "Bienvenido a ProyectoChats",
+    title: "Bienvenido a Hilvana Chat",
     text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. Tres zonas: clientes, ficha y asistente; arrastra la línea entre ellas para ajustar su ancho. Un recorrido de un minuto.",
   },
   {
