@@ -146,6 +146,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Posibles duplicados: si hay varios (p. ej. el mismo remitente desde varias direcciones), un solo aviso con todos
+  y «Unir todos aquí», en vez de un aviso amarillo por cada uno.
 - Las casillas dentro de los formularios (Ajustes, respuestas guardadas) quedan alineadas con su texto.
 - Correo: la conexión con los servidores IMAP y SMTP comprueba su certificado (antes no se verificaba y la
   contraseña podía acabar en un servidor falso); si no es válido, no se envía la contraseña y se explica.
