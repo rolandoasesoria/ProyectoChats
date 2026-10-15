@@ -21,11 +21,20 @@ function saveLayoutWidths(widths) {
   try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(widths)); } catch { /* almacenamiento no disponible */ }
 }
 
+// Espacio que ocupan las tres zonas: el ancho de la ficha sin su margen interior ni los huecos entre tarjetas
+// (cuatro: a cada lado de cada separador).
+function layoutContentWidth() {
+  const layout = $(".layout");
+  const cs = getComputedStyle(layout);
+  const gap = parseFloat(cs.columnGap) || 0;
+  return layout.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4 * gap;
+}
+
 // Límite de la zona, sin dejar la ficha por debajo de su mínimo con el ancho actual de la ventana.
 function clampZone(zone, width, widths) {
   const [min, max] = LAYOUT_LIMITS[zone];
   const other = zone === "clients" ? widths.chat : widths.clients;
-  const room = $(".layout").clientWidth - other - LAYOUT_MIN_DETAIL;
+  const room = layoutContentWidth() - other - LAYOUT_MIN_DETAIL;
   return Math.round(Math.max(min, Math.min(width, max, room)));
 }
 
@@ -56,8 +65,11 @@ function bindLayoutEvents() {
       event.preventDefault();
       handle.setPointerCapture(event.pointerId);
       document.body.classList.add("resizing");
-      const box = $(".layout").getBoundingClientRect();
-      const onMove = (e) => setZone(zone, zone === "clients" ? e.clientX - box.left : box.right - e.clientX);
+      // El ancho se mide desde el borde exterior de la zona; el separador está en medio del hueco entre tarjetas.
+      const gap = parseFloat(getComputedStyle($(".layout")).columnGap) || 0;
+      const left = $(".clients").getBoundingClientRect().left;
+      const right = $(".chat").getBoundingClientRect().right;
+      const onMove = (e) => setZone(zone, zone === "clients" ? e.clientX - left - gap : right - e.clientX - gap);
       const onUp = () => {
         handle.removeEventListener("pointermove", onMove);
         document.body.classList.remove("resizing");
