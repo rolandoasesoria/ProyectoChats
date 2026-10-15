@@ -178,8 +178,17 @@ Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba las secciones, \
-"Inicio" (el panel de actividad) y "Chats" (la vista principal: clientes, ficha y asistente); abajo "Mis cuentas", \
-"Respuestas guardadas" y "Administración" (solo administradores).
+"Inicio" (el panel de actividad), "Chats" y "Clientes" (la ficha completa y el asistente); abajo "Mis cuentas", \
+"Respuestas guardadas" y "Administración" (solo administradores). Al entrar se abre la última sección usada.
+- Sección "Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
+mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa o teléfono; "Todos" / "No leídos"; \
+los administradores pueden elegir "Todo el equipo" en vez de "Mis chats". Al elegir uno, en el centro salen sus \
+mensajes separados por canal en pestañas (WhatsApp, Email, Telegram) y abajo la caja para escribir: Intro envía por \
+tu cuenta conectada de ese canal (Mayús+Intro, nueva línea) y "✨ Redactar con IA" propone la respuesta para \
+revisarla antes de enviar. Si no tienes cuenta conectada de ese canal, lo indica y no deja enviar; si la \
+conversación la lleva otra persona, también. A la derecha, "Detalles del contacto" (estado, datos de contacto, \
+responsable y etiquetas; se oculta con el botón ⓘ). "Abrir ficha" lleva al cliente en la sección Clientes. Se \
+actualiza sola cada 20 segundos.
 - Menú de usuario (arriba a la derecha, con tu nombre): "Ver tutorial" repite el recorrido de bienvenida, \
 "Cambiar contraseña" y "Cerrar sesión".
 - Campana (arriba a la derecha): avisos de menciones en notas, de tareas que otra persona te asigna y de cuentas \
