@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Barra lateral a la izquierda con las secciones (Inicio: panel de actividad; Chats) y, abajo, Mis cuentas,
+  Respuestas guardadas y Administración. El menú de usuario queda con el tutorial, la contraseña y cerrar sesión.
 - Nueva marca: la app se llama **Hilvana Chat** («Todas tus conversaciones, en un solo hilo»), con logo propio en la
   cabecera, la pantalla de entrada y la pestaña del navegador.
 - Túnel fijo para los webhooks de WhatsApp con ngrok (`NGROK_AUTHTOKEN` y `NGROK_DOMAIN` en `.env`): la URL no
