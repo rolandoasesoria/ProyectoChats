@@ -9,6 +9,7 @@ const chatState = {
   conversationId: null, baseline: null, // conversación por la que se responde y su último mensaje al abrirla
   details: true, // panel «Detalles del contacto» visible
   file: null, // archivo elegido para enviar con el próximo mensaje
+  newEmail: false, // escribiendo un correo nuevo (con asunto) en vez de responder en el hilo
 };
 const CHAT_MAX_FILE = 15 * 1024 * 1024;
 let chatsSearchTimer = null;
@@ -107,6 +108,8 @@ async function openChat(clientId) {
   chatState.data = data;
   // Pestañas: los canales en los que hay conversación, el más reciente primero.
   const channels = [...new Set(chatConversations().map((c) => c.channel))];
+  // Con email pero sin conversaciones por correo: la pestaña sale igual, para escribirle un correo nuevo.
+  if (data.identities.some((i) => i.channel === "email") && !channels.includes("email")) channels.push("email");
   if (!channels.includes(chatState.channel)) chatState.channel = channels[0] || null;
   $("#chat-empty").hidden = true;
   $("#chat-open").hidden = false;
@@ -141,9 +144,33 @@ async function loadChatConversation(keepScroll = false) {
 }
 
 // Por dónde se responde: la conversación propia del canal (la más reciente) y si hay cuenta conectada para enviar.
+// Correo nuevo: aparece el asunto y se envía como hilo nuevo (POST /api/clients/{id}/emails).
+function setNewEmail(on) {
+  chatState.newEmail = on;
+  $("#chat-subject").hidden = !on;
+  $("#chat-new-email").textContent = on ? "Responder en el hilo" : "✉ Nuevo correo";
+  if (on) {
+    $("#chat-send").disabled = false;
+    $("#chat-file").disabled = false;
+    $("#chat-send").textContent = "Enviar correo";
+    $("#chat-send-note").hidden = true;
+    $("#chat-subject").focus();
+  }
+}
+
 async function prepareComposer() {
   const conv = chatState.data.conversations.find((c) => c.channel === chatState.channel && c.is_mine);
   const note = $("#chat-send-note");
+  const email = chatState.channel === "email";
+  $("#chat-new-email").hidden = !email;
+  if (!email || conv) setNewEmail(false);
+  if (email && !chatState.data.conversations.some((c) => c.channel === "email")) {
+    chatState.conversationId = null;
+    $("#chat-template").hidden = true;
+    $("#chat-ai-draft").disabled = true;
+    $("#chat-new-email").hidden = true; // sin hilo al que responder: solo correo nuevo
+    return setNewEmail(true);
+  }
   const disable = (text) => {
     chatState.conversationId = conv?.id || null;
     note.textContent = text;
@@ -201,8 +228,35 @@ function setChatFile(file) {
     <button type="button" class="link small" id="chat-file-remove" aria-label="Quitar el archivo">×</button>` : "";
 }
 
+async function sendNewEmail(text) {
+  const subject = $("#chat-subject").value.trim();
+  if (!subject) {
+    $("#chat-text").value = text;
+    $("#chat-subject").focus();
+    return alert("Ponle un asunto al correo.");
+  }
+  const file = chatState.file;
+  const btn = $("#chat-send");
+  btn.disabled = true;
+  try {
+    const payload = { subject, text, file: file ? { filename: file.name, mime: file.type || null, data: await fileToBase64(file) } : null };
+    await api(`/api/clients/${chatState.clientId}/emails`, { method: "POST", body: JSON.stringify(payload) });
+    $("#chat-subject").value = "";
+    setChatFile(null);
+    chatState.channel = "email";
+    await openChat(chatState.clientId); // el correo abre un hilo nuevo: se recargan las conversaciones
+    loadChats();
+  } catch (err) {
+    $("#chat-text").value = text;
+    alert(err.message);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
 async function sendChatMessage(text) {
   text = text.trim();
+  if (chatState.newEmail) return sendNewEmail(text);
   const convId = chatState.conversationId;
   const file = chatState.file;
   if ((!text && !file) || !convId || $("#chat-send").disabled) return;
@@ -331,6 +385,9 @@ function bindChatsEvents() {
   });
   bindComposer($("#chat-composer"), $("#chat-text"), sendChatMessage);
   $("#chat-file").addEventListener("change", (e) => setChatFile(e.target.files[0]));
+  $("#chat-new-email").addEventListener("click", () => {
+    if (chatState.newEmail) prepareComposer().then(() => setNewEmail(false)); else setNewEmail(true);
+  });
   $("#chat-file-chip").addEventListener("click", (e) => { if (e.target.closest("#chat-file-remove")) setChatFile(null); });
   $("#chat-ai-draft").addEventListener("click", draftChatReply);
   $("#chat-open-client").addEventListener("click", openChatClient);
