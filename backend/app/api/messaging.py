@@ -30,6 +30,18 @@ class SendFile(BaseModel):
     data: str  # contenido del archivo en base64
 
 
+def _attachment(file: SendFile | None) -> dict | None:
+    if not file:
+        return None
+    try:
+        data = base64.b64decode(file.data, validate=True)
+    except (binascii.Error, ValueError):
+        raise InvalidInput("No se pudo leer el archivo.")
+    if len(data) > MAX_SEND_FILE:
+        raise InvalidInput("El archivo supera el máximo de 15 MB.")
+    return {"filename": file.filename, "mime": file.mime, "data": data}
+
+
 class SendRequest(BaseModel):
     text: str = Field("", max_length=10000)
     file: SendFile | None = None         # adjunto opcional (el texto va como pie)
@@ -44,15 +56,7 @@ def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
         if newer:
             who = "un compañero ha respondido" if any(m["direction"] == "out" for m in newer) else "el cliente ha escrito"
             raise Conflict(f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
-    attachment = None
-    if req.file:
-        try:
-            data = base64.b64decode(req.file.data, validate=True)
-        except (binascii.Error, ValueError):
-            raise InvalidInput("No se pudo leer el archivo.")
-        if len(data) > MAX_SEND_FILE:
-            raise InvalidInput("El archivo supera el máximo de 15 MB.")
-        attachment = {"filename": req.file.filename, "mime": req.file.mime, "data": data}
+    attachment = _attachment(req.file)
     if not req.text.strip() and not attachment:
         raise InvalidInput("Escribe un mensaje o adjunta un archivo.")
     result = integrations.send_reply(conversation_id, user, req.text.strip(), attachment)
@@ -77,6 +81,22 @@ def send_template(conversation_id: int, req: TemplateSend, user: CurrentUser):
     result = whatsapp_templates.send_template(conversation_id, user, req.name, req.language, req.params)
     audit.log(user["id"], "message_sent", conversations.conversation_client_id(conversation_id),
               detail=f"plantilla «{req.name}» por {result['via']}")
+    return result
+
+
+class NewEmail(BaseModel):
+    subject: str = Field(min_length=1, max_length=300)
+    text: str = Field("", max_length=50000)
+    to: str | None = Field(None, max_length=320)  # una dirección del cliente (por defecto, la primera)
+    file: SendFile | None = None
+
+
+@router.post("/api/clients/{client_id}/emails")
+def send_new_email(client_id: int, req: NewEmail, user: CurrentUser):
+    """Correo nuevo al cliente, con su asunto (abre un hilo nuevo)."""
+    client_or_404(client_id)
+    result = integrations.send_new_email(client_id, user, req.subject, req.text, req.to, _attachment(req.file))
+    audit.log(user["id"], "message_sent", client_id, detail=f"correo nuevo por {result['via']}")
     return result
 
 
