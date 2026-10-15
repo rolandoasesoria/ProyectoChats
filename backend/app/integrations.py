@@ -543,6 +543,20 @@ def send_whatsapp(integ: dict, handle: str, text: str) -> str:
     return f"wa:{resp['messages'][0]['id']}"
 
 
+def send_whatsapp_template(integ: dict, handle: str, name: str, language: str, params: list[str]) -> str:
+    """Envía una plantilla aprobada (lo único que WhatsApp deja enviar pasadas 24 h del último mensaje del cliente)."""
+    to = digits(handle)
+    if len(to) < 8:
+        raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
+    cfg = integ["config"]
+    template = {"name": name, "language": {"code": language}}
+    if params:
+        template["components"] = [{"type": "body", "parameters": [{"type": "text", "text": p} for p in params]}]
+    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
+                         body={"messaging_product": "whatsapp", "to": to, "type": "template", "template": template})
+    return f"wa:{resp['messages'][0]['id']}"
+
+
 # ---------------------------------------------------------------- Sincronización y envío
 
 def _explain(kind: str, exc: Exception, phone_lookup: bool = False) -> IntegrationError:
@@ -609,33 +623,48 @@ def sender_for(conversation_id: int, user: dict) -> dict | None:
     return get(found_id) if found_id else None
 
 
-def send_reply(conversation_id: int, user: dict, text: str) -> dict:
+def reply_target(conversation_id: int, user: dict) -> tuple[dict, dict, list[str]]:
+    """Por dónde responde `user` en esta conversación: su integración del canal, la conversación y los
+    identificadores del cliente en ese canal."""
     integ = sender_for(conversation_id, user)
     if not integ:
         raise InvalidInput("No tienes una integración activa de este canal para enviar mensajes.")
     with get_conn() as conn:
         conv = repo.conversation(conn, conversation_id)
         idents = repo.client_handles(conn, conv["client_id"], conv["channel"])
-        in_reply_to = repo.last_incoming_external_id(conn, conversation_id)
     if not idents:
         raise InvalidInput("El cliente no tiene identificador en este canal.")
+    return integ, conv, idents
+
+
+def deliver(integ: dict, conversation_id: int, user: dict, text: str, send) -> dict:
+    """Envía con `send()` (devuelve el identificador externo) y guarda `text` en la conversación como enviado por
+    quien lo escribió. Los fallos se explican y, si son de credenciales, marcan la cuenta."""
     try:
-        if conv["channel"] == "email":
-            ext = send_email(integ, idents[0], text, conv["subject"], in_reply_to)
-        elif conv["channel"] == "telegram":
-            handle = next((h for h in idents if h.startswith("user")), idents[0])
-            ext = send_telegram(integ, handle, text)
-        else:
-            ext = send_whatsapp(integ, idents[0], text)
+        ext = send()
     except (IntegrationError, OSError, smtplib.SMTPException) as exc:
         error = _explain(integ["kind"], exc)
         if error.needs_attention:
             flag_problem(integ, str(error))
         raise ExternalServiceError(f"No se pudo enviar: {error}")
-    # El mensaje enviado se guarda en la conversación (como enviado por quien lo escribió).
     with get_conn() as conn:
         message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext)
     return {"message_id": message_id, "via": integ["name"]}
+
+
+def send_reply(conversation_id: int, user: dict, text: str) -> dict:
+    integ, conv, idents = reply_target(conversation_id, user)
+
+    def send() -> str:
+        if conv["channel"] == "email":
+            with get_conn() as conn:
+                in_reply_to = repo.last_incoming_external_id(conn, conversation_id)
+            return send_email(integ, idents[0], text, conv["subject"], in_reply_to)
+        if conv["channel"] == "telegram":
+            return send_telegram(integ, next((h for h in idents if h.startswith("user")), idents[0]), text)
+        return send_whatsapp(integ, idents[0], text)
+
+    return deliver(integ, conversation_id, user, text, send)
 
 
 # ---------------------------------------------------------------- Programador en segundo plano
