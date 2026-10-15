@@ -95,6 +95,7 @@ function showAdminTab(tab) {
   });
   if (tab === "audit") loadAudit();
   if (tab === "settings") loadSettingsForm();
+  if (tab === "properties") loadPropertiesAdmin();
 }
 
 /* ---------- Ajustes del equipo ---------- */

@@ -12,6 +12,7 @@ function showDetailTab(tab) {
 }
 
 function showSideTab(side) {
+  if ($(".layout").hidden) showView("client"); // las pestañas de la columna izquierda están en la vista de ficha
   document.querySelectorAll(".side-tabs [data-side]").forEach((b) => {
     b.classList.toggle("active", b.dataset.side === side);
     $(`#side-${b.dataset.side}`).hidden = b.dataset.side !== side;
@@ -359,7 +360,8 @@ async function showSourceMessage(messageId) {
 
 async function openClientDetail(clientId) {
   $("#task-assignee").innerHTML = assigneeOptions(currentUser.id);
-  await Promise.all([loadProfile(clientId), loadClientTasks(clientId), loadNotes(clientId), loadDocuments(clientId)]);
+  await Promise.all([loadProfile(clientId), loadClientTasks(clientId), loadNotes(clientId), loadDocuments(clientId),
+                     loadClientProperties(clientId)]);
 }
 
 function bindProfileEvents() {
