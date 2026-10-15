@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Tipografía de estilo Apple: San Francisco en los dispositivos de Apple e Inter (fuente libre, incluida en la app)
+  en el resto.
 - Chats, pestaña Email: «✉ Nuevo correo» escribe un correo nuevo con asunto (hilo nuevo, admite adjunto). Si el
   cliente tiene email pero no hay hilos de correo, la pestaña sale igualmente para escribirle.
 - Chats: adjuntar un archivo (📎, hasta 15 MB) al responder por WhatsApp, Telegram o correo; queda en la ficha del
@@ -150,6 +152,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Chats: al volver de un correo nuevo a otra pestaña, el botón de enviar ya no sigue diciendo «Enviar correo».
 - Posibles duplicados: si hay varios (p. ej. el mismo remitente desde varias direcciones), un solo aviso con todos
   y «Unir todos aquí», en vez de un aviso amarillo por cada uno.
 - Las casillas dentro de los formularios (Ajustes, respuestas guardadas) quedan alineadas con su texto.
