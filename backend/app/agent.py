@@ -178,7 +178,7 @@ Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba las secciones, \
-"Inicio" (el panel de actividad), "Chats" y "Contactos"; abajo "Mis cuentas", "Respuestas guardadas" y \
+"Inicio" (el panel de actividad), "Chats", "Contactos" y "Plantillas"; abajo "Mis cuentas", "Respuestas guardadas" y \
 "Administración" (solo administradores). Al entrar se abre la última sección usada.
 - Sección "Contactos": tabla con todos los contactos (clientes). Filtros: buscador (nombre, empresa, teléfono, email, \
 etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas" elige qué columnas se ven (empresa, \
@@ -229,12 +229,16 @@ app WhatsApp Business (no la normal) actualizada; los grupos no se sincronizan y
 permite mensajes temporales ni de "ver una vez". Si se desconecta desde el móvil, la cuenta se pausa y llega un aviso \
 a la campana. Un WhatsApp personal (no Business) no se puede conectar. La conexión con token y app secret sigue \
 disponible en "Conexión manual".
-- Plantillas de WhatsApp: en "Mis cuentas", el enlace "Plantillas" de una cuenta de WhatsApp muestra sus plantillas \
-con su estado en Meta (aprobada, en revisión, rechazada) y permite crear una nueva: nombre, categoría (Servicio o \
-Marketing), idioma y texto, con {{1}}, {{2}}… para lo que cambia en cada envío (piden un ejemplo de cada uno). Meta \
-la revisa antes de aprobarla. Las plantillas son lo único que se puede enviar pasadas 24 h desde el último mensaje \
-del cliente. Hace falta el identificador de la cuenta de WhatsApp Business (en "Editar"; con la coexistencia se \
-rellena solo).
+- Sección "Plantillas" (barra lateral; también el enlace "Plantillas" de una cuenta de WhatsApp en "Mis cuentas"): \
+arriba se elige la cuenta de WhatsApp (los administradores ven también las del equipo); a la izquierda la lista de \
+plantillas con buscador, categoría, idioma y estado en Meta (✓ aprobada, … en revisión, ✗ rechazada); al pulsar una \
+se ve como la vería el cliente y se puede borrar (en Meta, en todos sus idiomas). "Crear" abre el editor: nombre, \
+categoría (Servicio o Marketing), idioma y texto, con {{1}}, {{2}}… para lo que cambia en cada envío (Meta pide un \
+ejemplo de cada uno) y vista previa al escribir; "Enviar a revisión de Meta" la manda a aprobar (de minutos a un \
+día). Para enviarla: en Chats, pestaña WhatsApp, botón "Plantilla": se elige una aprobada, se rellenan sus variables \
+(la primera se propone con el nombre del cliente) viendo la vista previa y "Enviar plantilla". Es lo único que se \
+puede enviar pasadas 24 h desde el último mensaje del cliente. Hace falta el identificador de la cuenta de WhatsApp \
+Business (en "Editar"; con la coexistencia se rellena solo).
 - Barra lateral > "Mis cuentas": cada persona conecta sus propias cuentas para que sus mensajes entren solos, en \
 tiempo real, como conversaciones suyas, y pueda responder desde la app. Al conectar, la app prueba la cuenta y dice si \
 conecta o el error. Contraseñas y tokens se guardan cifrados. Tipos: (1) Correo: se elige el proveedor (Gmail, \

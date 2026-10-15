@@ -42,7 +42,7 @@ try:
         b.click('.tour-card [data-tour="next"]')
         if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 17, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 18, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
@@ -87,6 +87,43 @@ try:
     b.js("document.querySelector('#contacts-body tr[data-client]').click()")
     b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
     check("contactos: al pulsar uno se abre su ficha", b.js("document.querySelector('#nav-contacts').classList.contains('active')"))
+
+    # Sección Plantillas: sin cuenta de WhatsApp conectada explica qué hacer
+    b.click("#nav-templates")
+    b.wait("document.querySelector('#tpl-list').textContent.includes('Conecta una cuenta de WhatsApp')")
+    check("plantillas: sin cuenta de WhatsApp lo explica y no deja crear", b.js("document.querySelector('#tpl-new').disabled"))
+    b.shot("04c-plantillas")
+    # Con plantillas (datos de ejemplo cargados en la página: las pruebas no llegan a Meta)
+    b.js("""tplState.account = {id: 1, label: 'Prueba', base: '/api/me/integrations'};
+            tplState.items = [{name: 'cita', status: 'APPROVED', category: 'UTILITY', language: 'es',
+                               body: 'Hola {{1}}, te esperamos el {{2}}.'},
+                              {name: 'oferta_otono', status: 'PENDING', category: 'MARKETING', language: 'es',
+                               body: 'Este otoño, 10 % en todos los servicios.'}];
+            renderTemplateList(); selectTemplate('cita', 'es');""")
+    check("plantillas: lista con estado y vista previa de la elegida",
+          b.js("document.querySelectorAll('#tpl-list li[data-name]').length") == 2
+          and b.js("document.querySelector('#tpl-detail .tpl-var').textContent") == "{{1}}")
+    b.shot("04d-plantilla")
+    b.js("document.querySelector('#tpl-new').disabled = false")  # sin cuenta real está desactivado
+    b.click("#tpl-new")
+    b.wait("!document.querySelector('#tpl-form').hidden")
+    b.fill("#tpl-body", "Hola {{1}}, tu cita es el {{2}}.")
+    b.js("{ const i = document.querySelector('#tpl-examples input'); i.value = 'Laura';"
+         "i.dispatchEvent(new Event('input', {bubbles: true})); }")
+    check("plantillas: el editor pide un ejemplo por variable y lo muestra en la vista previa",
+          b.js("document.querySelectorAll('#tpl-examples input').length") == 2
+          and "Laura" in b.js("document.querySelector('#tpl-preview').textContent"))
+    b.shot("04e-plantilla-nueva")
+    b.js("""tplSendItems = [{name: 'cita', language: 'es', body: 'Hola {{1}}, te esperamos el {{2}}.', variables: 2}];
+            chatState.data = {name: 'Laura Gómez'}; document.querySelector('#tpl-send-dialog').showModal();
+            document.querySelector('#tpl-send-select').innerHTML = '<option value="0">cita · es</option>';
+            renderTemplateSendVars();""")
+    check("enviar plantilla: propone el nombre del cliente en {{1}}",
+          b.js("document.querySelector('#tpl-send-vars input').value") == "Laura"
+          and "Hola Laura" in b.js("document.querySelector('#tpl-send-preview').textContent"))
+    b.shot("04f-enviar-plantilla")
+    b.js("document.querySelector('#tpl-send-dialog').close(); chatState.data = null;")
+    b.js("showView('client')")  # lo que sigue (zonas, ficha, pestañas) es de la ficha del contacto
 
     # Lista de clientes y filtros
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)

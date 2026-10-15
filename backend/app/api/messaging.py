@@ -2,7 +2,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, conversations, integrations, presence
+from .. import audit, conversations, integrations, presence, whatsapp_templates
 from ..errors import Conflict
 from .deps import CurrentUser, client_or_404
 
@@ -33,6 +33,26 @@ def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
             raise Conflict(f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
     result = integrations.send_reply(conversation_id, user, req.text.strip())
     audit.log(user["id"], "message_sent", conversations.conversation_client_id(conversation_id), detail=f"por {result['via']}")
+    return result
+
+
+@router.get("/api/conversations/{conversation_id}/templates")
+def conversation_templates(conversation_id: int, user: CurrentUser):
+    """Plantillas aprobadas que se pueden enviar en esta conversación de WhatsApp (por la cuenta del usuario)."""
+    return {"items": whatsapp_templates.approved_for(conversation_id, user)}
+
+
+class TemplateSend(BaseModel):
+    name: str = Field(min_length=1, max_length=512)
+    language: str = Field(min_length=2, max_length=10)
+    params: list[str] = Field(default_factory=list, max_length=20)
+
+
+@router.post("/api/conversations/{conversation_id}/send-template")
+def send_template(conversation_id: int, req: TemplateSend, user: CurrentUser):
+    result = whatsapp_templates.send_template(conversation_id, user, req.name, req.language, req.params)
+    audit.log(user["id"], "message_sent", conversations.conversation_client_id(conversation_id),
+              detail=f"plantilla «{req.name}» por {result['via']}")
     return result
 
 
