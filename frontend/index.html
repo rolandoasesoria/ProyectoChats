@@ -145,8 +145,18 @@
     </section>
 
     <aside class="chat-details" id="chat-details" hidden>
-      <h3>Detalles del contacto</h3>
+      <div class="segmented details-tabs" id="chat-details-tabs" role="tablist" aria-label="Panel del contacto">
+        <button type="button" data-pane="info" class="active">Detalles</button>
+        <button type="button" data-pane="assistant">Asistente IA</button>
+      </div>
       <div id="chat-details-body"></div>
+      <div class="chat-assistant" id="chat-assistant" hidden>
+        <div class="chat-assistant-log" id="chat-assistant-log" aria-live="polite"></div>
+        <form class="chat-assistant-form" id="chat-assistant-form">
+          <textarea id="chat-assistant-input" rows="1" maxlength="4000" placeholder="Pregunta algo…"></textarea>
+          <button type="submit" class="primary small-btn" id="chat-assistant-send">Enviar</button>
+        </form>
+      </div>
     </aside>
   </section>
 
