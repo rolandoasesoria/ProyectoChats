@@ -53,6 +53,11 @@ merged = ana.get("/api/clients/1/properties")[1]["values"]
 check("el que se queda recibe lo que le faltaba y conserva lo suyo",
       merged[str(dni["id"])] == "87654321X" and merged[str(origen["id"])] == "Referido", merged)
 
+st, export = ana.get("/api/clients/1/export")
+check("la exportación de datos del cliente incluye sus propiedades",
+      {"label": "DNI / NIE", "value": "87654321X"}.items() <= next((p for p in export.get("properties", [])
+                                                                  if p["label"] == "DNI / NIE"), {}).items(), export.get("properties"))
+
 # ---------------------------------------------------------------- Borrar una propiedad borra sus valores
 check("borrar", ana.delete(f"/api/admin/properties/{origen['id']}")[0] == 200)
 check("ya no aparece en la ficha", str(origen["id"]) not in ana.get("/api/clients/1/properties")[1]["values"])

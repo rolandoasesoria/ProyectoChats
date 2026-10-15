@@ -121,6 +121,7 @@ def export_client(client_id: int) -> dict | None:
             "identities": repo.client_identities(conn, client_id),
             "tags": repo.client_tags(conn, client_id),
             "facts": repo.client_facts(conn, client_id),
+            "properties": repo.client_properties(conn, client_id),
             "summary": repo.client_summary(conn, client_id),
             "tasks": repo.client_tasks(conn, client_id),
             "notes": repo.client_notes(conn, client_id),
