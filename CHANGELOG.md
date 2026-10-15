@@ -6,6 +6,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Sección **Chats** en la barra lateral: conversaciones por cliente con el último mensaje y los no leídos («Todos» /
+  «No leídos», buscador y, para administradores, «Todo el equipo»), mensajes separados por canal en pestañas, caja
+  para escribir y enviar por la cuenta conectada (con «✨ Redactar con IA») y detalles del contacto. La vista anterior
+  pasa a ser la sección **Clientes**; el tutorial cambia solo de sección para enseñar cada parte.
 - Barra lateral a la izquierda con las secciones (Inicio: panel de actividad; Chats) y, abajo, Mis cuentas,
   Respuestas guardadas y Administración. El menú de usuario queda con el tutorial, la contraseña y cerrar sesión.
 - Nueva marca: la app se llama **Hilvana Chat** («Todas tus conversaciones, en un solo hilo»), con logo propio en la

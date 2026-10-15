@@ -5,39 +5,62 @@
 //   2. Sube TOUR_VERSION: así quienes ya vieron el tutorial lo verán de nuevo con los cambios.
 //   3. Actualiza también HELP_SYSTEM_PROMPT (la mascota Chispa) en backend/app/agent.py.
 //
-// Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
+// Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean,
+//              view?: sección de la barra lateral que se abre para enseñarlo ("chats" o "clients") }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 26;
+const TOUR_VERSION = 27;
 
 const TOUR_STEPS = [
   {
     target: null,
     title: "Bienvenido a Hilvana Chat",
-    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones; en el centro, tres zonas: clientes, ficha y asistente (arrastra la línea entre ellas para ajustar su ancho). Un recorrido de un minuto.",
+    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones: Chats, para conversar, y Clientes, con la ficha y el asistente. Un recorrido de un minuto.",
+  },
+  {
+    target: ".chats-pane",
+    view: "chats",
+    title: "Chats",
+    text: "Tus conversaciones, la más reciente arriba, con el último mensaje y los no leídos. «No leídos» deja solo las que tienen mensajes nuevos. Busca por nombre, empresa o teléfono.",
+  },
+  {
+    target: ".chat-main",
+    view: "chats",
+    title: "La conversación",
+    text: "Al elegir un chat, sus mensajes salen separados por canal (WhatsApp, Email, Telegram) en pestañas. Escribe abajo y pulsa Intro para enviar por tu cuenta conectada, o «✨ Redactar con IA» para que te proponga la respuesta. A la derecha, los detalles del contacto; «Abrir ficha» te lleva a todo lo demás.",
+  },
+  {
+    target: "#nav-clients",
+    title: "Clientes",
+    text: "La ficha completa de cada cliente: datos, tareas, notas, todo el historial y el asistente que encuentra cualquier dato. Te lo enseño.",
   },
   {
     target: ".clients",
-    title: "Clientes",
+    view: "clients",
+    title: "Lista de clientes",
     text: "Busca por nombre, empresa, email o teléfono, y filtra por estado, etiqueta o responsable. El número azul indica mensajes nuevos. «Consulta general» pregunta sobre todos los clientes a la vez.",
   },
   {
     target: ".detail",
+    view: "clients",
     title: "Ficha del cliente",
     text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. El estado (Potencial, Activo, Incidencia, Inactivo) lo decide la IA ✨; púlsalo para cambiarlo a mano. Con ✎ editas responsable y etiquetas. Si un compañero está respondiendo al mismo cliente, te lo avisaré aquí.",
   },
   {
     target: ".chat",
+    view: "clients",
     title: "Asistente",
     text: "Pregunta cualquier dato: «¿qué CIF nos dio?». Cada cliente tiene su propia conversación. Busca en las tuyas; si quieres que mire las de tus compañeros, pídeselo.",
   },
   {
     target: "#side-inbox-tab",
+    view: "clients",
     title: "Sin responder",
     text: "Quién espera respuesta, de más a menos tiempo; avisa cuando está a punto de vencer el plazo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta y «Posponer» la aparta hasta más tarde. Arriba verás también a quien no te ha contestado, si lo pediste al responder.",
   },
   {
     target: "#side-tasks-tab",
+    view: "clients",
     title: "Tareas",
     text: "Tus tareas de todos los clientes. El número se pone en rojo si alguna vence hoy o ya ha vencido.",
   },
@@ -93,8 +116,9 @@ function isVisible(el) {
 }
 
 function startTour() {
+  // Los pasos de otra sección cuentan aunque ahora no se vean: al llegar a ellos se abre su sección.
   const steps = TOUR_STEPS.filter((s) =>
-    (!s.when || s.when()) && (!s.target || isVisible(document.querySelector(s.target))));
+    (!s.when || s.when()) && (!s.target || s.view || isVisible(document.querySelector(s.target))));
   if (!steps.length) return;
   endTour(false);
   const backdrop = document.createElement("div");
@@ -117,6 +141,7 @@ function renderTourStep() {
   const { steps, index, els } = tour;
   const step = steps[index];
   const last = index === steps.length - 1;
+  if (step.view) showView(step.view);
   els.card.innerHTML = `
     <div class="tour-progress">${index + 1} / ${steps.length}</div>
     <h3>${escapeHtml(step.title)}</h3>

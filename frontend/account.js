@@ -279,8 +279,6 @@ function bindAccountEvents() {
   $("#menu-tour").addEventListener("click", () => startTour());
   $("#menu-password").addEventListener("click", openPasswordDialog);
   $("#menu-admin").addEventListener("click", openAdminDialog);
-  // «Chats» es la vista principal: de momento la única sección de la barra lateral, así que lleva al buscador.
-  $("#nav-chats").addEventListener("click", () => $("#client-search").focus());
   $("#menu-logout").addEventListener("click", logout);
 
   document.querySelectorAll("[data-admin-tab]").forEach((b) =>
