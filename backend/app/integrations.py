@@ -637,9 +637,9 @@ def reply_target(conversation_id: int, user: dict) -> tuple[dict, dict, list[str
     return integ, conv, idents
 
 
-def deliver(integ: dict, conversation_id: int, user: dict, text: str, send) -> dict:
+def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_ai: bool = False) -> dict:
     """Envía con `send()` (devuelve el identificador externo) y guarda `text` en la conversación como enviado por
-    quien lo escribió. Los fallos se explican y, si son de credenciales, marcan la cuenta."""
+    quien lo escribió (o por la IA, con `by_ai`). Los fallos se explican y, si son de credenciales, marcan la cuenta."""
     try:
         ext = send()
     except (IntegrationError, OSError, smtplib.SMTPException) as exc:
@@ -648,7 +648,7 @@ def deliver(integ: dict, conversation_id: int, user: dict, text: str, send) -> d
             flag_problem(integ, str(error))
         raise ExternalServiceError(f"No se pudo enviar: {error}")
     with get_conn() as conn:
-        message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext)
+        message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext, by_ai)
     return {"message_id": message_id, "via": integ["name"]}
 
 
