@@ -1,9 +1,9 @@
 """Plantillas de mensaje de WhatsApp: listarlas y enviarlas a revisión de Meta (simulada), desde «Mis cuentas»."""
 import sys
 
-from apitest import Session, check, results
+from apitest import Session, check, receive, results
 
-from app import integrations, whatsapp_templates
+from app import conversations, integrations, whatsapp_templates
 from app.errors import InvalidInput
 
 carlos, marta, ana = Session("carlos"), Session("marta"), Session("ana")
@@ -71,6 +71,59 @@ check("sin nombre válido", rejected("¡¡!!", "UTILITY", "es", "Hola") is not N
 check("un texto sin variables se envía sin ejemplos",
       rejected("aviso", "MARKETING", "es", "Novedades de octubre") is None)
 
+# ---------------------------------------------------------------- Enviar una plantilla desde el chat (Meta simulada)
+integrations.delete(without_account)  # Carlos responde por WhatsApp con la cuenta que tiene la WABA
+sent = []
+
+
+def meta_send(method, url, *, body=None, headers=None, raw=False, timeout=30):
+    path = url.replace(integrations.GRAPH_API, "")
+    sent.append((method, path, body))
+    if method == "DELETE":
+        return {"success": True}
+    if path.endswith("/messages"):
+        return {"messages": [{"id": "wamid.plantilla1"}]}
+    return {"data": [
+        {"id": "t1", "name": "cita", "status": "APPROVED", "category": "UTILITY", "language": "es",
+         "components": [{"type": "BODY", "text": "Hola {{1}}, te esperamos el {{2}}."}]},
+        {"id": "t2", "name": "pendiente", "status": "PENDING", "category": "UTILITY", "language": "es",
+         "components": [{"type": "BODY", "text": "Sin aprobar"}]}]}
+
+
+integrations.http_request = meta_send
+conv = receive("whatsapp", "+34600555444", "Hola, ¿tenéis hueco?", client_name="Paula", owner=2)["conversation_id"]
+CARLOS = {"id": 2, "name": "Carlos Pérez", "role": "user"}
+approved = whatsapp_templates.approved_for(conv, CARLOS)
+check("en el chat solo se ofrecen las aprobadas, con cuántas variables tienen",
+      [(t["name"], t["variables"]) for t in approved] == [("cita", 2)], approved)
+r = whatsapp_templates.send_template(conv, CARLOS, "cita", "es", ["Paula", "lunes a las 10"])
+msg = next(c for c in sent if c[0] == "POST")
+check("se envía a Meta como plantilla con sus parámetros",
+      msg[1] == "/888/messages" and msg[2]["type"] == "template" and msg[2]["to"] == "34600555444"
+      and msg[2]["template"] == {"name": "cita", "language": {"code": "es"}, "components": [
+          {"type": "body", "parameters": [{"type": "text", "text": "Paula"}, {"type": "text", "text": "lunes a las 10"}]}]},
+      msg)
+check("devuelve el mensaje guardado", r["message_id"] and r["via"] == "WhatsApp plantillas", r)
+tl = carlos.get(f"/api/clients/{conversations.conversation_client_id(conv)}/timeline")[1]
+check("y queda en la conversación con el texto ya rellenado",
+      any(m["direction"] == "out" and m["body"] == "Hola Paula, te esperamos el lunes a las 10." for m in tl), tl)
+
+
+def refused(*args):
+    try:
+        whatsapp_templates.send_template(conv, CARLOS, *args)
+    except InvalidInput as exc:
+        return str(exc)
+    return None
+
+
+check("sin rellenar todas las variables no se envía", "variables" in (refused("cita", "es", ["Paula"]) or ""))
+check("una plantilla sin aprobar no se envía", "aprobada" in (refused("pendiente", "es", []) or ""))
+check("Marta no puede enviar en la conversación de Carlos",
+      marta.post(f"/api/conversations/{conv}/send-template", {"name": "cita", "language": "es", "params": ["a", "b"]})[0] == 400)
+whatsapp_templates.delete_template(integrations.get(with_account), "Cita")
+check("borrar una plantilla la quita en Meta por su nombre",
+      any(c[0] == "DELETE" and c[1] == "/waba-9/message_templates?name=cita" for c in sent), sent[-1])
+
 integrations.delete(with_account)
-integrations.delete(without_account)
 sys.exit(0 if results["ok"] else 1)
