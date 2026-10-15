@@ -170,38 +170,50 @@ async function loadDuplicates(clientId) {
   box.hidden = true;
   const dups = await api(`/api/clients/${clientId}/duplicates`);
   if (state.clientId !== clientId || !dups.length) return;
-  box.innerHTML = dups.map((d) => `
-    <div class="duplicate" data-duplicate="${d.id}">
-      <span>¿Es la misma persona que <button class="link" data-open-duplicate>${escapeHtml(d.name)}</button>?
-        <span class="muted">(${escapeHtml(d.reasons.join(", "))})</span></span>
-      <button class="ghost small-btn" data-merge-duplicate title="Pasar todo lo de ${escapeHtml(d.name)} a este cliente">Unir aquí</button>
-    </div>`).join("");
+  const link = (d) => `<button class="link" data-open-duplicate="${d.id}">${escapeHtml(d.name)}</button>`;
+  // Varios posibles duplicados (p. ej. el mismo remitente desde varias direcciones): un solo aviso para todos.
+  box.innerHTML = dups.length === 1 ? `
+    <div class="duplicate" data-duplicate="${dups[0].id}">
+      <span>¿Es la misma persona que ${link(dups[0])}? <span class="muted">(${escapeHtml(dups[0].reasons.join(", "))})</span></span>
+      <button class="ghost small-btn" data-merge-duplicate title="Pasar todo lo de ${escapeHtml(dups[0].name)} a este cliente">Unir aquí</button>
+    </div>` : `
+    <div class="duplicate" data-duplicates="${dups.map((d) => d.id).join(",")}">
+      <span>Hay ${dups.length} clientes más que pueden ser la misma persona:
+        ${dups.map((d) => `${link(d)} <span class="muted">(${escapeHtml(d.reasons.join(", "))})</span>`).join(" · ")}</span>
+      <button class="ghost small-btn" data-merge-all title="Pasar todo lo de esos ${dups.length} clientes a este">Unir todos aquí</button>
+    </div>`;
   box.hidden = false;
 }
 
 async function onDuplicatesClick(e) {
-  const row = e.target.closest("[data-duplicate]");
-  if (!row) return;
-  const dupId = Number(row.dataset.duplicate);
-  if (e.target.closest("[data-open-duplicate]")) {
-    selectClient(dupId);
-  } else if (e.target.closest("[data-merge-duplicate]")) {
+  const open = e.target.closest("[data-open-duplicate]");
+  if (open) return selectClient(Number(open.dataset.openDuplicate));
+  const target = state.clientData.name;
+  if (e.target.closest("[data-merge-duplicate]")) {
+    const row = e.target.closest("[data-duplicate]");
     const name = row.querySelector("[data-open-duplicate]").textContent;
-    await mergeInto(dupId, state.clientId, `Se pasará todo lo de «${name}» a «${state.clientData.name}» y «${name}» desaparecerá. ¿Continuar?`);
+    await mergeInto([Number(row.dataset.duplicate)], state.clientId,
+                    `Se pasará todo lo de «${name}» a «${target}» y «${name}» desaparecerá. ¿Continuar?`);
+  } else if (e.target.closest("[data-merge-all]")) {
+    const ids = e.target.closest("[data-duplicates]").dataset.duplicates.split(",").map(Number);
+    await mergeInto(ids, state.clientId,
+                    `Se pasará todo lo de esos ${ids.length} clientes a «${target}» y desaparecerán. No se puede deshacer. ¿Continuar?`);
   }
 }
 
 /* ---------- Unir clientes ---------- */
 
-async function mergeInto(sourceId, targetId, question) {
+// Une los clientes `sourceIds` en `targetId` (de uno en uno), tras una sola confirmación.
+async function mergeInto(sourceIds, targetId, question) {
   if (!confirm(question)) return;
   try {
-    await api(`/api/clients/${sourceId}/merge`, { method: "POST", body: JSON.stringify({ into_client_id: targetId }) });
-    // La conversación con el asistente del cliente que desaparece queda archivada en el otro.
-    const thread = state.threads.get(sourceId);
-    thread?.el.remove();
-    state.threads.delete(sourceId);
-    state.convClients.delete(sourceId);
+    for (const sourceId of sourceIds) {
+      await api(`/api/clients/${sourceId}/merge`, { method: "POST", body: JSON.stringify({ into_client_id: targetId }) });
+      // La conversación con el asistente del cliente que desaparece queda archivada en el otro.
+      state.threads.get(sourceId)?.el.remove();
+      state.threads.delete(sourceId);
+      state.convClients.delete(sourceId);
+    }
     $("#client-dialog").close();
     await Promise.all([loadClients($("#client-search").value), loadTagOptions()]);
     await selectClient(targetId);
@@ -423,7 +435,7 @@ function bindClientEvents() {
     const target = Number($("#merge-target").value);
     if (!target) return;
     const targetName = $("#merge-target").selectedOptions[0].textContent;
-    mergeInto(state.clientId, target,
+    mergeInto([state.clientId], target,
       `Se pasará todo lo de «${state.clientData.name}» a «${targetName}» y «${state.clientData.name}» desaparecerá. ¿Continuar?`);
   });
 }
