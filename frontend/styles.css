@@ -60,7 +60,6 @@
   --shadow: rgba(31, 27, 46, .12);
   /* Profundidad: el fondo de la ventana, la tarjeta grande que contiene las secciones y su sombra suave */
   --canvas: #ece7f3;
-  --shell: #f6f2fa;
   --card-shadow: 0 1px 2px rgba(31, 27, 46, .05), 0 6px 18px rgba(31, 27, 46, .07);
   --backdrop: rgba(31, 27, 46, .45);
   --radius: 8px;
@@ -97,8 +96,7 @@
     --warn: #fbbf24;
     --shadow: rgba(0, 0, 0, .5);
     --canvas: #0c0a12;
-    --shell: #12101a;
-    --card-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
+      --card-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
     --backdrop: rgba(5, 4, 10, .6);
     --email: #d95926;
     --telegram: #3987e5;
@@ -136,7 +134,6 @@
   --warn: #fbbf24;
   --shadow: rgba(0, 0, 0, .5);
   --canvas: #0c0a12;
-  --shell: #12101a;
   --card-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
   --backdrop: rgba(5, 4, 10, .6);
   --email: #d95926;
@@ -1104,27 +1101,26 @@ body.resizing iframe { pointer-events: none; }
 /* Correo nuevo desde Chats: el asunto, sobre la caja de escribir */
 .chat-subject { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); font-weight: 600; }
 
-/* ---------- Profundidad: secciones como tarjetas ----------
-   La barra superior y la barra lateral quedan sobre el fondo de la ventana (--canvas). Cada sección es una tarjeta
-   grande con sombra suave (--shell) y, dentro, cada zona (lista, conversación, detalles…) es otra tarjeta, con un
-   hueco fino entre ellas. */
+/* ---------- Profundidad: zonas como tarjetas ----------
+   La barra superior y la barra lateral quedan sobre el fondo de la ventana (--canvas). Cada zona de la sección
+   (lista, conversación, detalles…) es una tarjeta con sombra suave, con un hueco fino entre ellas. */
 body { background: var(--canvas); }
 .app-body { padding: 8px 10px 10px 0; }
 .sidebar { background: transparent; border-right: 0; }
 .app-body > .layout, .app-body > .chats-view, .app-body > .contacts-view, .app-body > .templates-view,
 .app-body > .ai-view {
-  background: var(--shell); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--card-shadow);
-  padding: 8px; gap: 8px;
+  background: transparent; gap: 8px;
 }
-.app-body > .contacts-view, .app-body > .ai-view { overflow: hidden; }
 /* La ficha usa una rejilla con los separadores como columnas de ancho 0: medio hueco a cada lado de cada separador */
 .app-body > .layout { column-gap: 4px; }
 .clients, .detail, .chat, .chats-pane, .chat-main, .chat-details, .tpl-pane, .tpl-main, .zone-card {
-  border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden; box-shadow: var(--card-shadow);
 }
+/* En Chats, la lista y los detalles llevan el tono del asistente; la conversación, el suyo */
+.chats-pane, .chat-details { background: var(--assistant-bg); }
 .zone-card { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--panel); }
 .ai-card { overflow-y: auto; display: block; }
-.app-body > .ai-view { display: flex; }
+.app-body > .ai-view { display: flex; overflow: visible; }
 
 /* Panel derecho de Chats: pestañas «Detalles» / «Asistente IA» y el asistente del contacto */
 .chat-details { display: flex; flex-direction: column; gap: 12px; }
