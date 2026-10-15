@@ -43,6 +43,20 @@ def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, s
     return result
 
 
+def chat_list(user_id: int, scope: str = "mine", query: str = "", unread_only: bool = False,
+              limit: int = 200) -> list[dict]:
+    """Sección Chats: clientes con conversaciones en el alcance, el que tiene el mensaje más reciente primero, con ese
+    mensaje y cuántos ha escrito el cliente desde que el usuario abrió su chat por última vez."""
+    like = f"%{query.strip()}%"
+    with get_conn() as conn:
+        result = conversations_repo.chat_list(conn, user_id, scope, like, unread_only, limit)
+    for c in result:
+        c["tags"] = sorted(c["tags"].split("|"), key=str.lower) if c["tags"] else []
+        c["channels"] = sorted(c["channels"].split(",")) if c["channels"] else []
+        c["last_body"] = (c["last_body"] or "")[:160]
+    return result
+
+
 def record_visit(user_id: int, client_id: int) -> dict:
     """Registra que el usuario abre el cliente. Devuelve lo que ha llegado desde la visita anterior."""
     with get_conn() as conn:

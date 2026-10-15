@@ -19,6 +19,14 @@ def list_clients(user: CurrentUser, q: str = "", status: Literal["lead", "active
                                assignee_id=user["id"] if mine else None)
 
 
+@router.get("/api/chats")
+def list_chats(user: CurrentUser, q: str = "", scope: Literal["mine", "team"] = "mine", unread: bool = False):
+    """Sección Chats: un elemento por cliente con su último mensaje y los no leídos."""
+    if scope == "team":
+        audit.log(user["id"], "team_chats", throttle=True)
+    return search.chat_list(user["id"], scope, q, unread)
+
+
 class NewClient(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     company: str | None = Field(None, max_length=200)

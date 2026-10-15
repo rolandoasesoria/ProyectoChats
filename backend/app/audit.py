@@ -7,6 +7,7 @@ ACTIONS = {
     "team_search": "Buscó en conversaciones del equipo",
     "assistant_team_search": "El asistente buscó en conversaciones del equipo",
     "team_inbox": "Vio la bandeja «Sin responder» del equipo",
+    "team_chats": "Vio los chats del equipo",
     "client_export": "Exportó todos los datos del cliente",
     "client_delete": "Borró el cliente y todos sus datos",
     "client_merge": "Unió dos clientes",

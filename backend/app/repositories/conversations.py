@@ -60,6 +60,40 @@ def client_id_of(conn: Conn, conversation_id: int) -> int | None:
     return row["client_id"] if row else None
 
 
+def chat_list(conn: Conn, user_id: int, scope: str, like: str, unread_only: bool, limit: int) -> list[dict]:
+    """Clientes con mensajes en el alcance, el más reciente primero, con su último mensaje y cuántos ha escrito el
+    cliente desde la última vez que `user_id` abrió su chat (todos los recibidos si nunca lo ha abierto)."""
+    scope_sql, scope_args = scope_clause(scope, user_id)
+    scope2_sql, scope2_args = scope_clause(scope, user_id, alias="c2")
+    unread_sql = " WHERE unread > 0" if unread_only else ""  # fragmento fijo
+    return rows(conn.execute(
+        f"""
+        SELECT * FROM (
+          SELECT cl.id, cl.name, cl.company, cl.status, cl.assignee_user_id, u.name AS assignee,
+                 (SELECT string_agg(t.tag, '|') FROM client_tags t WHERE t.client_id = cl.id) AS tags,
+                 (SELECT string_agg(DISTINCT c2.channel, ',') FROM conversations c2
+                   WHERE c2.client_id = cl.id {scope2_sql}) AS channels,
+                 l.body AS last_body, l.sent_at AS last_at, l.direction AS last_direction, l.channel AS last_channel,
+                 (SELECT count(*) FROM messages m2 JOIN conversations c2 ON c2.id = m2.conversation_id
+                   WHERE c2.client_id = cl.id AND m2.direction = 'in'
+                     AND m2.id > coalesce(v.last_message_id, 0) {scope2_sql}) AS unread
+            FROM (SELECT DISTINCT ON (c.client_id) c.client_id, m.body, m.sent_at, m.direction, c.channel
+                    FROM messages m JOIN conversations c ON c.id = m.conversation_id
+                   WHERE TRUE {scope_sql}
+                   ORDER BY c.client_id, m.sent_at DESC, m.id DESC) l
+            JOIN clients cl ON cl.id = l.client_id
+            LEFT JOIN users u ON u.id = cl.assignee_user_id
+            LEFT JOIN client_visits v ON v.client_id = cl.id AND v.user_id = ?
+           WHERE (? = '%%' OR unaccent(cl.name) ILIKE unaccent(?) OR unaccent(cl.company) ILIKE unaccent(?)
+                  OR EXISTS (SELECT 1 FROM client_identities ci WHERE ci.client_id = cl.id AND ci.handle ILIKE ?))
+        ) chats{unread_sql}
+         ORDER BY last_at DESC
+         LIMIT ?
+        """,
+        (*scope2_args, *scope2_args, *scope_args, user_id, like, like, like, like, limit),
+    ))
+
+
 def list_for_client(conn: Conn, client_id: int) -> list[dict]:
     """Conversaciones del cliente con su dueño, número de mensajes y fechas del primero y del último."""
     return rows(conn.execute(
