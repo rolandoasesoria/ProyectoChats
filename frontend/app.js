@@ -441,6 +441,7 @@ function bindEvents() {
   bindIntegrationEvents();
   bindChatsEvents();
   bindContactsEvents();
+  bindTemplatesEvents();
   bindEvents();
   try {
     state.convClients = new Set(await api("/api/conversations/agent/clients"));

@@ -13,9 +13,9 @@ let chatsSearchTimer = null;
 
 /* ---------- Secciones de la barra lateral ---------- */
 
-// Vistas: «chats», «contacts» (la tabla) y «client» (la ficha de un contacto, con el asistente). La ficha cuenta como
+// Vistas: «chats», «contacts» (la tabla), «client» (la ficha de un contacto, con el asistente) y «templates». La ficha cuenta como
 // parte de Contactos en la barra lateral.
-const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout" };
+const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout", templates: "#view-templates" };
 
 function showView(name) {
   if (!VIEWS[name]) name = "chats";
@@ -29,10 +29,16 @@ function showView(name) {
   try { localStorage.setItem(VIEW_KEY, section); } catch { /* almacenamiento no disponible */ }
   if (name === "chats") loadChats();
   if (name === "contacts") loadContacts();
+  if (name === "templates") {
+    if (tplState.accounts.length) loadTemplateList(); else openTemplatesView(); // el estado en Meta cambia: se relee
+  }
 }
 
 function savedView() {
-  try { return localStorage.getItem(VIEW_KEY) === "contacts" ? "contacts" : "chats"; } catch { return "chats"; }
+  try {
+    const saved = localStorage.getItem(VIEW_KEY);
+    return ["contacts", "templates"].includes(saved) ? saved : "chats";
+  } catch { return "chats"; }
 }
 
 /* ---------- Lista de chats ---------- */
@@ -139,6 +145,7 @@ async function prepareComposer() {
     note.hidden = !text;
     $("#chat-send").disabled = true;
     $("#chat-ai-draft").disabled = !conv;
+    $("#chat-template").hidden = true;
   };
   if (!conv) {
     const other = chatState.data.conversations.find((c) => c.channel === chatState.channel);
@@ -152,6 +159,7 @@ async function prepareComposer() {
       return disable(`Para responder desde aquí, conecta tu cuenta de ${IDENTITY_LABELS[conv.channel] || conv.channel} en «Mis cuentas».`);
     }
     chatState.conversationId = conv.id;
+    $("#chat-template").hidden = conv.channel !== "whatsapp"; // las plantillas solo existen en WhatsApp
     note.hidden = true;
     $("#chat-send").disabled = false;
     $("#chat-ai-draft").disabled = false;

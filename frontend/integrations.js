@@ -233,7 +233,8 @@ async function onIntegrationsClick(e) {
         await loadIntegrations();
       }
     } else if (e.target.closest("[data-templates-integration]")) {
-      openTemplatesDialog(item);
+      $("#accounts-dialog").close();
+      openTemplatesView(item.id);
     } else if (e.target.closest("[data-edit-integration]")) {
       editingIntegration = id;
       $("#if-kind").value = item.kind;
@@ -256,79 +257,6 @@ async function onIntegrationsClick(e) {
   } catch (err) {
     alert(err.message);
     loadIntegrations();
-  }
-}
-
-/* ---------- Plantillas de mensaje de WhatsApp ---------- */
-
-const TEMPLATE_STATUS = { APPROVED: "✓ Aprobada", PENDING: "En revisión", REJECTED: "✗ Rechazada", PAUSED: "En pausa", DISABLED: "Desactivada" };
-const TEMPLATE_CATEGORY = { UTILITY: "Servicio", MARKETING: "Marketing", AUTHENTICATION: "Autenticación" };
-let templatesIntegration = null;
-
-async function openTemplatesDialog(item) {
-  templatesIntegration = item;
-  $("#tpl-title").textContent = `Plantillas de «${item.name}»`;
-  $("#tpl-form").reset();
-  renderTemplateExamples();
-  showError($("#tpl-error"), "");
-  $("#tpl-result").hidden = true;
-  $("#templates-dialog").showModal();
-  await loadTemplates();
-}
-
-async function loadTemplates() {
-  const list = $("#tpl-list");
-  list.innerHTML = `<li class="muted small">Consultando a Meta…</li>`;
-  try {
-    const { items } = await api(accountsApi(`/${templatesIntegration.id}/templates`));
-    list.innerHTML = items.length ? items.map((t) => `
-      <li class="integration">
-        <div class="int-head">
-          <strong>${escapeHtml(t.name)}</strong>
-          <span class="muted small">${escapeHtml(TEMPLATE_CATEGORY[t.category] || t.category || "")} · ${escapeHtml(t.language || "")}</span>
-          <span class="spacer"></span>
-          <span class="int-status ${t.status === "APPROVED" ? "ok" : t.status === "REJECTED" ? "error" : ""}">${escapeHtml(TEMPLATE_STATUS[t.status] || t.status || "")}</span>
-        </div>
-        <div class="int-body tpl-text">${escapeHtml(t.body || "")}</div>
-        ${t.status === "REJECTED" && t.rejected_reason && t.rejected_reason !== "NONE" ? `<div class="muted small">Motivo: ${escapeHtml(t.rejected_reason)}</div>` : ""}
-      </li>`).join("") : `<li class="muted small">Esta cuenta todavía no tiene plantillas.</li>`;
-  } catch (err) {
-    list.innerHTML = `<li class="form-error">${escapeHtml(err.message)}</li>`;
-  }
-}
-
-// Un campo de ejemplo por cada variable {{n}} del texto (Meta los exige para revisar la plantilla).
-function renderTemplateExamples() {
-  const box = $("#tpl-examples");
-  const previous = [...box.querySelectorAll("input")].map((i) => i.value);
-  const count = Math.max(0, ...[...$("#tpl-body").value.matchAll(/\{\{(\d+)\}\}/g)].map((m) => Number(m[1])));
-  box.innerHTML = Array.from({ length: count }, (_, n) => `
-    <label>Ejemplo de {{${n + 1}}} <input data-example maxlength="200" required value="${escapeHtml(previous[n] || "")}"
-      placeholder="${n === 0 ? "Ej. Laura" : n === 1 ? "Ej. 14 de octubre a las 10:00" : ""}"></label>`).join("");
-}
-
-async function submitTemplate(e) {
-  e.preventDefault();
-  const btn = $("#tpl-submit");
-  btn.disabled = true;
-  showError($("#tpl-error"), "");
-  try {
-    const res = await api(accountsApi(`/${templatesIntegration.id}/templates`), {
-      method: "POST",
-      body: JSON.stringify({
-        name: $("#tpl-name").value.trim(), category: $("#tpl-category").value, language: $("#tpl-language").value,
-        body: $("#tpl-body").value, examples: [...$("#tpl-examples").querySelectorAll("input")].map((i) => i.value),
-      }),
-    });
-    $("#tpl-form").reset();
-    renderTemplateExamples();
-    $("#tpl-result").textContent = `✓ «${res.name}» enviada a Meta: ${TEMPLATE_STATUS[res.status] || res.status}. El estado se actualiza al volver a abrir esta ventana.`;
-    $("#tpl-result").hidden = false;
-    await loadTemplates();
-  } catch (err) {
-    showError($("#tpl-error"), err.message);
-  } finally {
-    btn.disabled = false;
   }
 }
 
@@ -443,6 +371,4 @@ function bindIntegrationEvents() {
   $("#if-cancel").addEventListener("click", resetIntegrationForm);
   $("#integrations-list").addEventListener("click", onIntegrationsClick);
   $("#if-fields").addEventListener("click", (e) => { if (e.target.closest("#coex-connect")) connectCoexistence(); });
-  $("#tpl-body").addEventListener("input", renderTemplateExamples);
-  $("#tpl-form").addEventListener("submit", submitTemplate);
 }
