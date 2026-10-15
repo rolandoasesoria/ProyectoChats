@@ -55,8 +55,11 @@
     <button class="nav-btn" id="dashboard-btn" aria-label="Inicio: panel de actividad" title="Inicio: panel de actividad">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
     </button>
-    <button class="nav-btn active" id="nav-chats" aria-label="Chats" title="Chats" aria-current="page">
+    <button class="nav-btn" id="nav-chats" data-view="chats" aria-label="Chats" title="Chats">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
+    </button>
+    <button class="nav-btn" id="nav-clients" data-view="clients" aria-label="Clientes: ficha y asistente" title="Clientes: ficha y asistente">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg>
     </button>
     <span class="nav-spacer"></span>
     <button class="nav-btn" id="menu-accounts" aria-label="Mis cuentas: correo, WhatsApp y Telegram" title="Mis cuentas: correo, WhatsApp y Telegram">
@@ -69,6 +72,58 @@
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
     </button>
   </nav>
+
+  <!-- Sección Chats: lista de conversaciones · conversación por canal · datos del contacto -->
+  <section class="chats-view" id="view-chats" hidden>
+    <aside class="chats-pane">
+      <input id="chats-search" type="search" placeholder="Buscar contacto…" autocomplete="off">
+      <div class="chats-filters">
+        <div class="segmented" id="chats-filter" role="group" aria-label="Qué chats mostrar">
+          <button data-unread="false" class="active">Todos</button>
+          <button data-unread="true">No leídos</button>
+        </div>
+        <select id="chats-scope" title="De quién son los chats" hidden>
+          <option value="mine">Mis chats</option>
+          <option value="team">Todo el equipo</option>
+        </select>
+      </div>
+      <ul id="chats-list" class="chats-list"></ul>
+    </aside>
+
+    <section class="chat-main">
+      <p class="chat-empty muted" id="chat-empty">Elige un chat de la lista para ver la conversación.</p>
+      <div class="chat-open" id="chat-open" hidden>
+        <header class="chat-head">
+          <span class="chat-avatar" id="chat-avatar"></span>
+          <div class="chat-head-title">
+            <strong id="chat-name"></strong>
+            <span class="muted small" id="chat-sub"></span>
+          </div>
+          <span class="spacer"></span>
+          <button type="button" class="ghost small-btn" id="chat-open-client" title="Ficha completa, tareas, notas y asistente">Abrir ficha</button>
+          <button type="button" class="icon-btn" id="chat-details-toggle" aria-label="Detalles del contacto" title="Detalles del contacto" aria-pressed="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
+          </button>
+        </header>
+        <div class="tabs chat-tabs" id="chat-tabs" role="tablist"></div>
+        <ol class="timeline chat-timeline" id="chat-timeline"></ol>
+        <form class="chat-composer" id="chat-composer">
+          <p class="muted small" id="chat-send-note" hidden></p>
+          <textarea id="chat-text" rows="1" maxlength="4000" placeholder="Escribe un mensaje… (Mayús+Intro: nueva línea)"></textarea>
+          <div class="chat-composer-actions">
+            <button type="button" class="ghost small-btn" id="chat-ai-draft" title="La IA propone una respuesta con el contexto del cliente">✨ Redactar con IA</button>
+            <span class="spacer"></span>
+            <button type="submit" class="primary" id="chat-send">Enviar</button>
+          </div>
+        </form>
+      </div>
+    </section>
+
+    <aside class="chat-details" id="chat-details" hidden>
+      <h3>Detalles del contacto</h3>
+      <div id="chat-details-body"></div>
+    </aside>
+  </section>
 
   <main class="layout">
     <!-- Clientes -->
@@ -706,6 +761,7 @@
   <script src="integrations.js"></script>
   <script src="layout.js"></script>
   <script src="tour.js"></script>
+  <script src="chats.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
