@@ -6,6 +6,11 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Sección **Plantillas** en la barra lateral: lista de plantillas de cada cuenta de WhatsApp con su estado en Meta,
+  vista previa como la verá el cliente, editor con vista previa en directo y borrado. Sustituye a la ventana de
+  plantillas de «Mis cuentas».
+- Botón **«Plantilla»** en la caja de escribir de Chats (WhatsApp): enviar una plantilla aprobada rellenando sus
+  variables (la primera se propone con el nombre del cliente); se guarda en la conversación con el texto rellenado.
 - Sección **Contactos** (sustituye a «Clientes» en la barra): tabla de contactos con buscador, filtros por estado,
   etiqueta, agente, canal y no leídos, columnas a elegir y «+ Nuevo contacto»; al pulsar uno se abre su ficha.
 - **Propiedades de contacto** (DNI, nacionalidad, fecha de alta…): las define un administrador (texto, número, fecha o
