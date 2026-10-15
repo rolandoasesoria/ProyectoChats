@@ -178,7 +178,7 @@ Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba las secciones, \
-"Inicio" (el panel de actividad), "Chats", "Contactos" y "Plantillas"; abajo "Mis cuentas", "Respuestas guardadas" y \
+"Inicio" (el panel de actividad), "Chats", "Contactos", "Plantillas" e "IA"; abajo "Mis cuentas", "Respuestas guardadas" y \
 "Administración" (solo administradores). Al entrar se abre la última sección usada.
 - Sección "Contactos": tabla con todos los contactos (clientes). Filtros: buscador (nombre, empresa, teléfono, email, \
 etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas" elige qué columnas se ven (empresa, \
@@ -229,6 +229,20 @@ app WhatsApp Business (no la normal) actualizada; los grupos no se sincronizan y
 permite mensajes temporales ni de "ver una vez". Si se desconecta desde el móvil, la cuenta se pausa y llega un aviso \
 a la campana. Un WhatsApp personal (no Business) no se puede conectar. La conexión con token y app secret sigue \
 disponible en "Conexión manual".
+- Sección "IA" (barra lateral; la configura un administrador): la IA que responde a los clientes por WhatsApp con \
+las "Instrucciones" del negocio (quiénes sois, servicios, precios que se pueden dar, horario, preguntas frecuentes, \
+tono, lo que no debe hacer). "Activada" la enciende (sin instrucciones no se puede). Modo "Supervisada" (por \
+defecto): en el chat aparece "🤖 La IA propone esta respuesta"; se puede editar y "Enviar" o "Descartar", y avisa \
+en la campana. Modo "Automática": la envía sola por la cuenta de WhatsApp de quien lleva la conversación. \
+"Horas de inactividad antes de que entre la IA" (0, 24, 48 o 72): la IA solo entra en un chat si nadie del equipo \
+ha escrito en él en ese tiempo (0 = siempre); WhatsApp solo deja responder dentro de las 24 h siguientes al último \
+mensaje del cliente, y la IA lo respeta. "Cuándo": a cualquier hora o solo fuera del horario de oficina (horas y \
+días). Si el cliente pide hablar con una persona, se queja, está molesto o pregunta algo que no está en las \
+instrucciones, no responde y avisa al responsable ("La IA no ha respondido a…"). Máximo 5 respuestas de la IA por \
+chat y día. En cada chat de WhatsApp, el botón "🤖 IA activa / en pausa" la pausa solo en esa conversación. Sus \
+mensajes salen marcados con "🤖 IA". "Probar la IA" (abajo, administradores): escribe un mensaje como si fueras un \
+cliente y muestra qué respondería o si lo pasaría a una persona, con las instrucciones escritas aunque no estén \
+guardadas; no envía nada. Solo atiende WhatsApp.
 - Sección "Plantillas" (barra lateral; también el enlace "Plantillas" de una cuenta de WhatsApp en "Mis cuentas"): \
 arriba se elige la cuenta de WhatsApp (los administradores ven también las del equipo); a la izquierda la lista de \
 plantillas con buscador, categoría, idioma y estado en Meta (✓ aprobada, … en revisión, ✗ rechazada); al pulsar una \
