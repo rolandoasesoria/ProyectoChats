@@ -1,9 +1,12 @@
 """Enviar respuestas desde la app y presencia (evitar responder dos veces)."""
+import base64
+import binascii
+
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
 from .. import audit, conversations, integrations, presence, whatsapp_templates
-from ..errors import Conflict
+from ..errors import Conflict, InvalidInput
 from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
@@ -18,8 +21,18 @@ def conversation_sender(conversation_id: int, user: CurrentUser):
             "last_message_id": conversations.last_message_id(conversation_id)}
 
 
+MAX_SEND_FILE = 15 * 1024 * 1024  # por debajo de lo que admiten WhatsApp (16 MB vídeo/audio) y la mayoría de correos
+
+
+class SendFile(BaseModel):
+    filename: str = Field(min_length=1, max_length=255)
+    mime: str | None = Field(None, max_length=100)
+    data: str  # contenido del archivo en base64
+
+
 class SendRequest(BaseModel):
-    text: str = Field(min_length=1, max_length=10000)
+    text: str = Field("", max_length=10000)
+    file: SendFile | None = None         # adjunto opcional (el texto va como pie)
     after_message_id: int | None = None  # último mensaje que se veía al empezar a escribir
     force: bool = False                  # enviar aunque haya llegado algo nuevo
 
@@ -31,7 +44,18 @@ def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
         if newer:
             who = "un compañero ha respondido" if any(m["direction"] == "out" for m in newer) else "el cliente ha escrito"
             raise Conflict(f"Mientras escribías, {who} en esta conversación. Revisa la conversación antes de enviar.")
-    result = integrations.send_reply(conversation_id, user, req.text.strip())
+    attachment = None
+    if req.file:
+        try:
+            data = base64.b64decode(req.file.data, validate=True)
+        except (binascii.Error, ValueError):
+            raise InvalidInput("No se pudo leer el archivo.")
+        if len(data) > MAX_SEND_FILE:
+            raise InvalidInput("El archivo supera el máximo de 15 MB.")
+        attachment = {"filename": req.file.filename, "mime": req.file.mime, "data": data}
+    if not req.text.strip() and not attachment:
+        raise InvalidInput("Escribe un mensaje o adjunta un archivo.")
+    result = integrations.send_reply(conversation_id, user, req.text.strip(), attachment)
     audit.log(user["id"], "message_sent", conversations.conversation_client_id(conversation_id), detail=f"por {result['via']}")
     return result
 
