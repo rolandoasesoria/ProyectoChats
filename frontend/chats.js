@@ -13,9 +13,10 @@ let chatsSearchTimer = null;
 
 /* ---------- Secciones de la barra lateral ---------- */
 
-// Vistas: «chats», «contacts» (la tabla), «client» (la ficha de un contacto, con el asistente) y «templates». La ficha cuenta como
+// Vistas: «chats», «contacts» (la tabla), «client» (la ficha de un contacto, con el asistente), «templates» y «ai». La ficha cuenta como
 // parte de Contactos en la barra lateral.
-const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout", templates: "#view-templates" };
+const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout", templates: "#view-templates",
+                ai: "#view-ai" };
 
 function showView(name) {
   if (!VIEWS[name]) name = "chats";
@@ -29,6 +30,7 @@ function showView(name) {
   try { localStorage.setItem(VIEW_KEY, section); } catch { /* almacenamiento no disponible */ }
   if (name === "chats") loadChats();
   if (name === "contacts") loadContacts();
+  if (name === "ai") loadAISettings().catch((err) => alert(err.message));
   if (name === "templates") {
     if (tplState.accounts.length) loadTemplateList(); else openTemplatesView(); // el estado en Meta cambia: se relee
   }
@@ -37,7 +39,7 @@ function showView(name) {
 function savedView() {
   try {
     const saved = localStorage.getItem(VIEW_KEY);
-    return ["contacts", "templates"].includes(saved) ? saved : "chats";
+    return ["contacts", "templates", "ai"].includes(saved) ? saved : "chats";
   } catch { return "chats"; }
 }
 
@@ -146,6 +148,7 @@ async function prepareComposer() {
     $("#chat-send").disabled = true;
     $("#chat-ai-draft").disabled = !conv;
     $("#chat-template").hidden = true;
+    loadChatAI(conv?.channel === "whatsapp" ? conv.id : null);
   };
   if (!conv) {
     const other = chatState.data.conversations.find((c) => c.channel === chatState.channel);
@@ -164,6 +167,7 @@ async function prepareComposer() {
     $("#chat-send").disabled = false;
     $("#chat-ai-draft").disabled = false;
     $("#chat-send").textContent = `Enviar por ${s.via}`;
+    loadChatAI(conv.channel === "whatsapp" ? conv.id : null);
   } catch {
     disable("No se ha podido comprobar la cuenta de envío.");
   }
