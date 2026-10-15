@@ -7,6 +7,7 @@ from .db import get_conn
 from .errors import Conflict, InvalidInput, NotFound
 from .repositories import clients as clients_repo
 from .repositories import messages as messages_repo
+from .repositories import properties as properties_repo
 
 STATUSES = {"lead": "Potencial", "active": "Activo", "issue": "Incidencia", "inactive": "Inactivo"}
 CHANNELS = ("email", "whatsapp", "telegram", "phone", "other")
@@ -201,6 +202,7 @@ def merge_clients(source_id: int, target_id: int) -> dict:
         clients_repo.copy_tags(conn, source_id, target_id)
         clients_repo.merge_visits(conn, source_id, target_id)
         clients_repo.archive_assistant_chats(conn, source_id, target_id)
+        properties_repo.merge_values(conn, source_id, target_id)
         # El resumen de IA del que se queda deja de estar al día: se fuerza a mostrar mensajes nuevos.
         clients_repo.reset_analysis(conn, target_id)
         clients_repo.fill_missing(conn, target_id, src["company"], src["notes"], src["assignee_user_id"])
