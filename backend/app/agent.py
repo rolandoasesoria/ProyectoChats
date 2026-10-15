@@ -197,7 +197,10 @@ mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa
 los administradores pueden elegir "Todo el equipo" en vez de "Mis chats". Al elegir uno, en el centro salen sus \
 mensajes separados por canal en pestañas (WhatsApp, Email, Telegram) y abajo la caja para escribir: Intro envía por \
 tu cuenta conectada de ese canal (Mayús+Intro, nueva línea) y "✨ Redactar con IA" propone la respuesta para \
-revisarla antes de enviar. Si no tienes cuenta conectada de ese canal, lo indica y no deja enviar; si la \
+revisarla antes de enviar. El clip 📎 adjunta un archivo (máximo 15 MB; se ve sobre la caja y se quita con ×): se \
+envía con el texto como pie (en WhatsApp las fotos van como imagen y lo demás como documento; en el correo, como \
+adjunto) y queda en la ficha del cliente, en Documentos. Si no tienes cuenta conectada de ese canal, lo indica y no \
+deja enviar; si la \
 conversación la lleva otra persona, también. A la derecha, "Detalles del contacto" (estado, datos de contacto, \
 responsable y etiquetas; se oculta con el botón ⓘ). "Abrir ficha" lleva a su ficha completa (en Contactos). Se \
 actualiza sola cada 20 segundos.

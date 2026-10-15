@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Chats: adjuntar un archivo (📎, hasta 15 MB) al responder por WhatsApp, Telegram o correo; queda en la ficha del
+  cliente junto al mensaje.
 - **IA que responde** por WhatsApp (sección «IA»): instrucciones del negocio, modo supervisado (propone y una persona
   envía o descarta) o automático, horas de inactividad del equipo antes de entrar, horario (siempre o fuera de la
   oficina) y «Probar la IA». Pasa el chat a una persona si se lo piden, hay una queja o no sabe la respuesta; respeta
