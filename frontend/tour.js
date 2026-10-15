@@ -9,7 +9,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 28;
+const TOUR_VERSION = 29;
 
 const TOUR_STEPS = [
   {
@@ -34,6 +34,11 @@ const TOUR_STEPS = [
     view: "contacts",
     title: "Contactos",
     text: "Todos tus contactos en una tabla: filtra por estado, etiqueta, agente, canal o no leídos, elige las columnas que quieres ver (también las propiedades, como el DNI) y crea uno nuevo. Al pulsar uno se abre su ficha.",
+  },
+  {
+    target: "#nav-templates",
+    title: "Plantillas",
+    text: "Las plantillas de WhatsApp de tu cuenta: créalas con vista previa, mira si Meta las ha aprobado y bórralas. Las aprobadas se envían desde el chat con el botón «Plantilla»: es lo único que WhatsApp deja enviar pasadas 24 h del último mensaje del cliente.",
   },
   {
     target: ".clients",
@@ -73,7 +78,7 @@ const TOUR_STEPS = [
   {
     target: ".sidebar",
     title: "Barra lateral",
-    text: "Tus secciones: Inicio (el panel de actividad), Chats y Contactos. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
+    text: "Tus secciones: Inicio (el panel de actividad), Chats, Contactos y Plantillas. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
   },
   {
     target: "#dashboard-btn",
