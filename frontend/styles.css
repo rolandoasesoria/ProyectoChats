@@ -1068,3 +1068,13 @@ body.resizing iframe { pointer-events: none; }
 .ai-suggestion-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
 .ai-suggestion textarea { width: 100%; resize: vertical; padding: 7px 9px; border: 1px solid var(--border); border-radius: 8px; background: var(--panel); }
 .ai-mark { font-weight: 600; }
+
+/* Adjuntar un archivo desde la caja de escribir de Chats */
+.attach-btn { cursor: pointer; }
+.attach-btn svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.attach-btn:has(input:disabled) { opacity: .4; cursor: not-allowed; }
+.chat-file-chip {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; padding: 4px 6px 4px 10px;
+  border: 1px solid var(--border); border-radius: 999px; background: var(--sub); font-size: 13px;
+}
+.chat-file-chip .link { font-size: 16px; line-height: 1; padding: 0 4px; }
