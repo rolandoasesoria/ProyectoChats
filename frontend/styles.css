@@ -578,7 +578,6 @@ dialog:not(.is-admin) .admin-only { display: none !important; }
 .integrations-list { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .integration { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; font-size: 14px; }
 .integration.disabled { opacity: .6; }
-.tpl-text { white-space: pre-wrap; }
 .tpl-body { display: flex; flex-direction: column; gap: 4px; margin-top: 10px; }
 .tpl-body textarea { width: 100%; resize: vertical; }
 .int-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -1002,3 +1001,41 @@ body.resizing iframe { pointer-events: none; }
 .props-admin-list li { display: flex; align-items: center; gap: 6px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; }
 .prop-form { flex-wrap: wrap; align-items: center; }
 .prop-form select { padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg); }
+
+/* ---------- Sección Plantillas ---------- */
+.app-body > .templates-view { flex: 1; min-width: 0; display: flex; }
+.tpl-pane {
+  width: 300px; flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; padding: 12px;
+  background: var(--sub); border-right: 1px solid var(--border); min-height: 0;
+}
+.tpl-pane-head { display: flex; gap: 8px; }
+.tpl-pane-head input { flex: 1; min-width: 0; }
+.tpl-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 4px; }
+.tpl-list li[data-name] {
+  display: flex; flex-direction: column; gap: 2px; padding: 9px 10px; border-radius: 8px; cursor: pointer;
+  border: 1px solid var(--border); background: var(--panel);
+}
+.tpl-list li[data-name]:hover { border-color: var(--accent); }
+.tpl-list li[data-name].active { background: var(--accent-soft); border-color: var(--accent); }
+.tpl-item-top { display: flex; align-items: center; gap: 8px; }
+.tpl-item-top strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tpl-status { font-weight: 700; color: var(--muted); }
+.tpl-status.approved { color: var(--whatsapp); }
+.tpl-status.rejected { color: var(--danger-text); }
+.tpl-hint { padding: 12px 4px; }
+.tpl-main { flex: 1; min-width: 0; overflow-y: auto; padding: 18px 24px; display: flex; flex-direction: column; gap: 16px; background: var(--panel); }
+.tpl-main .chat-empty { margin: auto; }
+.tpl-detail { display: flex; flex-direction: column; gap: 12px; max-width: 720px; }
+.tpl-detail-head { display: flex; align-items: center; gap: 12px; }
+.tpl-detail-head h2 { margin: 0; font-size: 18px; }
+.tpl-editor { max-width: 720px; }
+.tpl-editor h3 { margin: 0; }
+.tpl-preview-box { display: flex; flex-direction: column; gap: 6px; max-width: 720px; }
+/* Vista previa: el mensaje como lo vería el cliente en WhatsApp */
+.tpl-preview { background: var(--chat-bg); border-radius: 10px; padding: 16px; display: flex; }
+.tpl-bubble {
+  max-width: 420px; background: var(--panel); border-radius: 10px; border-top-left-radius: 3px; padding: 9px 12px;
+  white-space: pre-wrap; word-wrap: break-word; box-shadow: 0 1px 1px var(--shadow); font-size: 14px;
+}
+.tpl-var { background: var(--accent-soft); color: var(--accent); border-radius: 4px; padding: 0 3px; font-weight: 600; }
+#tpl-send-dialog .tpl-preview { margin-top: 4px; }
