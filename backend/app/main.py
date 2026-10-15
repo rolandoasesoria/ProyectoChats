@@ -32,6 +32,7 @@ from .api import (
 )
 from .api import integrations as integrations_api
 from .api import privacy as privacy_api
+from .api import properties as properties_api
 from .config import config
 from .db import init_db
 from .errors import (
@@ -140,6 +141,7 @@ app.include_router(integrations_api.router)
 app.include_router(messaging.router)
 app.include_router(dashboard.router)
 app.include_router(privacy_api.router)
+app.include_router(properties_api.router)
 app.include_router(clients.router)
 app.include_router(drafts.router)
 app.include_router(replies.router)

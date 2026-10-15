@@ -6,6 +6,12 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Sección **Contactos** (sustituye a «Clientes» en la barra): tabla de contactos con buscador, filtros por estado,
+  etiqueta, agente, canal y no leídos, columnas a elegir y «+ Nuevo contacto»; al pulsar uno se abre su ficha.
+- **Propiedades de contacto** (DNI, nacionalidad, fecha de alta…): las define un administrador (texto, número, fecha o
+  lista de opciones) en Administración, se rellenan en la ficha, salen como columnas en la tabla, se conservan al unir
+  clientes y se incluyen en la exportación de datos. Migración `0002_propiedades_contacto.sql`.
+- Buscador rápido (Ctrl+K): «Ir a Chats» e «Ir a Contactos».
 - Sección **Chats** en la barra lateral: conversaciones por cliente con el último mensaje y los no leídos («Todos» /
   «No leídos», buscador y, para administradores, «Todo el equipo»), mensajes separados por canal en pestañas, caja
   para escribir y enviar por la cuenta conectada (con «✨ Redactar con IA») y detalles del contacto. La vista anterior

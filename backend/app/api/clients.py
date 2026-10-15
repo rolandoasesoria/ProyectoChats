@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, clients, insights, search
+from .. import audit, clients, contacts, insights, search
 from ..errors import NotFound
 from .deps import CurrentUser, client_or_404
 
@@ -25,6 +25,14 @@ def list_chats(user: CurrentUser, q: str = "", scope: Literal["mine", "team"] = 
     if scope == "team":
         audit.log(user["id"], "team_chats", throttle=True)
     return search.chat_list(user["id"], scope, q, unread)
+
+
+@router.get("/api/contacts")
+def list_contacts(user: CurrentUser, q: str = "", status: Literal["lead", "active", "issue", "inactive"] | None = None,
+                  tag: str | None = None, assignee: int | None = None,
+                  channel: Literal["email", "whatsapp", "telegram", "phone"] | None = None, unread: bool = False):
+    """Sección Contactos: la tabla con datos de contacto, etiquetas, responsable, actividad y propiedades."""
+    return contacts.list_contacts(user["id"], q, status, tag or None, assignee, channel, unread)
 
 
 class NewClient(BaseModel):

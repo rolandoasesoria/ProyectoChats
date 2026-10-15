@@ -27,6 +27,14 @@ def get_basic(conn: Conn, client_id: int) -> dict | None:
     return dict(row) if row else None
 
 
+def identities_for(conn: Conn, client_ids: list[int]) -> list[dict]:
+    """Identidades de varios clientes a la vez (para la tabla de contactos)."""
+    if not client_ids:
+        return []
+    return rows(conn.execute(
+        "SELECT client_id, channel, handle FROM client_identities WHERE client_id = ANY(?) ORDER BY id", (client_ids,)))
+
+
 def get(conn: Conn, client_id: int) -> dict | None:
     row = conn.execute("SELECT * FROM clients WHERE id = ?", (client_id,)).fetchone()
     return dict(row) if row else None

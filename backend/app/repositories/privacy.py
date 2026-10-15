@@ -78,6 +78,14 @@ def client_tags(conn: Conn, client_id: int) -> list[str]:
     return [r["tag"] for r in conn.execute("SELECT tag FROM client_tags WHERE client_id = ?", (client_id,))]
 
 
+def client_properties(conn: Conn, client_id: int) -> list[dict]:
+    """Propiedades de contacto rellenadas (DNI, fechas…), con su nombre."""
+    return rows(conn.execute(
+        """SELECT p.label, v.value, v.updated_at FROM client_property_values v
+             JOIN contact_properties p ON p.id = v.property_id
+            WHERE v.client_id = ? ORDER BY p.position, p.id""", (client_id,)))
+
+
 def client_facts(conn: Conn, client_id: int) -> list[dict]:
     """Datos del cliente, salvo los descartados."""
     return rows(conn.execute(

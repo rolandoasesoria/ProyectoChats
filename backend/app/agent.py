@@ -178,8 +178,20 @@ Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba las secciones, \
-"Inicio" (el panel de actividad), "Chats" y "Clientes" (la ficha completa y el asistente); abajo "Mis cuentas", \
-"Respuestas guardadas" y "Administración" (solo administradores). Al entrar se abre la última sección usada.
+"Inicio" (el panel de actividad), "Chats" y "Contactos"; abajo "Mis cuentas", "Respuestas guardadas" y \
+"Administración" (solo administradores). Al entrar se abre la última sección usada.
+- Sección "Contactos": tabla con todos los contactos (clientes). Filtros: buscador (nombre, empresa, teléfono, email, \
+etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas" elige qué columnas se ven (empresa, \
+teléfono, email, canales, etiquetas, agente, estado, última actividad y cada propiedad de contacto); se recuerda en \
+el navegador. "+ Nuevo contacto" crea uno a mano. Al pulsar un contacto se abre su ficha completa: a la izquierda la \
+lista de clientes y las pestañas "Sin responder" y "Tareas", en el centro la ficha (Ficha, Tareas, Notas, Mensajes) \
+y a la derecha el asistente.
+- Propiedades de contacto: campos fijos de la ficha (p. ej. DNI, nacionalidad, fecha de alta, origen) que define un \
+administrador en Administración > "Propiedades de contacto" (tipo texto, número, fecha o lista de opciones; se \
+pueden renombrar, ordenar con las flechas y borrar, lo que borra su valor en todos los contactos). Cualquiera las \
+rellena en la pestaña "Ficha", apartado "Propiedades": se guardan al cambiar el campo (borde verde) y se pueden \
+mostrar como columnas en la tabla. Son distintas de los "Datos clave" que extrae la IA. Al unir dos clientes se \
+conservan, y la exportación de datos del cliente las incluye.
 - Sección "Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
 mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa o teléfono; "Todos" / "No leídos"; \
 los administradores pueden elegir "Todo el equipo" en vez de "Mis chats". Al elegir uno, en el centro salen sus \
@@ -187,7 +199,7 @@ mensajes separados por canal en pestañas (WhatsApp, Email, Telegram) y abajo la
 tu cuenta conectada de ese canal (Mayús+Intro, nueva línea) y "✨ Redactar con IA" propone la respuesta para \
 revisarla antes de enviar. Si no tienes cuenta conectada de ese canal, lo indica y no deja enviar; si la \
 conversación la lleva otra persona, también. A la derecha, "Detalles del contacto" (estado, datos de contacto, \
-responsable y etiquetas; se oculta con el botón ⓘ). "Abrir ficha" lleva al cliente en la sección Clientes. Se \
+responsable y etiquetas; se oculta con el botón ⓘ). "Abrir ficha" lleva a su ficha completa (en Contactos). Se \
 actualiza sola cada 20 segundos.
 - Menú de usuario (arriba a la derecha, con tu nombre): "Ver tutorial" repite el recorrido de bienvenida, \
 "Cambiar contraseña" y "Cerrar sesión".

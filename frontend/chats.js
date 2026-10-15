@@ -13,21 +13,26 @@ let chatsSearchTimer = null;
 
 /* ---------- Secciones de la barra lateral ---------- */
 
+// Vistas: «chats», «contacts» (la tabla) y «client» (la ficha de un contacto, con el asistente). La ficha cuenta como
+// parte de Contactos en la barra lateral.
+const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout" };
+
 function showView(name) {
-  const chats = name === "chats";
-  $("#view-chats").hidden = !chats;
-  $(".layout").hidden = chats;
+  if (!VIEWS[name]) name = "chats";
+  Object.entries(VIEWS).forEach(([view, selector]) => { $(selector).hidden = view !== name; });
+  const section = name === "client" ? "contacts" : name;
   document.querySelectorAll(".sidebar [data-view]").forEach((b) => {
-    const active = b.dataset.view === name;
+    const active = b.dataset.view === section;
     b.classList.toggle("active", active);
     if (active) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   });
-  try { localStorage.setItem(VIEW_KEY, name); } catch { /* almacenamiento no disponible */ }
-  if (chats) loadChats();
+  try { localStorage.setItem(VIEW_KEY, section); } catch { /* almacenamiento no disponible */ }
+  if (name === "chats") loadChats();
+  if (name === "contacts") loadContacts();
 }
 
 function savedView() {
-  try { return localStorage.getItem(VIEW_KEY) === "clients" ? "clients" : "chats"; } catch { return "chats"; }
+  try { return localStorage.getItem(VIEW_KEY) === "contacts" ? "contacts" : "chats"; } catch { return "chats"; }
 }
 
 /* ---------- Lista de chats ---------- */
@@ -237,10 +242,10 @@ function toggleChatDetails(show) {
   $("#chat-details-toggle").setAttribute("aria-pressed", String(open));
 }
 
-// «Abrir ficha»: el cliente en la sección Clientes (ficha, tareas, notas y asistente).
+// «Abrir ficha»: la ficha completa del contacto (datos, tareas, notas, mensajes y asistente).
 async function openChatClient() {
   if (!chatState.clientId) return;
-  showView("clients");
+  showView("client");
   await selectClient(chatState.clientId);
 }
 

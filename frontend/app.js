@@ -101,8 +101,8 @@ function setThreadDot(clientId, on) {
 }
 
 async function selectClient(id) {
-  // Un cliente se abre en la sección Clientes (desde el buscador, los avisos, la bandeja, el chat…).
-  if (id !== null && $(".layout").hidden) showView("clients");
+  // Un cliente se abre en su ficha (desde la tabla de contactos, el buscador, los avisos, la bandeja, el chat…).
+  if (id !== null && $(".layout").hidden) showView("client");
   state.clientId = id;
   document.querySelectorAll("#client-list li[data-id]").forEach((li) =>
     li.classList.toggle("active", (li.dataset.id ? Number(li.dataset.id) : null) === id));
@@ -440,6 +440,7 @@ function bindEvents() {
   bindSearchEvents();
   bindIntegrationEvents();
   bindChatsEvents();
+  bindContactsEvents();
   bindEvents();
   try {
     state.convClients = new Set(await api("/api/conversations/agent/clients"));

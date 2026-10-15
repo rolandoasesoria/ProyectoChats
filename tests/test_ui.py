@@ -65,7 +65,28 @@ try:
     b.shot("04a-chats")
     b.click("#chat-open-client")
     b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
-    check("chats: «Abrir ficha» lleva al cliente en la sección Clientes", True)
+    check("chats: «Abrir ficha» lleva a la ficha del contacto", True)
+
+    # Sección Contactos: tabla, columnas, filtros y abrir la ficha
+    b.click("#nav-contacts")
+    b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
+    check("contactos: la tabla con los 3 contactos", True)
+    check("contactos: Contactos activo en la barra", b.js("document.querySelector('#nav-contacts').classList.contains('active')"))
+    b.click("#contacts-columns-btn")
+    b.js("const e = document.querySelector('#contacts-columns [data-column=\"company\"]'); e.checked = true;"
+         "e.dispatchEvent(new Event('change', {bubbles: true}))")
+    b.wait("[...document.querySelectorAll('#contacts-head th')].some((th) => th.textContent === 'Empresa')")
+    check("contactos: elegir columnas (Empresa)", True)
+    b.js("document.body.click()")
+    b.js("{ const s = document.querySelector('#contacts-channel'); s.value = 'telegram'; s.dispatchEvent(new Event('change')); }")
+    b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 2")
+    check("contactos: filtro por canal (Telegram)", True)
+    b.js("{ const s = document.querySelector('#contacts-channel'); s.value = ''; s.dispatchEvent(new Event('change')); }")
+    b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
+    b.shot("04b-contactos")
+    b.js("document.querySelector('#contacts-body tr[data-client]').click()")
+    b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
+    check("contactos: al pulsar uno se abre su ficha", b.js("document.querySelector('#nav-contacts').classList.contains('active')"))
 
     # Lista de clientes y filtros
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
@@ -96,6 +117,7 @@ try:
     b.send("Emulation.setDeviceMetricsOverride", width=1400, height=900, deviceScaleFactor=1, mobile=False)
     b.goto(BASE + "/")
     b.wait("document.querySelectorAll('#client-list li[data-id]').length > 1")
+    b.js("showView('client')")  # al recargar se abre la última sección (Contactos): estas zonas son las de la ficha
     check("el ancho elegido se recuerda al recargar", width(".clients") == 366, width(".clients"))
     b.send("Emulation.setDeviceMetricsOverride", width=760, height=900, deviceScaleFactor=1, mobile=False)
     b.pump(0.3)
@@ -106,6 +128,7 @@ try:
     b.js("localStorage.removeItem('pc-layout')")
     b.goto(BASE + "/")
     b.wait("document.querySelectorAll('#client-list li[data-id]').length > 1")
+    b.js("showView('client')")  # al recargar se abre la última sección (Contactos): estas zonas son las de la ficha
     check("sin preferencia guardada vuelve a los anchos iniciales", width(".clients") == 290, width(".clients"))
 
     # Abrir Laura (Carlos la tiene abierta y está respondiendo)
@@ -389,7 +412,29 @@ try:
     check("la retención avisa de cuántos mensajes borraría", True)
     b.shot("14b-ajustes")
 
+    # Propiedades de contacto: crearlas en Administración y rellenarlas en la ficha
+    b.click('[data-admin-tab="properties"]')
+    b.fill("#prop-label", "DNI")
+    b.js("document.querySelector('#prop-form').requestSubmit()")
+    b.wait("document.querySelector('#props-admin-list').textContent.includes('DNI')")
+    b.js("{ const k = document.querySelector('#prop-kind'); k.value = 'select'; k.dispatchEvent(new Event('change')); }")
+    b.fill("#prop-label", "Origen")
+    b.fill("#prop-options", "Web, Referido")
+    b.js("document.querySelector('#prop-form').requestSubmit()")
+    b.wait("document.querySelector('#props-admin-list').textContent.includes('Referido')")
+    check("propiedades: crear de texto y de lista", True)
+    b.shot("14c-propiedades")
+
     b.js("document.querySelector('#admin-dialog').close()")
+    b.js("selectClient(1)")
+    b.wait("document.querySelectorAll('#client-props [data-prop]').length === 2")
+    b.js("showDetailTab('profile')")
+    b.js("{ const i = document.querySelector('#client-props input[data-prop]'); i.value = '12345678Z';"
+         "i.dispatchEvent(new Event('change', {bubbles: true})); }")
+    b.wait("document.querySelector('#client-props input[data-prop]').classList.contains('saved')")
+    check("propiedades: se rellenan en la ficha y se guardan solas",
+          b.js("fetch('/api/clients/1/properties').then((r) => r.json())"
+               ".then((d) => Object.values(d.values).includes('12345678Z'))", await_promise=True))
 
     # Mis cuentas: el correo trae los servidores del proveedor y se conecta un bot de Telegram
     b.click("#menu-accounts")
