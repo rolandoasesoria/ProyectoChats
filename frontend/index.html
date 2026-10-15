@@ -61,6 +61,9 @@
     <button class="nav-btn" id="nav-contacts" data-view="contacts" aria-label="Contactos" title="Contactos">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18.5 20a6.5 6.5 0 0 0-3-5.5"/></svg>
     </button>
+    <button class="nav-btn" id="nav-templates" data-view="templates" aria-label="Plantillas de WhatsApp" title="Plantillas de WhatsApp">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+    </button>
     <span class="nav-spacer"></span>
     <button class="nav-btn" id="menu-accounts" aria-label="Mis cuentas: correo, WhatsApp y Telegram" title="Mis cuentas: correo, WhatsApp y Telegram">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
@@ -111,6 +114,7 @@
           <p class="muted small" id="chat-send-note" hidden></p>
           <textarea id="chat-text" rows="1" maxlength="4000" placeholder="Escribe un mensaje… (Mayús+Intro: nueva línea)"></textarea>
           <div class="chat-composer-actions">
+            <button type="button" class="ghost small-btn" id="chat-template" hidden title="Enviar una plantilla aprobada (lo único que WhatsApp deja enviar pasadas 24 h del último mensaje del cliente)">Plantilla</button>
             <button type="button" class="ghost small-btn" id="chat-ai-draft" title="La IA propone una respuesta con el contexto del cliente">✨ Redactar con IA</button>
             <span class="spacer"></span>
             <button type="submit" class="primary" id="chat-send">Enviar</button>
@@ -159,6 +163,60 @@
         <tbody id="contacts-body"></tbody>
       </table>
     </div>
+  </section>
+
+  <!-- Sección Plantillas: lista de plantillas de una cuenta de WhatsApp · plantilla elegida o editor -->
+  <section class="templates-view" id="view-templates" hidden>
+    <aside class="tpl-pane">
+      <select id="tpl-account" title="Cuenta de WhatsApp Business"></select>
+      <div class="tpl-pane-head">
+        <input id="tpl-search" type="search" placeholder="Buscar una plantilla" autocomplete="off">
+        <button type="button" class="primary small-btn" id="tpl-new">Crear</button>
+      </div>
+      <ul id="tpl-list" class="tpl-list"></ul>
+    </aside>
+    <section class="tpl-main">
+      <p class="chat-empty muted" id="tpl-empty">Selecciona una plantilla de la lista para verla, o crea una nueva.</p>
+      <div class="tpl-detail" id="tpl-detail" hidden></div>
+      <form id="tpl-form" class="form tpl-editor" hidden>
+        <h3>Nueva plantilla</h3>
+        <p class="muted small">Meta revisa cada plantilla antes de aprobarla; suele tardar de unos minutos a un día.</p>
+        <div class="form-grid">
+          <label>Nombre <input id="tpl-name" maxlength="512" required placeholder="Ej. Recordatorio de cita"></label>
+          <label>Categoría
+            <select id="tpl-category">
+              <option value="UTILITY">Servicio (avisos, recordatorios, pedidos)</option>
+              <option value="MARKETING">Marketing (promociones, novedades)</option>
+            </select>
+          </label>
+          <label>Idioma
+            <select id="tpl-language">
+              <option value="es">Español</option>
+              <option value="ca">Catalán</option>
+              <option value="en">Inglés</option>
+              <option value="fr">Francés</option>
+              <option value="pt_PT">Portugués</option>
+            </select>
+          </label>
+        </div>
+        <label class="tpl-body">Texto
+          <textarea id="tpl-body" rows="4" maxlength="1024" required
+                    placeholder="Hola {{1}}, te recordamos tu cita del {{2}}. Si no puedes venir, responde a este mensaje."></textarea>
+        </label>
+        <p class="muted small">Usa <code>{{1}}</code>, <code>{{2}}</code>… para lo que cambia en cada envío (nombre, fecha…).</p>
+        <div class="form-grid" id="tpl-examples"></div>
+        <p class="form-error" id="tpl-error" role="alert" hidden></p>
+        <p class="muted small" id="tpl-result" role="status" hidden></p>
+        <div class="dialog-actions">
+          <button type="button" class="ghost" id="tpl-cancel">Cancelar</button>
+          <button type="submit" class="primary" id="tpl-submit">Enviar a revisión de Meta</button>
+        </div>
+      </form>
+      <div class="tpl-preview-box" id="tpl-preview-box" hidden>
+        <span class="muted small">Vista previa</span>
+        <div class="tpl-preview" id="tpl-preview"></div>
+      </div>
+    </section>
   </section>
 
   <main class="layout">
@@ -664,45 +722,20 @@
     </form>
   </dialog>
 
-  <!-- Plantillas de mensaje de una cuenta de WhatsApp -->
-  <dialog id="templates-dialog" class="dialog wide">
+
+  <!-- Enviar una plantilla desde el chat -->
+  <dialog id="tpl-send-dialog" class="dialog">
     <div class="dialog-head">
-      <h2 id="tpl-title">Plantillas de WhatsApp</h2>
+      <h2>Enviar una plantilla</h2>
       <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
     </div>
-    <p class="muted small">Las plantillas son los mensajes que puedes enviar a un cliente pasadas 24 h desde su último mensaje
-      (recordatorios, avisos, promociones). Meta revisa cada una antes de aprobarla; suele tardar de unos minutos a un día.</p>
-    <ul id="tpl-list" class="integrations-list"></ul>
-    <form id="tpl-form" class="form integration-form">
-      <h3>Nueva plantilla</h3>
-      <div class="form-grid">
-        <label>Nombre <input id="tpl-name" maxlength="512" required placeholder="Ej. Recordatorio de cita"></label>
-        <label>Categoría
-          <select id="tpl-category">
-            <option value="UTILITY">Servicio (avisos, recordatorios, pedidos)</option>
-            <option value="MARKETING">Marketing (promociones, novedades)</option>
-          </select>
-        </label>
-        <label>Idioma
-          <select id="tpl-language">
-            <option value="es">Español</option>
-            <option value="ca">Catalán</option>
-            <option value="en">Inglés</option>
-            <option value="fr">Francés</option>
-            <option value="pt_PT">Portugués</option>
-          </select>
-        </label>
-      </div>
-      <label class="tpl-body">Texto
-        <textarea id="tpl-body" rows="4" maxlength="1024" required
-                  placeholder="Hola {{1}}, te recordamos tu cita del {{2}}. Si no puedes venir, responde a este mensaje."></textarea>
-      </label>
-      <p class="muted small">Usa <code>{{1}}</code>, <code>{{2}}</code>… para lo que cambia en cada envío (nombre, fecha…).</p>
-      <div class="form-grid" id="tpl-examples"></div>
-      <p class="form-error" id="tpl-error" role="alert" hidden></p>
-      <p class="muted small" id="tpl-result" role="status" hidden></p>
+    <form id="tpl-send-form" class="form">
+      <label>Plantilla <select id="tpl-send-select" required></select></label>
+      <div class="form-grid" id="tpl-send-vars"></div>
+      <div class="tpl-preview" id="tpl-send-preview"></div>
+      <p class="form-error" id="tpl-send-error" role="alert" hidden></p>
       <div class="dialog-actions">
-        <button type="submit" class="primary" id="tpl-submit">Enviar a revisión de Meta</button>
+        <button type="submit" class="primary" id="tpl-send-submit">Enviar plantilla</button>
       </div>
     </form>
   </dialog>
@@ -820,6 +853,7 @@
   <script src="tour.js"></script>
   <script src="chats.js"></script>
   <script src="contacts.js"></script>
+  <script src="templates.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
