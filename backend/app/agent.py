@@ -205,7 +205,7 @@ hilo" vuelve a la respuesta normal; si el cliente tiene email pero no hay hilos 
 igualmente para escribirle. Si no tienes cuenta conectada de ese canal, lo indica y no \
 deja enviar; si la \
 conversación la lleva otra persona, también. A la derecha, "Detalles del contacto" (estado, datos de contacto, \
-responsable y etiquetas; se oculta con el botón ⓘ). "Abrir ficha" lleva a su ficha completa (en Contactos). Se \
+responsable y etiquetas; se oculta con el botón ⓘ). En ese panel, la pestaña "Asistente IA" permite preguntar al asistente sobre ese contacto sin abrir la ficha (es la misma conversación que en la ficha). "Abrir ficha" lleva a su ficha completa (en Contactos). Se \
 actualiza sola cada 20 segundos.
 - Menú de usuario (arriba a la derecha, con tu nombre): "Ver tutorial" repite el recorrido de bienvenida, \
 "Cambiar contraseña" y "Cerrar sesión".
