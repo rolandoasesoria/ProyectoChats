@@ -42,10 +42,30 @@ try:
         b.click('.tour-card [data-tour="next"]')
         if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 14, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 17, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
+
+    # Sección Chats: lista, conversación por canal y detalles del contacto
+    b.click("#nav-chats")
+    b.wait("document.querySelectorAll('#chats-list li[data-client]').length > 0")
+    check("chats: la lista con el último mensaje", b.js("!!document.querySelector('#chats-list .chat-preview').textContent"))
+    b.js("document.querySelector('#chats-list li[data-client]').click()")
+    b.wait("!document.querySelector('#chat-open').hidden && document.querySelectorAll('#chat-timeline .msg-row').length > 0")
+    check("chats: pestañas por canal", b.js("document.querySelectorAll('#chat-tabs [data-channel]').length") >= 1)
+    check("chats: detalles del contacto", b.js("!document.querySelector('#chat-details').hidden"))
+    first_tab = b.js("document.querySelector('#chat-tabs [data-channel]').dataset.channel")
+    check("chats: cada pestaña muestra solo su canal",
+          b.js(f"[...document.querySelectorAll('#chat-timeline .msg-row')].every((r) => r.classList.contains('{first_tab}'))"))
+    b.click('#chats-filter [data-unread="true"]')
+    b.pump(0.6)
+    check("chats: filtro «No leídos»", b.js("document.querySelector('#chats-filter .active').dataset.unread") == "true")
+    b.click('#chats-filter [data-unread="false"]')
+    b.shot("04a-chats")
+    b.click("#chat-open-client")
+    b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
+    check("chats: «Abrir ficha» lleva al cliente en la sección Clientes", True)
 
     # Lista de clientes y filtros
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
