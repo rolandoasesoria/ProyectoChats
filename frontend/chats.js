@@ -8,7 +8,9 @@ const chatState = {
   clientId: null, data: null, channel: null, unread: false, scope: "mine", query: "",
   conversationId: null, baseline: null, // conversación por la que se responde y su último mensaje al abrirla
   details: true, // panel «Detalles del contacto» visible
+  file: null, // archivo elegido para enviar con el próximo mensaje
 };
+const CHAT_MAX_FILE = 15 * 1024 * 1024;
 let chatsSearchTimer = null;
 
 /* ---------- Secciones de la barra lateral ---------- */
@@ -96,6 +98,7 @@ function chatConversations() {
 }
 
 async function openChat(clientId) {
+  if (chatState.clientId !== clientId) setChatFile(null); // el archivo elegido era para otro chat
   chatState.clientId = clientId;
   document.querySelectorAll("#chats-list li[data-client]").forEach((li) =>
     li.classList.toggle("active", Number(li.dataset.client) === clientId));
@@ -146,6 +149,7 @@ async function prepareComposer() {
     note.textContent = text;
     note.hidden = !text;
     $("#chat-send").disabled = true;
+    $("#chat-file").disabled = true;
     $("#chat-ai-draft").disabled = !conv;
     $("#chat-template").hidden = true;
     loadChatAI(conv?.channel === "whatsapp" ? conv.id : null);
@@ -165,6 +169,7 @@ async function prepareComposer() {
     $("#chat-template").hidden = conv.channel !== "whatsapp"; // las plantillas solo existen en WhatsApp
     note.hidden = true;
     $("#chat-send").disabled = false;
+    $("#chat-file").disabled = false;
     $("#chat-ai-draft").disabled = false;
     $("#chat-send").textContent = `Enviar por ${s.via}`;
     loadChatAI(conv.channel === "whatsapp" ? conv.id : null);
@@ -173,14 +178,46 @@ async function prepareComposer() {
   }
 }
 
+// El archivo elegido, en base64 para enviarlo con el mensaje.
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(",")[1] || "");
+    reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function setChatFile(file) {
+  if (file && file.size > CHAT_MAX_FILE) {
+    alert("El archivo supera el máximo de 15 MB.");
+    file = null;
+  }
+  chatState.file = file || null;
+  $("#chat-file").value = "";
+  const chip = $("#chat-file-chip");
+  chip.hidden = !file;
+  chip.innerHTML = file ? `📎 ${escapeHtml(file.name)} <span class="muted small">(${Math.max(1, Math.round(file.size / 1024))} KB)</span>
+    <button type="button" class="link small" id="chat-file-remove" aria-label="Quitar el archivo">×</button>` : "";
+}
+
 async function sendChatMessage(text) {
   text = text.trim();
   const convId = chatState.conversationId;
-  if (!text || !convId || $("#chat-send").disabled) return;
+  const file = chatState.file;
+  if ((!text && !file) || !convId || $("#chat-send").disabled) return;
   const btn = $("#chat-send");
   btn.disabled = true;
+  let payload;
+  try {
+    payload = { text, file: file ? { filename: file.name, mime: file.type || null, data: await fileToBase64(file) } : null };
+  } catch (err) {
+    btn.disabled = false;
+    $("#chat-text").value = text;
+    return alert(err.message);
+  }
   const send = (force) => api(`/api/conversations/${convId}/send`, {
-    method: "POST", body: JSON.stringify({ text, after_message_id: chatState.baseline, force }),
+    method: "POST", body: JSON.stringify({ ...payload, after_message_id: chatState.baseline, force }),
   });
   try {
     try {
@@ -193,6 +230,7 @@ async function sendChatMessage(text) {
       }
       await send(true);
     }
+    setChatFile(null);
     await loadChatConversation();
     loadChats();
     refreshInboxCount();
@@ -292,6 +330,8 @@ function bindChatsEvents() {
     loadChatConversation();
   });
   bindComposer($("#chat-composer"), $("#chat-text"), sendChatMessage);
+  $("#chat-file").addEventListener("change", (e) => setChatFile(e.target.files[0]));
+  $("#chat-file-chip").addEventListener("click", (e) => { if (e.target.closest("#chat-file-remove")) setChatFile(null); });
   $("#chat-ai-draft").addEventListener("click", draftChatReply);
   $("#chat-open-client").addEventListener("click", openChatClient);
   $("#chat-details-toggle").addEventListener("click", () => toggleChatDetails());

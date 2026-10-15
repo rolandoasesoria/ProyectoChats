@@ -18,7 +18,7 @@ AI_IMAGE_TYPES = {"image/png", "image/jpeg", "image/gif", "image/webp"}
 AI_IMAGE_MAX_BYTES = 5 * 1024 * 1024   # límite de la API de Claude por imagen
 
 
-def _guess_mime(filename: str, mime: str | None) -> str:
+def guess_mime(filename: str, mime: str | None) -> str:
     if mime and mime != "application/octet-stream":
         return mime
     return mimetypes.guess_type(filename)[0] or "application/octet-stream"
@@ -50,7 +50,7 @@ def save(conn: Conn, client_id: int, filename: str, data: bytes, mime: str | Non
     """Guarda el archivo en disco y su fila (usa la conexión de quien llama, dentro de su transacción)."""
     if len(data) > MAX_BYTES:
         raise InvalidInput(f"«{filename}» supera el máximo de 20 MB.")
-    mime = _guess_mime(filename, mime)
+    mime = guess_mime(filename, mime)
     STORAGE.mkdir(parents=True, exist_ok=True)
     path = STORAGE / f"{uuid.uuid4().hex}_{_safe_name(filename)}"
     path.write_bytes(data)

@@ -30,7 +30,7 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 from email.utils import formataddr, make_msgid
 
-from . import clients, conversations, emails, insights, notes, secrets_store, settings
+from . import attachments, clients, conversations, emails, insights, notes, secrets_store, settings
 from .config import config
 from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
@@ -96,11 +96,31 @@ class IntegrationError(Exception):
 
 # ---------------------------------------------------------------- HTTP
 
+def _multipart(form: dict) -> tuple[bytes, str]:
+    """Cuerpo multipart/form-data. Los archivos van como (nombre, tipo MIME, bytes); el resto, como texto."""
+    boundary = secrets.token_hex(16).encode()
+    parts = []
+    for name, value in form.items():
+        if isinstance(value, tuple):
+            filename, mime, content = value
+            head = (f'Content-Disposition: form-data; name="{name}"; filename="{filename}"\r\n'
+                    f"Content-Type: {mime}\r\n\r\n").encode()
+        else:
+            head, content = f'Content-Disposition: form-data; name="{name}"\r\n\r\n'.encode(), str(value).encode()
+        parts.append(b"--" + boundary + b"\r\n" + head + content + b"\r\n")
+    return b"".join(parts) + b"--" + boundary + b"--\r\n", f"multipart/form-data; boundary={boundary.decode()}"
+
+
 def http_request(method: str, url: str, *, body: dict | None = None, headers: dict | None = None,
-                 raw: bool = False, timeout: int = 30):
-    data = json.dumps(body).encode() if body is not None else None
+                 raw: bool = False, timeout: int = 30, form: dict | None = None):
+    """Petición HTTP con cuerpo JSON (`body`) o multipart (`form`, para subir archivos)."""
+    if form is not None:
+        data, content_type = _multipart(form)
+    else:
+        data = json.dumps(body).encode() if body is not None else None
+        content_type = "application/json" if data else None
     req = urllib.request.Request(url, data=data, method=method,
-                                 headers={**({"Content-Type": "application/json"} if data else {}), **(headers or {})})
+                                 headers={**({"Content-Type": content_type} if content_type else {}), **(headers or {})})
     try:
         with urllib.request.urlopen(req, timeout=timeout) as r:
             content = r.read(MAX_DOWNLOAD + 1)
@@ -402,7 +422,8 @@ def sync_email(integ: dict) -> int:
     return imported
 
 
-def send_email(integ: dict, to: str, text: str, subject: str | None, in_reply_to: str | None) -> str:
+def send_email(integ: dict, to: str, text: str, subject: str | None, in_reply_to: str | None,
+               attachment: dict | None = None) -> str:
     cfg = integ["config"]
     msg = EmailMessage()
     msg["From"] = formataddr((cfg.get("display_name") or "", cfg["address"]))
@@ -413,6 +434,10 @@ def send_email(integ: dict, to: str, text: str, subject: str | None, in_reply_to
         msg["In-Reply-To"] = in_reply_to
         msg["References"] = in_reply_to
     msg.set_content(text)
+    if attachment:
+        maintype, _, subtype = (attachment["mime"] or "application/octet-stream").partition("/")
+        msg.add_attachment(attachment["data"], maintype=maintype, subtype=subtype or "octet-stream",
+                           filename=attachment["filename"])
     port = int(cfg["smtp_port"])
     context = _tls()
     server = SMTP_SSL_CLASS(cfg["smtp_host"], port, timeout=30, context=context) if port == 465 \
@@ -480,6 +505,18 @@ def send_telegram(integ: dict, handle: str, text: str) -> str:
     return f"tg:{handle[4:]}:{resp['result']['message_id']}"
 
 
+def send_telegram_file(integ: dict, handle: str, attachment: dict, caption: str) -> str:
+    if not handle.startswith("user") or not handle[4:].isdigit():
+        raise IntegrationError("Este cliente no ha escrito al bot: Telegram solo deja responder a quien escribió antes al bot.")
+    photo = attachment["mime"] in ("image/jpeg", "image/png")
+    method, field = ("sendPhoto", "photo") if photo else ("sendDocument", "document")
+    form = {"chat_id": handle[4:], field: (attachment["filename"], attachment["mime"], attachment["data"])}
+    if caption:
+        form["caption"] = caption
+    resp = http_request("POST", f"{TELEGRAM_API}/bot{integ['config']['bot_token']}/{method}", form=form, timeout=60)
+    return f"tg:{handle[4:]}:{resp['result']['message_id']}"
+
+
 # ---------------------------------------------------------------- WhatsApp Business (Cloud API)
 
 META_TOKEN_REJECTED = ("Meta no acepta el access token: ha caducado o se ha revocado. Si usaste el temporal de "
@@ -540,6 +577,32 @@ def send_whatsapp(integ: dict, handle: str, text: str) -> str:
     cfg = integ["config"]
     resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
                          body={"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}})
+    return f"wa:{resp['messages'][0]['id']}"
+
+
+# Tipo de mensaje de WhatsApp según el archivo (el resto va como documento).
+WHATSAPP_MEDIA = {"image/jpeg": "image", "image/png": "image", "video/mp4": "video", "audio/mpeg": "audio",
+                  "audio/ogg": "audio", "audio/aac": "audio", "audio/mp4": "audio"}
+
+
+def send_whatsapp_file(integ: dict, handle: str, attachment: dict, caption: str) -> str:
+    """Sube el archivo a Meta y lo envía (imagen, vídeo, audio o documento) con `caption` como pie."""
+    to = digits(handle)
+    if len(to) < 8:
+        raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
+    cfg = integ["config"]
+    mime = attachment["mime"] or "application/octet-stream"
+    uploaded = http_request("POST", f"{GRAPH_API}/{cfg['phone_number_id']}/media", headers=bearer(cfg["access_token"]),
+                            form={"messaging_product": "whatsapp", "type": mime,
+                                  "file": (attachment["filename"], mime, attachment["data"])}, timeout=60)
+    kind = WHATSAPP_MEDIA.get(mime, "document")
+    media = {"id": uploaded["id"]}
+    if caption and kind != "audio":
+        media["caption"] = caption
+    if kind == "document":
+        media["filename"] = attachment["filename"]
+    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
+                         body={"messaging_product": "whatsapp", "to": to, "type": kind, kind: media})
     return f"wa:{resp['messages'][0]['id']}"
 
 
@@ -652,19 +715,32 @@ def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_a
     return {"message_id": message_id, "via": integ["name"]}
 
 
-def send_reply(conversation_id: int, user: dict, text: str) -> dict:
+def send_reply(conversation_id: int, user: dict, text: str, attachment: dict | None = None) -> dict:
+    """Responde al cliente por el canal de la conversación. Con `attachment` ({filename, mime, data}) envía el archivo
+    (el texto va como pie) y lo guarda en la ficha del cliente, junto al mensaje."""
     integ, conv, idents = reply_target(conversation_id, user)
+    if attachment:
+        attachment = {**attachment, "mime": attachments.guess_mime(attachment["filename"], attachment.get("mime"))}
 
     def send() -> str:
         if conv["channel"] == "email":
             with get_conn() as conn:
                 in_reply_to = repo.last_incoming_external_id(conn, conversation_id)
-            return send_email(integ, idents[0], text, conv["subject"], in_reply_to)
+            return send_email(integ, idents[0], text, conv["subject"], in_reply_to, attachment)
         if conv["channel"] == "telegram":
-            return send_telegram(integ, next((h for h in idents if h.startswith("user")), idents[0]), text)
+            handle = next((h for h in idents if h.startswith("user")), idents[0])
+            return send_telegram_file(integ, handle, attachment, text) if attachment else send_telegram(integ, handle, text)
+        if attachment:
+            return send_whatsapp_file(integ, idents[0], attachment, text)
         return send_whatsapp(integ, idents[0], text)
 
-    return deliver(integ, conversation_id, user, text, send)
+    stored = text or (f"📎 {attachment['filename']}" if attachment else "")
+    result = deliver(integ, conversation_id, user, stored, send)
+    if attachment:
+        with get_conn() as conn:
+            attachments.save(conn, conv["client_id"], attachment["filename"], attachment["data"], attachment["mime"],
+                             result["message_id"], user["id"])
+    return result
 
 
 # ---------------------------------------------------------------- Programador en segundo plano

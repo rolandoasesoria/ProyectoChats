@@ -55,6 +55,14 @@ try:
     b.wait("!document.querySelector('#chat-open').hidden && document.querySelectorAll('#chat-timeline .msg-row').length > 0")
     check("chats: pestañas por canal", b.js("document.querySelectorAll('#chat-tabs [data-channel]').length") >= 1)
     check("chats: detalles del contacto", b.js("!document.querySelector('#chat-details').hidden"))
+    b.pump(1)
+    check("chats: sin cuenta conectada no se puede adjuntar", b.js("document.querySelector('#chat-file').disabled"))
+    b.js("setChatFile(new File(['hola'], 'presupuesto.pdf', {type: 'application/pdf'}))")
+    check("chats: el archivo elegido se ve sobre la caja de escribir",
+          "presupuesto.pdf" in b.js("document.querySelector('#chat-file-chip').textContent")
+          and not b.js("document.querySelector('#chat-file-chip').hidden"))
+    b.click("#chat-file-remove")
+    check("chats: y se puede quitar", b.js("document.querySelector('#chat-file-chip').hidden && chatState.file === null"))
     first_tab = b.js("document.querySelector('#chat-tabs [data-channel]').dataset.channel")
     check("chats: cada pestaña muestra solo su canal",
           b.js(f"[...document.querySelectorAll('#chat-timeline .msg-row')].every((r) => r.classList.contains('{first_tab}'))"))

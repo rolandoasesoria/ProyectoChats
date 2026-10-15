@@ -126,8 +126,13 @@
         </div>
         <form class="chat-composer" id="chat-composer">
           <p class="muted small" id="chat-send-note" hidden></p>
+          <div class="chat-file-chip" id="chat-file-chip" hidden></div>
           <textarea id="chat-text" rows="1" maxlength="4000" placeholder="Escribe un mensaje… (Mayús+Intro: nueva línea)"></textarea>
           <div class="chat-composer-actions">
+            <label class="icon-btn attach-btn" id="chat-attach" title="Adjuntar un archivo (máximo 15 MB)">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7-7l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>
+              <input type="file" id="chat-file" hidden>
+            </label>
             <button type="button" class="ghost small-btn" id="chat-template" hidden title="Enviar una plantilla aprobada (lo único que WhatsApp deja enviar pasadas 24 h del último mensaje del cliente)">Plantilla</button>
             <button type="button" class="ghost small-btn" id="chat-ai-draft" title="La IA propone una respuesta con el contexto del cliente">✨ Redactar con IA</button>
             <span class="spacer"></span>
