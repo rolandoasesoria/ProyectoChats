@@ -173,7 +173,28 @@ select, input[type="search"], .form input {
 .small { font-size: 13px; }
 
 /* Mientras se comprueba la sesión no se muestra la app (evita un parpadeo antes de ir al login) */
-body.booting .layout, body.booting .topbar-actions, body.booting .help { visibility: hidden; }
+body.booting .layout, body.booting .topbar-actions, body.booting .help, body.booting .sidebar { visibility: hidden; }
+
+/* Barra lateral: iconos de las secciones (arriba) y de la configuración (abajo) */
+.app-body { flex: 1; min-height: 0; display: flex; }
+.app-body > .layout { flex: 1; min-width: 0; }
+.sidebar {
+  width: 60px; flex-shrink: 0; display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 12px 0; background: var(--sub); border-right: 1px solid var(--border);
+}
+.nav-spacer { flex: 1; }
+.nav-btn {
+  width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: 10px;
+  background: transparent; color: var(--muted); cursor: pointer; position: relative;
+}
+.nav-btn svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn:hover { background: var(--sub-hover); color: var(--text); }
+.nav-btn.active { background: var(--accent-soft); color: var(--accent); }
+/* Marca de la sección activa en el borde izquierdo */
+.nav-btn.active::before {
+  content: ""; position: absolute; left: -10px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
 
 /* Botones */
 button.primary {
@@ -849,7 +870,7 @@ body.resizing iframe { pointer-events: none; }
 
 /* Mascota de ayuda */
 /* Abajo a la izquierda: a la derecha taparía el botón de enviar del asistente. */
-.help { position: fixed; left: 20px; bottom: 20px; z-index: 50; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.help { position: fixed; left: 72px; bottom: 20px; /* a la derecha de la barra lateral (60 px) */ z-index: 50; display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
 .mascot {
   width: 52px; height: 52px; border: 1px solid var(--border); border-radius: 50%; padding: 5px; cursor: pointer;
   background: var(--panel); box-shadow: 0 4px 12px var(--shadow);
