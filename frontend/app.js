@@ -101,6 +101,8 @@ function setThreadDot(clientId, on) {
 }
 
 async function selectClient(id) {
+  // Un cliente se abre en la sección Clientes (desde el buscador, los avisos, la bandeja, el chat…).
+  if (id !== null && $(".layout").hidden) showView("clients");
   state.clientId = id;
   document.querySelectorAll("#client-list li[data-id]").forEach((li) =>
     li.classList.toggle("active", (li.dataset.id ? Number(li.dataset.id) : null) === id));
@@ -437,6 +439,7 @@ function bindEvents() {
   bindDocumentEvents();
   bindSearchEvents();
   bindIntegrationEvents();
+  bindChatsEvents();
   bindEvents();
   try {
     state.convClients = new Set(await api("/api/conversations/agent/clients"));
@@ -446,6 +449,7 @@ function bindEvents() {
     loadNotifications();
     await loadClients();
     await selectClient(null);
+    showView(savedView());
   } catch (err) {
     appendBubble($("#chat-log"), "error", `No se pudo conectar con el servidor: ${escapeHtml(err.message)}`);
   }
