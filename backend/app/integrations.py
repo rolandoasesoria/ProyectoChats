@@ -423,12 +423,16 @@ def sync_email(integ: dict) -> int:
 
 
 def send_email(integ: dict, to: str, text: str, subject: str | None, in_reply_to: str | None,
-               attachment: dict | None = None) -> str:
+               attachment: dict | None = None, reply: bool = True) -> str:
+    """Envía un correo: respuesta en el hilo («Re: asunto») o, con reply=False, uno nuevo con ese asunto."""
     cfg = integ["config"]
     msg = EmailMessage()
     msg["From"] = formataddr((cfg.get("display_name") or "", cfg["address"]))
     msg["To"] = to
-    msg["Subject"] = f"Re: {subject}" if subject and subject != "(sin asunto)" else (subject or "")
+    if reply:
+        msg["Subject"] = f"Re: {subject}" if subject and subject != "(sin asunto)" else (subject or "")
+    else:
+        msg["Subject"] = subject or ""
     msg["Message-ID"] = make_msgid(domain=cfg["address"].split("@")[-1])
     if in_reply_to:
         msg["In-Reply-To"] = in_reply_to
@@ -700,19 +704,58 @@ def reply_target(conversation_id: int, user: dict) -> tuple[dict, dict, list[str
     return integ, conv, idents
 
 
-def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_ai: bool = False) -> dict:
-    """Envía con `send()` (devuelve el identificador externo) y guarda `text` en la conversación como enviado por
-    quien lo escribió (o por la IA, con `by_ai`). Los fallos se explican y, si son de credenciales, marcan la cuenta."""
+def _attempt(integ: dict, send) -> str:
+    """Ejecuta `send()` (devuelve el identificador externo). Los fallos se explican y, si son de credenciales,
+    marcan la cuenta."""
     try:
-        ext = send()
+        return send()
     except (IntegrationError, OSError, smtplib.SMTPException) as exc:
         error = _explain(integ["kind"], exc)
         if error.needs_attention:
             flag_problem(integ, str(error))
         raise ExternalServiceError(f"No se pudo enviar: {error}")
+
+
+def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_ai: bool = False) -> dict:
+    """Envía con `send()` y guarda `text` en la conversación como enviado por quien lo escribió (o por la IA, con
+    `by_ai`)."""
+    ext = _attempt(integ, send)
     with get_conn() as conn:
         message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext, by_ai)
     return {"message_id": message_id, "via": integ["name"]}
+
+
+def send_new_email(client_id: int, user: dict, subject: str, text: str, to: str | None = None,
+                   attachment: dict | None = None) -> dict:
+    """Correo nuevo (hilo nuevo, con su asunto) a una dirección del cliente, por la cuenta de correo del usuario. Se
+    guarda como conversación de quien tiene esa cuenta."""
+    subject = " ".join(subject.split())
+    if not subject:
+        raise InvalidInput("Ponle un asunto al correo.")
+    if not text.strip() and not attachment:
+        raise InvalidInput("Escribe el correo o adjunta un archivo.")
+    with get_conn() as conn:
+        integration_id = repo.find_sender_id(conn, "email", user["id"], user["role"])
+        addresses = repo.client_handles(conn, client_id, "email")
+    if not integration_id:
+        raise InvalidInput("Conecta tu correo en «Mis cuentas» para escribir desde aquí.")
+    if not addresses:
+        raise InvalidInput("Este cliente no tiene ninguna dirección de correo.")
+    to = to or addresses[0]
+    if to not in addresses:
+        raise InvalidInput("Esa dirección no es de este cliente.")
+    integ = get(integration_id)
+    if attachment:
+        attachment = {**attachment, "mime": attachments.guess_mime(attachment["filename"], attachment.get("mime"))}
+    ext = _attempt(integ, lambda: send_email(integ, to, text, subject, None, attachment, reply=False))
+    result = conversations.import_conversation({
+        "owner_user_id": integ["owner_user_id"], "channel": "email", "handle": to, "client_id": client_id,
+        "subject": subject, "messages": [{
+            "direction": "out", "sender": user["name"], "sent_at": _now_local(), "external_id": ext,
+            "body": text.strip() or (f"📎 {attachment['filename']}" if attachment else ""),
+            "attachments": [attachment] if attachment else []}],
+    })
+    return {"conversation_id": result["conversation_id"], "via": integ["name"]}
 
 
 def send_reply(conversation_id: int, user: dict, text: str, attachment: dict | None = None) -> dict:

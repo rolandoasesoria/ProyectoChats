@@ -1078,3 +1078,6 @@ body.resizing iframe { pointer-events: none; }
   border: 1px solid var(--border); border-radius: 999px; background: var(--sub); font-size: 13px;
 }
 .chat-file-chip .link { font-size: 16px; line-height: 1; padding: 0 4px; }
+
+/* Correo nuevo desde Chats: el asunto, sobre la caja de escribir */
+.chat-subject { width: 100%; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--panel); font-weight: 600; }

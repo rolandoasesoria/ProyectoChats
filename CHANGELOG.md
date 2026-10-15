@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Chats, pestaña Email: «✉ Nuevo correo» escribe un correo nuevo con asunto (hilo nuevo, admite adjunto). Si el
+  cliente tiene email pero no hay hilos de correo, la pestaña sale igualmente para escribirle.
 - Chats: adjuntar un archivo (📎, hasta 15 MB) al responder por WhatsApp, Telegram o correo; queda en la ficha del
   cliente junto al mensaje.
 - **IA que responde** por WhatsApp (sección «IA»): instrucciones del negocio, modo supervisado (propone y una persona

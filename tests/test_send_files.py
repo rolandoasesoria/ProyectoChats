@@ -85,6 +85,26 @@ parts = list(sent_mail[-1].iter_attachments())
 check("correo: va como adjunto del mensaje", len(parts) == 1 and parts[0].get_filename() == "presupuesto.pdf"
       and parts[0].get_content_type() == "application/pdf" and parts[0].get_content() == PDF["data"], parts)
 
+# Correo nuevo (hilo nuevo con su asunto), con adjunto
+r = integrations.send_new_email(econv["client_id"], CARLOS, "Contrato de mantenimiento 2027", "Hola Lucía, te lo envío.", attachment=PDF)
+m = sent_mail[-1]
+check("correo nuevo: con su asunto tal cual (sin «Re:») y sin responder a ningún hilo",
+      m["Subject"] == "Contrato de mantenimiento 2027" and m["To"] == "lucia@cliente.es" and not m["In-Reply-To"], dict(m))
+check("y con el adjunto", [p.get_filename() for p in m.iter_attachments()] == ["presupuesto.pdf"])
+check("se guarda como conversación nueva del cliente", r["conversation_id"] != econv["conversation_id"], r)
+tl = carlos.get(f"/api/clients/{econv['client_id']}/timeline?channel=email")[1]
+check("con el mensaje enviado", any(t["body"] == "Hola Lucía, te lo envío." and t["direction"] == "out" for t in tl), tl[-2:])
+for label, kwargs in (("sin asunto", {"subject": "  ", "text": "x"}),
+                      ("a una dirección que no es del cliente", {"subject": "Hola", "text": "x", "to": "otro@x.es"}),
+                      ("vacío", {"subject": "Hola", "text": ""})):
+    try:
+        integrations.send_new_email(econv["client_id"], CARLOS, **kwargs)
+        check(f"correo nuevo {label}: no se envía", False)
+    except Exception as exc:  # noqa: BLE001
+        check(f"correo nuevo {label}: no se envía", "InvalidInput" in type(exc).__name__, exc)
+check("Marta, sin cuenta de correo conectada, no puede = 400",
+      marta.post(f"/api/clients/{econv['client_id']}/emails", {"subject": "Hola", "text": "x"})[0] == 400)
+
 # ---------------------------------------------------------------- La ruta (servidor real: valida antes de enviar)
 cid = conv["conversation_id"]
 check("sin texto ni archivo = 400", carlos.post(f"/api/conversations/{cid}/send", {"text": ""})[0] == 400)
