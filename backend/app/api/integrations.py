@@ -169,6 +169,22 @@ def admin_create_template(integration_id: int, req: TemplateIn, admin: AdminUser
     return _create_template(integrations.get(integration_id), req, admin)
 
 
+def _delete_template(integ: dict, name: str, user: dict) -> dict:
+    whatsapp_templates.delete_template(integ, name)
+    audit.log(user["id"], "integration_change", detail=f"borró la plantilla de WhatsApp «{name}» en «{integ['name']}»")
+    return {"ok": True}
+
+
+@router.delete("/api/me/integrations/{integration_id}/templates/{name}")
+def delete_my_template(integration_id: int, name: str, user: CurrentUser):
+    return _delete_template(_my_integration(integration_id, user), name, user)
+
+
+@router.delete("/api/admin/integrations/{integration_id}/templates/{name}")
+def admin_delete_template(integration_id: int, name: str, admin: AdminUser):
+    return _delete_template(integrations.get(integration_id), name, admin)
+
+
 # Coexistencia: cada persona conecta el WhatsApp Business de su móvil con el registro insertado de Meta.
 
 @router.get("/api/meta/whatsapp-signup")
