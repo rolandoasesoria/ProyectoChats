@@ -149,6 +149,7 @@ function setNewEmail(on) {
   chatState.newEmail = on;
   $("#chat-subject").hidden = !on;
   $("#chat-new-email").textContent = on ? "Responder en el hilo" : "✉ Nuevo correo";
+  if (!on) $("#chat-send").textContent = "Enviar"; // prepareComposer pone «Enviar por …» si hay cuenta
   if (on) {
     $("#chat-send").disabled = false;
     $("#chat-file").disabled = false;

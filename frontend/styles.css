@@ -1,3 +1,13 @@
+/* Inter (SIL Open Font License, ver fonts/LICENSE-Inter.txt): la fuente de la app fuera de los dispositivos de Apple.
+   Variable: un solo archivo para todos los grosores. */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("fonts/InterVariable.woff2") format("woff2");
+}
+
 :root {
   /* Paleta de identidad (de claro a más intenso): rosa lavanda, malva, lila, lavanda y azul pervinca.
      Son tonos pastel: se usan para fondos, selecciones, bordes y burbujas. Para texto y botones se usa el
@@ -131,7 +141,9 @@
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
 body {
-  font-family: "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  /* San Francisco en los dispositivos de Apple; en el resto, Inter (fuente libre de estilo muy parecido) */
+  font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+  font-optical-sizing: auto;
   font-size: 14px; line-height: 1.45; -webkit-font-smoothing: antialiased;
   background: var(--panel);
   color: var(--text);
@@ -1054,7 +1066,7 @@ body.resizing iframe { pointer-events: none; }
 .ai-hours { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .ai-hours input[type="time"] { padding: 5px 7px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); }
 .day-check { gap: 2px; font-size: 13px; color: var(--text); }
-.ai-form textarea { width: 100%; resize: vertical; font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 13px; }
+.ai-form textarea { width: 100%; resize: vertical; font-size: 13px; }
 .ai-test { border-top: 1px solid var(--border); padding-top: 14px; }
 .ai-test h3 { margin: 0 0 4px; }
 .ai-test-result { margin-top: 10px; padding: 12px; border-radius: 10px; background: var(--chat-bg); display: flex; flex-direction: column; gap: 6px; }
