@@ -8,8 +8,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ### Añadido
 - Chats, panel derecho: pestaña **«Asistente IA»** para preguntar al asistente sobre ese contacto sin abrir su ficha
   (es la misma conversación que en la ficha).
-- Estilo de tarjetas: las secciones van en una tarjeta grande con sombra suave sobre el fondo de la ventana, y cada
-  zona dentro es su propia tarjeta; la barra lateral queda aparte.
+- Estilo de tarjetas: cada zona de las secciones (lista, conversación, detalles…) es una tarjeta con sombra suave
+  sobre el fondo de la ventana; la barra lateral queda aparte. En Chats, la lista y los detalles llevan el tono del
+  asistente.
 - Tipografía de estilo Apple: San Francisco en los dispositivos de Apple e Inter (fuente libre, incluida en la app)
   en el resto.
 - Chats, pestaña Email: «✉ Nuevo correo» escribe un correo nuevo con asunto (hilo nuevo, admite adjunto). Si el

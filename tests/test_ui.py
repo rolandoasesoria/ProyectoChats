@@ -504,6 +504,11 @@ try:
     b.pump(0.6)
     b.shot("16-panel-claro")
     b.js("document.querySelector('#dashboard-dialog').close()")
+    b.click("#nav-chats")
+    b.js("document.querySelector('#chats-list li[data-client]').click()")
+    b.wait("document.querySelectorAll('#chat-timeline .msg-row').length > 0")
+    b.pump(0.6)
+    b.shot("16b-chats-claro")
 
     # Administración
     b.click("#menu-admin")
