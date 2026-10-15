@@ -12,7 +12,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
-from . import integrations, privacy
+from . import ai_reply, integrations, privacy
+from .api import ai_reply as ai_reply_api
 from .api import (
     assistants,
     auth,
@@ -63,6 +64,7 @@ async def lifespan(_: FastAPI):
     if not config.integrations.sync_disabled:
         integrations.start_scheduler()  # buzones y bots conectados
         privacy.start_daily_jobs()  # retención de mensajes y clientes inactivos, una vez al día
+        ai_reply.start_scheduler()  # IA que responde por WhatsApp (si está activada)
     yield
 
 
@@ -142,6 +144,7 @@ app.include_router(messaging.router)
 app.include_router(dashboard.router)
 app.include_router(privacy_api.router)
 app.include_router(properties_api.router)
+app.include_router(ai_reply_api.router)
 app.include_router(clients.router)
 app.include_router(drafts.router)
 app.include_router(replies.router)
