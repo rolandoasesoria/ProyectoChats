@@ -79,6 +79,10 @@ try:
           b.js("!!document.querySelector('#chat-tabs [data-channel=\"email\"]')"))
     b.js("document.querySelector('#chat-tabs [data-channel=\"whatsapp\"]').click()")
     b.wait("chatState.channel === 'whatsapp'")
+    b.pump(0.8)
+    check("correo nuevo: al volver a WhatsApp el botón ya no dice «Enviar correo»",
+          b.js("document.querySelector('#chat-send').textContent") != "Enviar correo"
+          and b.js("document.querySelector('#chat-subject').hidden"))
     first_tab = b.js("document.querySelector('#chat-tabs [data-channel]').dataset.channel")
     check("chats: cada pestaña muestra solo su canal",
           b.js(f"[...document.querySelectorAll('#chat-timeline .msg-row')].every((r) => r.classList.contains('{first_tab}'))"))
