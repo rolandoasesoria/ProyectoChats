@@ -512,6 +512,17 @@ try:
           b.js("fetch('/api/clients/1/properties').then((r) => r.json())"
                ".then((d) => Object.values(d.values).includes('12345678Z'))", await_promise=True))
 
+    # Varios posibles duplicados (p. ej. el mismo remitente desde varias direcciones): un solo aviso y «Unir todos aquí»
+    b.js("Promise.all([1, 2].map(() => api('/api/clients', {method: 'POST', body: JSON.stringify({name: 'Laura Gómez'})})))")
+    b.js("selectClient(1)")
+    b.wait("document.querySelector('#duplicates [data-merge-all]') !== null")
+    check("duplicados: un solo aviso para varios clientes con el mismo nombre",
+          b.js("document.querySelectorAll('#duplicates .duplicate').length") == 1
+          and "Hay 2 clientes más" in b.js("document.querySelector('#duplicates').textContent"))
+    b.click("#duplicates [data-merge-all]")
+    b.wait("api('/api/clients?q=Laura').then((cs) => cs.length === 1)")
+    check("duplicados: «Unir todos aquí» los une en este cliente", b.js("document.querySelector('#duplicates').hidden"))
+
     # Mis cuentas: el correo trae los servidores del proveedor y se conecta un bot de Telegram
     b.click("#menu-accounts")
     b.wait("document.querySelector('#accounts-dialog').open && document.querySelectorAll('#if-fields input').length > 0")
