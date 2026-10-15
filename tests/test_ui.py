@@ -42,7 +42,7 @@ try:
         b.click('.tour-card [data-tour="next"]')
         if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 12, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 14, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
@@ -50,6 +50,9 @@ try:
     # Lista de clientes y filtros
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
     b.shot("04-inicio")
+    check("barra lateral con sus secciones (y Administración para un administrador)",
+          b.js("['#dashboard-btn', '#nav-chats', '#menu-accounts', '#menu-replies', '#menu-admin']"
+               ".every((s) => { const e = document.querySelector(s); return e && e.closest('.sidebar') && !e.hidden; })"))
 
     # Zonas ajustables: arrastrar, teclado, doble clic, se recuerda y siempre se ven las tres
     width = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().width)")  # noqa: E731
@@ -194,7 +197,6 @@ try:
     b.wait("document.querySelector('#draft-applied').textContent.includes('Te avisaré')")
     check("al copiar programa el aviso de seguimiento", True)
     b.click("#draft-close")
-    b.click("#user-menu-btn")
     b.click("#menu-replies")
     b.wait("document.querySelector('#replies-dialog').open && document.querySelectorAll('#replies-list .reply-row').length >= 4")
     b.fill("#rf-title", "Horario")
@@ -327,9 +329,11 @@ try:
     # Panel de actividad (en oscuro y en claro)
     b.click("#help-close")
     b.click("#dashboard-btn")
+    # Los datos de ejemplo tienen fechas fijas (julio a septiembre de 2026): con «1 año» siguen dentro del periodo.
+    b.wait("document.querySelector('#dashboard-dialog').open")
+    b.click('#dash-range [data-days="365"]')
     b.wait("document.querySelectorAll('#dash-weekly .viz-seg').length > 0")
-    b.click('#dash-range [data-days="90"]')
-    b.wait("document.querySelector('#dash-tiles').textContent.includes('13')")
+    b.wait("document.querySelector('#dash-tiles').textContent.includes('14')")  # mensajes recibidos en el año
     check("panel: indicadores y columnas", b.js("document.querySelectorAll('#dash-weekly .viz-seg').length") >= 6)
     check("panel: tabla por persona (admin)", b.js("document.querySelectorAll('#dash-people tbody tr').length") == 3)
     b.js("""(() => { const hit = [...document.querySelectorAll('#dash-weekly .viz-hit')]
@@ -347,7 +351,6 @@ try:
     b.js("document.querySelector('#dashboard-dialog').close()")
 
     # Administración
-    b.click("#user-menu-btn")
     b.click("#menu-admin")
     b.wait("document.querySelectorAll('#users-tbody tr').length === 3")
     b.shot("14-admin")
@@ -369,7 +372,6 @@ try:
     b.js("document.querySelector('#admin-dialog').close()")
 
     # Mis cuentas: el correo trae los servidores del proveedor y se conecta un bot de Telegram
-    b.click("#user-menu-btn")
     b.click("#menu-accounts")
     b.wait("document.querySelector('#accounts-dialog').open && document.querySelectorAll('#if-fields input').length > 0")
     check("el correo se rellena según el proveedor (Gmail)",

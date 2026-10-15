@@ -8,13 +8,13 @@
 // Cada paso: { target: selector CSS o null (tarjeta centrada), title, text, when?: () => boolean }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 25;
+const TOUR_VERSION = 26;
 
 const TOUR_STEPS = [
   {
     target: null,
     title: "Bienvenido a Hilvana Chat",
-    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. Tres zonas: clientes, ficha y asistente; arrastra la línea entre ellas para ajustar su ancho. Un recorrido de un minuto.",
+    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones; en el centro, tres zonas: clientes, ficha y asistente (arrastra la línea entre ellas para ajustar su ancho). Un recorrido de un minuto.",
   },
   {
     target: ".clients",
@@ -47,8 +47,13 @@ const TOUR_STEPS = [
     text: "Abre cualquier cliente o acción escribiendo. Con ? ves los atajos de teclado: j/k para cambiar de cliente, r para responder…",
   },
   {
+    target: ".sidebar",
+    title: "Barra lateral",
+    text: "Tus secciones: Inicio (el panel de actividad) y Chats, la vista en la que estás. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
+  },
+  {
     target: "#dashboard-btn",
-    title: "Panel",
+    title: "Inicio: el panel",
     text: "Mensajes, tiempo de respuesta y cuántas se responden en plazo, tareas y clientes por estado en el periodo que elijas.",
   },
   {
@@ -57,14 +62,19 @@ const TOUR_STEPS = [
     text: "Te avisa cuando te mencionan en una nota, te asignan una tarea o una de tus cuentas conectadas deja de funcionar (por ejemplo, un token caducado).",
   },
   {
-    target: "#user-menu-btn",
-    title: "Tu cuenta",
-    text: "En «Mis cuentas» conectas tu correo, tu bot de Telegram o el WhatsApp Business de tu móvil (sigue funcionando en el móvil) para que tus mensajes entren solos, y creas las plantillas de WhatsApp. También: respuestas guardadas, contraseña, este tutorial y cerrar sesión. El botón de al lado cambia el tema.",
+    target: "#menu-accounts",
+    title: "Mis cuentas",
+    text: "Conecta tu correo, tu bot de Telegram o el WhatsApp Business de tu móvil (sigue funcionando en el móvil) para que tus mensajes entren solos, y crea las plantillas de WhatsApp. Debajo, tus respuestas guardadas.",
   },
   {
     target: "#user-menu-btn",
+    title: "Tu cuenta",
+    text: "Tu contraseña, este tutorial y cerrar sesión. El botón de al lado cambia el tema.",
+  },
+  {
+    target: "#menu-admin",
     title: "Administración",
-    text: "En este menú gestionas los usuarios y consultas el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta y si la IA analiza sola a los clientes. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
+    text: "Aquí gestionas los usuarios y consultas el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta y si la IA analiza sola a los clientes. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
     when: () => currentUser?.role === "admin",
   },
   {
