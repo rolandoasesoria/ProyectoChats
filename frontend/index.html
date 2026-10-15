@@ -145,13 +145,24 @@
     </section>
 
     <aside class="chat-details" id="chat-details" hidden>
-      <h3>Detalles del contacto</h3>
+      <div class="segmented details-tabs" id="chat-details-tabs" role="tablist" aria-label="Panel del contacto">
+        <button type="button" data-pane="info" class="active">Detalles</button>
+        <button type="button" data-pane="assistant">Asistente IA</button>
+      </div>
       <div id="chat-details-body"></div>
+      <div class="chat-assistant" id="chat-assistant" hidden>
+        <div class="chat-assistant-log" id="chat-assistant-log" aria-live="polite"></div>
+        <form class="chat-assistant-form" id="chat-assistant-form">
+          <textarea id="chat-assistant-input" rows="1" maxlength="4000" placeholder="Pregunta algo…"></textarea>
+          <button type="submit" class="primary small-btn" id="chat-assistant-send">Enviar</button>
+        </form>
+      </div>
     </aside>
   </section>
 
   <!-- Sección Contactos: tabla con filtros y columnas a elegir; al abrir uno se ve su ficha -->
   <section class="contacts-view" id="view-contacts" hidden>
+    <div class="zone-card contacts-card">
     <div class="contacts-toolbar">
       <h2>Contactos <span class="muted small" id="contacts-count"></span></h2>
       <input id="contacts-search" type="search" placeholder="Buscar nombre, empresa, teléfono, email, etiqueta…" autocomplete="off">
@@ -183,6 +194,7 @@
         <thead id="contacts-head"></thead>
         <tbody id="contacts-body"></tbody>
       </table>
+    </div>
     </div>
   </section>
 
@@ -242,6 +254,7 @@
 
   <!-- Sección IA: la IA que responde a los clientes por WhatsApp (configuración y «Probar la IA») -->
   <section class="ai-view" id="view-ai" hidden>
+    <div class="zone-card ai-card">
     <div class="ai-page">
       <header class="ai-head">
         <div>
@@ -304,6 +317,7 @@
         </div>
         <div class="ai-test-result" id="ai-test-result" hidden></div>
       </section>
+    </div>
     </div>
   </section>
 

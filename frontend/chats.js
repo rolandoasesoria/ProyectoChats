@@ -10,6 +10,9 @@ const chatState = {
   details: true, // panel «Detalles del contacto» visible
   file: null, // archivo elegido para enviar con el próximo mensaje
   newEmail: false, // escribiendo un correo nuevo (con asunto) en vez de responder en el hilo
+  detailsPane: "info", // panel derecho: «info» (detalles del contacto) o «assistant» (asistente IA)
+  assistantFor: null, // cliente cuya conversación con el asistente se ve en el panel
+  assistantBusy: false,
 };
 const CHAT_MAX_FILE = 15 * 1024 * 1024;
 let chatsSearchTimer = null;
@@ -121,6 +124,8 @@ async function openChat(clientId) {
     `<button role="tab" data-channel="${escapeHtml(ch)}" class="${ch === chatState.channel ? "active" : ""}">${badge(ch)}</button>`).join("");
   renderChatDetails(data);
   toggleChatDetails(chatState.details);
+  if (chatState.assistantFor !== clientId) chatState.assistantFor = null;
+  showDetailsPane(chatState.detailsPane);
   await Promise.all([loadChatConversation(), api(`/api/clients/${clientId}/visit`, { method: "POST" })]);
   const item = document.querySelector(`#chats-list li[data-client="${clientId}"]`);
   item?.classList.remove("has-unread");
@@ -325,6 +330,7 @@ function renderChatDetails(data) {
   const identities = data.identities.map((i) =>
     `<div class="detail-row"><span class="muted small">${escapeHtml(IDENTITY_LABELS[i.channel] || i.channel)}</span><span>${escapeHtml(i.handle)}</span></div>`).join("");
   $("#chat-details-body").innerHTML = `
+    <h3>Detalles del contacto</h3>
     <div class="chat-details-card">
       <span class="chat-avatar large">${escapeHtml(initialsOf(data.name))}</span>
       <strong>${escapeHtml(data.name)}</strong>
@@ -339,6 +345,66 @@ function renderChatDetails(data) {
     <div class="chip-row">${data.tags.length ? tagChips(data.tags) : `<span class="muted small">Sin etiquetas</span>`}</div>`;
 }
 
+/* ---------- Asistente IA del contacto (en el panel derecho) ---------- */
+
+// Es la misma conversación con el asistente que en la ficha del cliente: se lee del servidor al abrirla.
+async function loadChatAssistant() {
+  const clientId = chatState.clientId;
+  const log = $("#chat-assistant-log");
+  if (!clientId || chatState.assistantFor === clientId) return;
+  chatState.assistantFor = clientId;
+  log.innerHTML = "";
+  try {
+    const { turns } = await api(`/api/conversations/agent?client_id=${clientId}`);
+    if (chatState.clientId !== clientId) return;
+    if (!turns.length) {
+      log.innerHTML = `<p class="muted small chat-assistant-empty">Pregúntame cualquier dato de ${escapeHtml(chatState.data?.name || "este contacto")}:
+        qué pidió, qué se acordó, su CIF…</p>`;
+    }
+    turns.forEach((t) => appendBubble(log, t.role === "user" ? "user" : "bot", turnHtml(t)));
+    log.scrollTop = log.scrollHeight;
+  } catch (err) {
+    chatState.assistantFor = null;
+    appendBubble(log, "error", escapeHtml(err.message));
+  }
+}
+
+async function askChatAssistant(text) {
+  const clientId = chatState.clientId;
+  if (!text.trim() || !clientId || chatState.assistantBusy) return;
+  const log = $("#chat-assistant-log");
+  log.querySelector(".chat-assistant-empty")?.remove();
+  chatState.assistantBusy = true;
+  $("#chat-assistant-send").disabled = true;
+  try {
+    const ok = await askBot(log, text, async () => {
+      const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: text, client_id: clientId }) });
+      return renderMarkdown(res.reply) + renderTrace(res.tool_calls);
+    }, () => { log.scrollTop = log.scrollHeight; });
+    if (ok) {
+      // La ficha guarda su copia del hilo: se descarta para que la vuelva a leer con esta pregunta incluida.
+      state.threads.get(clientId)?.el.remove();
+      state.threads.delete(clientId);
+      setThreadDot(clientId, true);
+    }
+  } finally {
+    chatState.assistantBusy = false;
+    $("#chat-assistant-send").disabled = false;
+    log.scrollTop = log.scrollHeight;
+  }
+}
+
+function showDetailsPane(pane) {
+  chatState.detailsPane = pane;
+  document.querySelectorAll("#chat-details-tabs [data-pane]").forEach((b) => b.classList.toggle("active", b.dataset.pane === pane));
+  $("#chat-details-body").hidden = pane !== "info";
+  $("#chat-assistant").hidden = pane !== "assistant";
+  if (pane === "assistant") {
+    loadChatAssistant();
+    $("#chat-assistant-input").focus();
+  }
+}
+
 function toggleChatDetails(show) {
   const panel = $("#chat-details");
   const open = show ?? panel.hidden;
@@ -350,6 +416,7 @@ function toggleChatDetails(show) {
 // «Abrir ficha»: la ficha completa del contacto (datos, tareas, notas, mensajes y asistente).
 async function openChatClient() {
   if (!chatState.clientId) return;
+  chatState.assistantFor = null; // lo que se pregunte en la ficha se verá al volver
   showView("client");
   await selectClient(chatState.clientId);
 }
@@ -393,6 +460,11 @@ function bindChatsEvents() {
   $("#chat-ai-draft").addEventListener("click", draftChatReply);
   $("#chat-open-client").addEventListener("click", openChatClient);
   $("#chat-details-toggle").addEventListener("click", () => toggleChatDetails());
+  $("#chat-details-tabs").addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-pane]");
+    if (tab) showDetailsPane(tab.dataset.pane);
+  });
+  bindComposer($("#chat-assistant-form"), $("#chat-assistant-input"), askChatAssistant);
   setInterval(() => {
     if (document.hidden || $("#view-chats").hidden) return;
     loadChats();

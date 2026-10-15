@@ -9,7 +9,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 32;
+const TOUR_VERSION = 33;
 
 const TOUR_STEPS = [
   {
@@ -27,7 +27,7 @@ const TOUR_STEPS = [
     target: ".chat-main",
     view: "chats",
     title: "La conversación",
-    text: "Al elegir un chat, sus mensajes salen separados por canal (WhatsApp, Email, Telegram) en pestañas. Escribe abajo y pulsa Intro para enviar por tu cuenta conectada (con 📎 adjuntas un archivo; en Email, «✉ Nuevo correo» escribe uno con asunto), o «✨ Redactar con IA» para que te proponga la respuesta. A la derecha, los detalles del contacto; «Abrir ficha» te lleva a su ficha completa.",
+    text: "Al elegir un chat, sus mensajes salen separados por canal (WhatsApp, Email, Telegram) en pestañas. Escribe abajo y pulsa Intro para enviar por tu cuenta conectada (con 📎 adjuntas un archivo; en Email, «✉ Nuevo correo» escribe uno con asunto), o «✨ Redactar con IA» para que te proponga la respuesta. A la derecha, los detalles del contacto y, en la pestaña «Asistente IA», puedes preguntarle sobre ese contacto sin salir del chat; «Abrir ficha» te lleva a su ficha completa.",
   },
   {
     target: ".contacts-table-wrap",
