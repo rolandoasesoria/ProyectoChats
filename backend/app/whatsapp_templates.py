@@ -75,3 +75,43 @@ def create_template(integ: dict, name: str, category: str, language: str, body: 
                     {"name": slug, "category": category, "language": language, "components": [component]})
     return {"id": result.get("id"), "name": slug, "status": result.get("status", "PENDING"),
             "category": result.get("category", category)}
+
+
+def delete_template(integ: dict, name: str) -> None:
+    """Borra la plantilla en Meta (en todos sus idiomas)."""
+    _graph(integ, "DELETE", f"/{_account(integ)}/message_templates?name={template_name(name)}")
+
+
+def variable_count(body: str) -> int:
+    return max((int(n) for n in VARIABLE.findall(body or "")), default=0)
+
+
+def render(body: str, params: list[str]) -> str:
+    """El texto que verá el cliente: cada {{n}} sustituido por su valor."""
+    return VARIABLE.sub(lambda m: params[int(m.group(1)) - 1] if int(m.group(1)) <= len(params) else m.group(0), body)
+
+
+def approved_for(conversation_id: int, user: dict) -> list[dict]:
+    """Plantillas aprobadas de la cuenta de WhatsApp con la que `user` responde en esta conversación."""
+    integ, conv, _ = integrations.reply_target(conversation_id, user)
+    if conv["channel"] != "whatsapp":
+        raise InvalidInput("Las plantillas solo se envían por WhatsApp.")
+    return [{**t, "variables": variable_count(t["body"])} for t in list_templates(integ) if t["status"] == "APPROVED"]
+
+
+def send_template(conversation_id: int, user: dict, name: str, language: str, params: list[str]) -> dict:
+    """Envía una plantilla aprobada al cliente de la conversación y la guarda con el texto ya rellenado."""
+    integ, conv, idents = integrations.reply_target(conversation_id, user)
+    if conv["channel"] != "whatsapp":
+        raise InvalidInput("Las plantillas solo se envían por WhatsApp.")
+    template = next((t for t in list_templates(integ) if t["name"] == name and t["language"] == language
+                     and t["status"] == "APPROVED"), None)
+    if not template:
+        raise InvalidInput("Esa plantilla no existe o todavía no está aprobada por Meta.")
+    params = [p.strip() for p in params]
+    needed = variable_count(template["body"])
+    if len(params) != needed or not all(params):
+        raise InvalidInput(f"Rellena las {needed} variables de la plantilla." if needed != 1 else "Rellena la variable.")
+    text = render(template["body"], params)
+    return integrations.deliver(integ, conversation_id, user, text,
+                                lambda: integrations.send_whatsapp_template(integ, idents[0], name, language, params))
