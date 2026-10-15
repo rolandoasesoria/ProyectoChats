@@ -46,7 +46,7 @@ def timeline(conn: Conn, client_id: int, user_id: int, scope: str, channel: str 
     return rows(conn.execute(
         f"""
         SELECT * FROM (
-            SELECT m.id, m.direction, m.sender, m.body, m.sent_at,
+            SELECT m.id, m.direction, m.sender, m.body, m.sent_at, m.by_ai,
                    c.id AS conversation_id, c.channel, c.owner_user_id AS owner_id, u.name AS owner
               FROM messages m
               JOIN conversations c ON c.id = m.conversation_id

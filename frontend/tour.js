@@ -9,7 +9,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 29;
+const TOUR_VERSION = 30;
 
 const TOUR_STEPS = [
   {
@@ -39,6 +39,11 @@ const TOUR_STEPS = [
     target: "#nav-templates",
     title: "Plantillas",
     text: "Las plantillas de WhatsApp de tu cuenta: créalas con vista previa, mira si Meta las ha aprobado y bórralas. Las aprobadas se envían desde el chat con el botón «Plantilla»: es lo único que WhatsApp deja enviar pasadas 24 h del último mensaje del cliente.",
+  },
+  {
+    target: "#nav-ai",
+    title: "IA que responde",
+    text: "Una IA que contesta a tus clientes por WhatsApp con las instrucciones de tu negocio: en modo supervisado te propone la respuesta en el chat y tú la envías; en automático la envía sola. Si el cliente pide una persona o pregunta algo que no sabe, te avisa. Puedes pausarla en cada chat.",
   },
   {
     target: ".clients",
@@ -78,7 +83,7 @@ const TOUR_STEPS = [
   {
     target: ".sidebar",
     title: "Barra lateral",
-    text: "Tus secciones: Inicio (el panel de actividad), Chats, Contactos y Plantillas. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
+    text: "Tus secciones: Inicio (el panel de actividad), Chats, Contactos, Plantillas e IA. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
   },
   {
     target: "#dashboard-btn",

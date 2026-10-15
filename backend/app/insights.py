@@ -268,7 +268,7 @@ def _ask_text(system: str, content: str, refusal: str) -> str:
     return "\n".join(b.text for b in response.content if b.type == "text").strip()
 
 
-def _message_line(m: dict, channel: str | None = None) -> str:
+def message_line(m: dict, channel: str | None = None) -> str:
     """Un mensaje en el contexto de un prompt: «fecha[ · canal] · quién (cliente|equipo): texto»."""
     who = f"{m['sender']} (cliente)" if m["direction"] == "in" else f"{m['sender']} (equipo)"
     return f"{m['sent_at'][:16].replace('T', ' ')}{' · ' + channel if channel else ''} · {who}: {m['body'][:MAX_MESSAGE_CHARS]}"
@@ -277,7 +277,7 @@ def _message_line(m: dict, channel: str | None = None) -> str:
 def summarize_new_messages(client_name: str, messages: list[dict]) -> str:
     """Resumen breve de los mensajes llegados desde la última visita (no se guarda)."""
     lines = [f"Cliente: {client_name}", "Mensajes nuevos (fecha · canal · quién escribe):",
-             *[_message_line(m, m["channel"]) for m in messages]]
+             *[message_line(m, m["channel"]) for m in messages]]
     return _ask_text("Resume en español, en 1 a 4 viñetas cortas, qué ha pasado en estos mensajes nuevos entre el "
                      "equipo y el cliente: peticiones, cambios, acuerdos y lo que queda pendiente de responder. "
                      "Sin introducción ni despedida.",
@@ -317,8 +317,8 @@ def draft_reply(conversation_id: int, author: dict, instructions: str = "") -> d
         lines += ["Tareas pendientes con este cliente:", *[f"- {t['title']}" + (f" (vence {t['due_date']})" if t["due_date"] else "")
                                                            for t in open_tasks], ""]
     if other:
-        lines += ["Mensajes recientes por otros canales (contexto):", *[_message_line(m, m["channel"]) for m in other], ""]
-    lines += ["Conversación a la que hay que responder:", *[_message_line(m) for m in thread], ""]
+        lines += ["Mensajes recientes por otros canales (contexto):", *[message_line(m, m["channel"]) for m in other], ""]
+    lines += ["Conversación a la que hay que responder:", *[message_line(m) for m in thread], ""]
     if instructions.strip():
         lines += [f"Indicaciones de {author['name']} para esta respuesta: {instructions.strip()}"]
 

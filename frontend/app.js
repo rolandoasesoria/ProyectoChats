@@ -185,7 +185,7 @@ function timelineHtml(messages) {
       <div class="bubble" title="${escapeHtml(formatDate(m.sent_at))}">
         ${grouped ? "" : `<div class="bubble-sender">${escapeHtml(m.sender)}</div>`}
         <div class="bubble-text">${escapeHtml(m.body)}</div>${attachmentChips(m.attachments)}
-        <div class="bubble-meta"><span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}</div>
+        <div class="bubble-meta">${m.by_ai ? `<span class="ai-mark" title="Escrito por la IA">🤖 IA</span> · ` : ""}<span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}</div>
       </div>
     </li>`;
   }).join("");
@@ -442,6 +442,7 @@ function bindEvents() {
   bindChatsEvents();
   bindContactsEvents();
   bindTemplatesEvents();
+  bindAIEvents();
   bindEvents();
   try {
     state.convClients = new Set(await api("/api/conversations/agent/clients"));

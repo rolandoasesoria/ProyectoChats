@@ -151,6 +151,9 @@ async function onBellClick(e) {
   } catch { /* se abre igualmente */ }
   if (li.dataset.kind === "integration_error") {
     openAccountsDialog();  // una cuenta conectada necesita atención (token caducado, contraseña cambiada...)
+  } else if (li.dataset.kind.startsWith("ai_") && li.dataset.client) {
+    showView("chats");  // propuesta de la IA o chat que la IA ha pasado a una persona: se abre el chat
+    await openChat(Number(li.dataset.client));
   } else if (li.dataset.client) {
     await selectClient(Number(li.dataset.client));
     showDetailTab({ mention: "notes", task_assigned: "tasks" }[li.dataset.kind] || "profile");

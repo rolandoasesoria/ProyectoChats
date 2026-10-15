@@ -64,6 +64,9 @@
     <button class="nav-btn" id="nav-templates" data-view="templates" aria-label="Plantillas de WhatsApp" title="Plantillas de WhatsApp">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
     </button>
+    <button class="nav-btn" id="nav-ai" data-view="ai" aria-label="IA que responde" title="IA que responde">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16.5h5M3 12v3M21 12v3"/></svg>
+    </button>
     <span class="nav-spacer"></span>
     <button class="nav-btn" id="menu-accounts" aria-label="Mis cuentas: correo, WhatsApp y Telegram" title="Mis cuentas: correo, WhatsApp y Telegram">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg>
@@ -103,6 +106,8 @@
             <span class="muted small" id="chat-sub"></span>
           </div>
           <span class="spacer"></span>
+          <button type="button" class="ghost small-btn ai-toggle" id="chat-ai-toggle" hidden aria-pressed="false"
+                  title="Pausar o reanudar la IA que responde, solo en este chat"></button>
           <button type="button" class="ghost small-btn" id="chat-open-client" title="Ficha completa, tareas, notas y asistente">Abrir ficha</button>
           <button type="button" class="icon-btn" id="chat-details-toggle" aria-label="Detalles del contacto" title="Detalles del contacto" aria-pressed="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
@@ -110,6 +115,15 @@
         </header>
         <div class="tabs chat-tabs" id="chat-tabs" role="tablist"></div>
         <ol class="timeline chat-timeline" id="chat-timeline"></ol>
+        <div class="ai-suggestion" id="chat-ai-suggestion" hidden>
+          <div class="ai-suggestion-head"><strong>🤖 La IA propone esta respuesta</strong><span class="muted small">revísala antes de enviarla</span></div>
+          <textarea id="chat-ai-text" rows="2" maxlength="4000"></textarea>
+          <div class="chat-composer-actions">
+            <button type="button" class="link small danger" id="chat-ai-discard">Descartar</button>
+            <span class="spacer"></span>
+            <button type="button" class="primary small-btn" id="chat-ai-send">Enviar</button>
+          </div>
+        </div>
         <form class="chat-composer" id="chat-composer">
           <p class="muted small" id="chat-send-note" hidden></p>
           <textarea id="chat-text" rows="1" maxlength="4000" placeholder="Escribe un mensaje… (Mayús+Intro: nueva línea)"></textarea>
@@ -217,6 +231,73 @@
         <div class="tpl-preview" id="tpl-preview"></div>
       </div>
     </section>
+  </section>
+
+  <!-- Sección IA: la IA que responde a los clientes por WhatsApp (configuración y «Probar la IA») -->
+  <section class="ai-view" id="view-ai" hidden>
+    <div class="ai-page">
+      <header class="ai-head">
+        <div>
+          <h2>IA que responde</h2>
+          <p class="muted small">Responde por WhatsApp a tus clientes con las instrucciones de tu negocio. En modo supervisado
+            propone la respuesta y una persona la envía; en automático la envía sola. Si el cliente pide hablar con alguien,
+            se queja o pregunta algo que no sabe, no responde y avisa al responsable.</p>
+        </div>
+        <label class="switch"><input type="checkbox" id="ai-enabled"><span>Activada</span></label>
+      </header>
+      <p class="muted small" id="ai-readonly" hidden>Solo un administrador puede cambiar esta configuración.</p>
+      <form id="ai-form" class="form ai-form">
+        <div class="ai-row">
+          <span class="ai-label">Modo</span>
+          <div class="segmented" id="ai-mode" role="group" aria-label="Modo">
+            <button type="button" data-mode="supervised">Supervisada</button>
+            <button type="button" data-mode="auto">Automática</button>
+          </div>
+        </div>
+        <div class="ai-row">
+          <span class="ai-label">Horas de inactividad antes de que entre la IA</span>
+          <div class="segmented" id="ai-inactivity" role="group" aria-label="Horas de inactividad">
+            <button type="button" data-hours="0">0 h</button>
+            <button type="button" data-hours="24">24 h</button>
+            <button type="button" data-hours="48">48 h</button>
+            <button type="button" data-hours="72">72 h</button>
+          </div>
+        </div>
+        <p class="muted small">La IA solo entra en un chat si nadie del equipo ha escrito en él en ese tiempo (0 h: siempre),
+          y siempre dentro de las 24 h en las que WhatsApp deja responder a un cliente.</p>
+        <div class="ai-row">
+          <span class="ai-label">Cuándo</span>
+          <select id="ai-schedule">
+            <option value="always">A cualquier hora</option>
+            <option value="out_of_hours">Solo fuera del horario de oficina</option>
+          </select>
+          <span class="ai-hours" id="ai-hours-box">
+            <input type="time" id="ai-hours-start" aria-label="Inicio del horario de oficina"> –
+            <input type="time" id="ai-hours-end" aria-label="Fin del horario de oficina">
+            <span id="ai-days"></span>
+          </span>
+        </div>
+        <label>Instrucciones (lo que la IA sabe de tu negocio)
+          <textarea id="ai-instructions" rows="14" maxlength="8000"
+                    placeholder="Quiénes sois y cómo presentarse · servicios y precios que se pueden dar · horario y dirección · preguntas frecuentes y sus respuestas · el tono (tú o usted) · lo que nunca debe hacer o prometer…"></textarea>
+        </label>
+        <p class="form-error" id="ai-error" role="alert" hidden></p>
+        <div class="dialog-actions">
+          <span class="muted small" id="ai-saved" hidden>Guardado.</span>
+          <button type="submit" class="primary" id="ai-save">Guardar</button>
+        </div>
+      </form>
+      <section class="ai-test" id="ai-test">
+        <h3>Probar la IA</h3>
+        <p class="muted small">Escribe un mensaje como si fueras un cliente y mira qué haría con las instrucciones de arriba
+          (aunque no estén guardadas). No se envía nada.</p>
+        <div class="inline-form">
+          <input id="ai-test-message" maxlength="2000" placeholder="Ej. ¿Hacéis envíos a Madrid? ¿Cuánto cuesta?">
+          <button type="button" class="ghost small-btn" id="ai-test-btn">Probar</button>
+        </div>
+        <div class="ai-test-result" id="ai-test-result" hidden></div>
+      </section>
+    </div>
   </section>
 
   <main class="layout">
@@ -854,6 +935,7 @@
   <script src="chats.js"></script>
   <script src="contacts.js"></script>
   <script src="templates.js"></script>
+  <script src="ai.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

@@ -42,7 +42,7 @@ try:
         b.click('.tour-card [data-tour="next"]')
         if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 18, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 19, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
@@ -123,6 +123,45 @@ try:
           and "Hola Laura" in b.js("document.querySelector('#tpl-send-preview').textContent"))
     b.shot("04f-enviar-plantilla")
     b.js("document.querySelector('#tpl-send-dialog').close(); chatState.data = null;")
+
+    # Sección IA: configurarla y activarla (después se desactiva para no afectar al resto)
+    b.click("#nav-ai")
+    b.wait("document.querySelector('#ai-mode .active') !== null")
+    check("IA: desactivada y supervisada por defecto",
+          not b.js("document.querySelector('#ai-enabled').checked")
+          and b.js("document.querySelector('#ai-mode .active').dataset.mode") == "supervised")
+    b.js("document.querySelector('#ai-enabled').click()")
+    b.wait("!document.querySelector('#ai-error').hidden")
+    check("IA: no se activa sin instrucciones", not b.js("document.querySelector('#ai-enabled').checked"))
+    b.fill("#ai-instructions", "Somos una floristería en Madrid. Envíos en 24 h.")
+    b.click('#ai-inactivity [data-hours="24"]')
+    b.js("document.querySelector('#ai-enabled').checked = true; document.querySelector('#ai-form').requestSubmit()")
+    b.wait("!document.querySelector('#ai-saved').hidden")
+    check("IA: activada con instrucciones e inactividad de 24 h",
+          b.js("fetch('/api/ai-reply/settings').then((r) => r.json()).then((s) => s.enabled && s.inactivity_hours === 24)",
+               await_promise=True))
+    b.fill("#ai-test-message", "¿Hacéis envíos?")
+    b.click("#ai-test-btn")
+    b.wait("document.querySelector('#ai-test-result .form-error') !== null")
+    check("IA: probarla sin clave de Claude lo explica",
+          "ANTHROPIC_API_KEY" in b.js("document.querySelector('#ai-test-result').textContent"))
+    b.shot("04g-ia")
+    b.js("document.querySelector('#ai-enabled').click()")
+    b.wait("fetch('/api/ai-reply/settings').then((r) => r.json()).then((s) => !s.enabled)")
+    # Cómo se ve en el chat una propuesta de la IA (cargada en la página: sin cuenta de WhatsApp real no hay propuestas)
+    b.click("#nav-chats")
+    b.wait("document.querySelectorAll('#chats-list li[data-client]').length > 0")
+    b.js("document.querySelector('#chats-list li[data-client]').click()")
+    b.wait("!document.querySelector('#chat-open').hidden")
+    b.pump(1.5)  # que termine de consultar el estado de la IA del chat (sin propuesta real, la ocultaría)
+    b.js("""{ const t = document.querySelector('#chat-ai-toggle'); t.hidden = false; t.textContent = '🤖 IA activa';
+            document.querySelector('#chat-ai-text').value = '¡Hola Laura! Sí, enviamos a Madrid en 24 h. ¿Te preparo el pedido?';
+            document.querySelector('#chat-ai-suggestion').hidden = false; }""")
+    check("IA: la propuesta aparece sobre la caja de escribir",
+          b.js("document.querySelector('#chat-ai-suggestion').getBoundingClientRect().height") > 60)
+    b.shot("04h-ia-propuesta")
+    b.js("document.querySelector('#chat-ai-suggestion').hidden = true; document.querySelector('#chat-ai-toggle').hidden = true;")
+    b.js("showView('client')")  # lo que sigue es de la ficha del contacto
     b.js("showView('client')")  # lo que sigue (zonas, ficha, pestañas) es de la ficha del contacto
 
     # Lista de clientes y filtros
@@ -522,7 +561,8 @@ try:
           "ANTHROPIC_API_KEY" in b.dialogs[-1] and b.js("document.querySelector('#draft-text').value") == "hola, te paso el presu"
           and b.js("document.querySelector('#draft-undo').hidden"), b.dialogs[-1:])
     # Ese aviso (y el 503 que lo provoca) era el esperado: no cuenta como error.
-    b.errors[:] = [e for e in b.errors if "ANTHROPIC_API_KEY" not in e and "/api/drafts/rewrite" not in e]
+    b.errors[:] = [e for e in b.errors if "ANTHROPIC_API_KEY" not in e and "/api/drafts/rewrite" not in e
+                   and "/api/admin/ai-reply" not in e]
     b.shot("18-enviar")
 finally:
     b.pump(0.5)

@@ -6,6 +6,11 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **IA que responde** por WhatsApp (sección «IA»): instrucciones del negocio, modo supervisado (propone y una persona
+  envía o descarta) o automático, horas de inactividad del equipo antes de entrar, horario (siempre o fuera de la
+  oficina) y «Probar la IA». Pasa el chat a una persona si se lo piden, hay una queja o no sabe la respuesta; respeta
+  la ventana de 24 h de WhatsApp; máximo 5 respuestas por chat y día; se puede pausar en cada chat y sus mensajes se
+  marcan con «🤖 IA». Migración `0003_ia_que_responde.sql`.
 - Sección **Plantillas** en la barra lateral: lista de plantillas de cada cuenta de WhatsApp con su estado en Meta,
   vista previa como la verá el cliente, editor con vista previa en directo y borrado. Sustituye a la ventana de
   plantillas de «Mis cuentas».
