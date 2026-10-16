@@ -83,6 +83,13 @@ async function loadIntegrations() {
         ? `✓ Conectada · comprobada ${timeAgo(i.last_sync_at)} · recibe por webhook` : "Recibe por webhook"}</span>`
       : i.last_sync_at ? `<span class="int-status ok">✓ Conectada · revisada ${timeAgo(i.last_sync_at)}</span>`
       : `<span class="int-status">Pendiente de la primera sincronización</span>`;
+    const waba = i.kind !== "whatsapp" ? "" : !i.waba_id
+      ? `<div class="muted small">Sin el identificador de su cuenta de WhatsApp Business: añádelo en «Editar» para usar plantillas.</div>`
+      : `<div class="${i.waba_other ? "int-status error" : "muted small"}">${i.waba_other ? "⚠ " : ""}Cuenta de WhatsApp Business `
+        + `${escapeHtml(i.waba_id)}${i.waba_shared_with.length ? ` · comparte plantillas con ${escapeHtml(i.waba_shared_with.join(", "))}` : ""}`
+        + (i.waba_other ? ` — es distinta de la del resto del equipo (${escapeHtml(i.waba_main)}), así que tiene sus propias plantillas. `
+          + "Para compartirlas, conecta este número a la cuenta de la asesoría (en la conexión con el móvil, elige la cuenta que ya existe)." : "")
+        + "</div>";
     const coexistence = i.coexistence
       ? `<div class="muted small">Conectado con la app WhatsApp Business del móvil (coexistencia)${i.history ? ` · historial: ${escapeHtml(i.history)}` : ""}</div>`
       : "";
@@ -101,7 +108,7 @@ async function loadIntegrations() {
           <label class="check"><input type="checkbox" data-toggle-integration ${i.enabled ? "checked" : ""}> Activa</label>
         </div>
         <div class="int-body">${status}${i.kind === "email" ? ` · ${escapeHtml(i.config.address)}` : ""}</div>
-        ${coexistence}${webhook}
+        ${waba}${coexistence}${webhook}
         <div class="draft-actions">
           <button class="ghost small-btn" data-sync-integration>${i.kind === "whatsapp" ? "↻ Comprobar ahora" : "↻ Revisar ahora"}</button>
           ${i.kind === "whatsapp" ? `<button class="link small" data-templates-integration>Plantillas</button>` : ""}

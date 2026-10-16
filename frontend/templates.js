@@ -28,16 +28,35 @@ function previewBubble(body, values) {
 
 /* ---------- Cuentas y lista ---------- */
 
+// Una entrada por cuenta de WhatsApp Business de Meta (WABA): todos sus números comparten las plantillas, que se
+// consultan con uno de ellos. Un número sin el identificador de su cuenta va aparte.
 async function loadTemplateAccounts() {
   const whatsapp = (items) => items.filter((i) => i.kind === "whatsapp");
-  const mine = whatsapp((await api("/api/me/integrations")).items)
-    .map((i) => ({ id: i.id, label: i.name, base: "/api/me/integrations" }));
+  const mine = whatsapp((await api("/api/me/integrations")).items).map((i) => ({ ...i, base: "/api/me/integrations" }));
   let others = [];
   if (currentUser.role === "admin") {
     others = whatsapp((await api("/api/admin/integrations")).items).filter((i) => !mine.some((m) => m.id === i.id))
-      .map((i) => ({ id: i.id, label: `${i.name} · de ${i.owner}`, base: "/api/admin/integrations" }));
+      .map((i) => ({ ...i, base: "/api/admin/integrations" }));
   }
-  tplState.accounts = [...mine, ...others];
+  const groups = new Map();
+  for (const i of [...mine, ...others]) {
+    const key = i.waba_id || `numero-${i.id}`;
+    if (!groups.has(key)) {
+      groups.set(key, { id: i.id, base: i.base, waba: i.waba_id, ids: [], numbers: [], other: i.waba_other,
+                        main: i.waba_main, sharedWith: i.waba_shared_with || [] });
+    }
+    const g = groups.get(key);
+    g.ids.push(i.id);
+    g.numbers.push(`${i.name} (${i.owner})`);
+  }
+  tplState.accounts = [...groups.values()].map((g) => {
+    // Los números que comparten sus plantillas: los que se ven aquí y los de los compañeros (quien no es administrador
+    // solo tiene los suyos).
+    const shared = [...new Set([...g.numbers, ...g.sharedWith])];
+    const label = g.waba ? `Cuenta ${g.waba} · ${shared.length} ${shared.length === 1 ? "número" : "números"}`
+      : `${g.numbers[0]} · sin cuenta de Meta`;
+    return { ...g, shared, label };
+  });
   $("#tpl-account").innerHTML = tplState.accounts.length
     ? tplState.accounts.map((a) => `<option value="${a.id}">${escapeHtml(a.label)}</option>`).join("")
     : `<option value="">Sin cuentas de WhatsApp</option>`;
@@ -46,11 +65,26 @@ async function loadTemplateAccounts() {
 function chooseTemplateAccount(id) {
   let saved = null;
   try { saved = Number(localStorage.getItem(TEMPLATE_ACCOUNT_KEY)); } catch { /* sin preferencia guardada */ }
-  tplState.account = tplState.accounts.find((a) => a.id === (id ?? saved)) || tplState.accounts[0] || null;
+  const wanted = id ?? saved;
+  tplState.account = tplState.accounts.find((a) => a.ids.includes(wanted)) || tplState.accounts[0] || null;
   if (tplState.account) {
     $("#tpl-account").value = tplState.account.id;
     try { localStorage.setItem(TEMPLATE_ACCOUNT_KEY, tplState.account.id); } catch { /* almacenamiento no disponible */ }
   }
+  renderTemplateAccountInfo();
+}
+
+// Bajo el selector: qué números comparten estas plantillas, o qué falta para usarlas.
+function renderTemplateAccountInfo() {
+  const a = tplState.account;
+  const info = $("#tpl-account-info");
+  info.hidden = !a;
+  if (!a) return;
+  info.classList.toggle("error-text", !!a.other);
+  info.textContent = !a.waba
+    ? "Este número no tiene el identificador de su cuenta de WhatsApp Business: añádelo en «Mis cuentas» → «Editar» para usar plantillas."
+    : `${a.shared.length > 1 ? "Comparten estas plantillas" : "Usa estas plantillas"}: ${a.shared.join(", ")}.`
+      + (a.other ? ` ⚠ Esta cuenta de Meta es distinta de la del resto del equipo (${a.main}): sus plantillas son otras.` : "");
 }
 
 // Al entrar en la sección (o desde «Mis cuentas» → «Plantillas» de una cuenta concreta).
