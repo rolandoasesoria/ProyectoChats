@@ -105,6 +105,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- Las plantillas de WhatsApp solo las crea y las borra un administrador (son de la empresa y Meta puntúa su
+  calidad); los demás usuarios las ven y envían las aprobadas desde el chat.
 - «Sin responder» pasa a ser un filtro de Mis Chats («Todos · No leídos · Sin responder»). Desaparece la pantalla
   antigua de la ficha con su columna «Clientes / Sin responder / Tareas»; los atajos g c / g s / g t llevan a
   Contactos, Sin responder y Tareas.
