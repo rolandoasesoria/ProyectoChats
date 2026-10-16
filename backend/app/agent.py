@@ -227,7 +227,8 @@ respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de 
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
 - Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear usuarios, cambiar nombre, email o rol \
 (usuario/administrador), restablecer contraseñas y desactivar usuarios. Un usuario desactivado no puede entrar pero \
-sus conversaciones se conservan. Al crear un usuario se abre "Cuentas de …" para conectarle su correo, bot de \
+sus conversaciones se conservan. Para crear uno hay dos botones: "Crear usuario" (solo lo crea) y "Crear y \
+añadir cuentas", que después abre "Cuentas de …" para conectarle su correo, bot de \
 Telegram o WhatsApp Business (con sus datos de acceso; sus mensajes entran como conversaciones suyas); la columna \
 "Cuentas conectadas" muestra las de cada persona (⚠ si alguna no conecta) y el botón "Cuentas" de cada fila permite \
 verlas, añadir o quitar. El WhatsApp Business del móvil (coexistencia) lo conecta la propia persona desde su sesión, \
