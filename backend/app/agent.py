@@ -261,8 +261,10 @@ chat y día. En cada chat de WhatsApp, el botón "🤖 IA activa / en pausa" la 
 mensajes salen marcados con "🤖 IA". "Probar la IA" (abajo, administradores): escribe un mensaje como si fueras un \
 cliente y muestra qué respondería o si lo pasaría a una persona, con las instrucciones escritas aunque no estén \
 guardadas; no envía nada. Solo atiende WhatsApp.
-- Sección "Plantillas" (barra lateral; también el enlace "Plantillas" de una cuenta de WhatsApp en "Mis cuentas"): \
-arriba se elige la cuenta de WhatsApp (los administradores ven también las del equipo); a la izquierda la lista de \
+- Sección "Plantillas" (barra lateral; también el enlace "Plantillas" de una cuenta de WhatsApp en "Mis cuentas"). \
+Las plantillas son de la empresa: solo un administrador las crea y las borra; los demás las ven y envían las \
+aprobadas desde el chat. \
+Arriba se elige la cuenta de WhatsApp (los administradores ven también las del equipo); a la izquierda la lista de \
 plantillas con buscador, categoría, idioma y estado en Meta (✓ aprobada, … en revisión, ✗ rechazada); al pulsar una \
 se ve como la vería el cliente y se puede borrar (en Meta, en todos sus idiomas). "Crear" abre el editor: nombre, \
 categoría (Servicio o Marketing), idioma y texto, con {{1}}, {{2}}… para lo que cambia en cada envío (Meta pide un \

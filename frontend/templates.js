@@ -66,9 +66,16 @@ async function openTemplatesView(accountId = null) {
   }
 }
 
+// Crear y borrar plantillas es cosa de un administrador (son de la empresa); los demás las ven y las envían.
+function canManageTemplates() {
+  return currentUser.role === "admin";
+}
+
 async function loadTemplateList() {
   const list = $("#tpl-list");
-  $("#tpl-new").disabled = !tplState.account;
+  $("#tpl-new").disabled = !tplState.account || !canManageTemplates();
+  $("#tpl-new").hidden = !canManageTemplates();
+  $("#tpl-admin-note").hidden = canManageTemplates();
   if (!tplState.account) {
     tplState.items = [];
     list.innerHTML = `<li class="muted small tpl-hint">Conecta una cuenta de WhatsApp Business en «Mis cuentas» para crear y usar plantillas.</li>`;
@@ -131,7 +138,7 @@ function selectTemplate(name, language) {
       </div>
       <span class="spacer"></span>
       <span class="int-status ${t.status === "APPROVED" ? "ok" : t.status === "REJECTED" ? "error" : ""}">${escapeHtml(TEMPLATE_STATUS[t.status] || t.status || "")}</span>
-      <button type="button" class="link small danger" id="tpl-delete">Borrar</button>
+      ${canManageTemplates() ? `<button type="button" class="link small danger" id="tpl-delete">Borrar</button>` : ""}
     </div>
     ${rejected ? `<p class="form-error">Meta la ha rechazado: ${escapeHtml(t.rejected_reason)}</p>` : ""}
     ${t.status === "PENDING" ? `<p class="muted small">Meta la está revisando. Podrás enviarla desde el chat cuando esté aprobada.</p>` : ""}

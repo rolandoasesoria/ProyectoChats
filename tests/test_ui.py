@@ -176,6 +176,8 @@ try:
     b.wait("document.querySelector('#tpl-list').textContent.includes('Conecta una cuenta de WhatsApp')")
     check("plantillas: sin cuenta de WhatsApp lo explica y no deja crear", b.js("document.querySelector('#tpl-new').disabled"))
     b.shot("04c-plantillas")
+    check("plantillas: un administrador ve «Crear» (los demás, un aviso de que las crea un administrador)",
+          b.js("!document.querySelector('#tpl-new').hidden && document.querySelector('#tpl-admin-note').hidden"))
     # Con plantillas (datos de ejemplo cargados en la página: las pruebas no llegan a Meta)
     b.js("""tplState.account = {id: 1, label: 'Prueba', base: '/api/me/integrations'};
             tplState.items = [{name: 'cita', status: 'APPROVED', category: 'UTILITY', language: 'es',
