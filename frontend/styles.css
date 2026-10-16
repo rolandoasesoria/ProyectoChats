@@ -1268,3 +1268,5 @@ body { background: var(--canvas); }
 .acct-chip.telegram { --c: var(--telegram); }
 .acct-chip.error { color: var(--danger-text); border-color: var(--danger-text); }
 .acct-chip.paused { opacity: .55; }
+/* Nuevo usuario: los campos de una fila, alineados por abajo aunque una etiqueta ocupe dos líneas */
+.user-form .form-grid > label { justify-content: flex-end; }
