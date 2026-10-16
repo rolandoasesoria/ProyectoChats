@@ -65,9 +65,12 @@ try:
         b.js(f"document.querySelector('#view-chats > .resizer[data-zone=\"{zone}\"]').dispatchEvent(new MouseEvent('dblclick'))")
     check("chats: doble clic vuelve al ancho inicial", (cw(".chats-pane"), cw("#chat-details")) == (list_w, det_w))
     b.click('#chat-details-tabs [data-pane="assistant"]')
-    b.wait("!document.querySelector('#chat-assistant').hidden && chatState.assistantFor === chatState.clientId")
-    check("chats: pestaña del asistente IA del contacto",
-          b.js("document.querySelector('#chat-details-body').hidden && !!document.querySelector('#chat-assistant-input')"))
+    b.wait("!document.querySelector('#chats-assistant').hidden && !!document.querySelector('#chats-assistant-log .thread:not([hidden])')")
+    check("chats: pestaña del asistente IA del contacto", b.js("document.querySelector('#chat-details-body').hidden"))
+    check("chats: es el mismo asistente que el de la ficha (mismo hilo, mismo diseño)",
+          b.js("state.threads.get(chatState.clientId).el.parentElement.id === 'chats-assistant-log'"
+               " && document.querySelector('#chats-assistant').matches('.panel.chat')"
+               " && document.querySelector('#chats-assistant-context').textContent.startsWith('Conversación sobre')"))
     b.pump(1)
     b.shot("04-chats-asistente")
     b.click('#chat-details-tabs [data-pane="info"]')
@@ -108,9 +111,16 @@ try:
     check("chats: filtro «No leídos»", b.js("document.querySelector('#chats-filter .active').dataset.unread") == "true")
     b.click('#chats-filter [data-unread="false"]')
     b.shot("04a-chats")
+    b.click('#chat-details-tabs [data-pane="assistant"]')
+    b.wait("state.threads.get(chatState.clientId)?.el.parentElement.id === 'chats-assistant-log'")
     b.click("#chat-open-client")
     b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
     check("chats: «Abrir ficha» lleva a la ficha del contacto", True)
+    check("y su asistente es la misma conversación, de vuelta en la ficha",
+          b.js("const t = state.threads.get(state.clientId); t.el.parentElement.id === 'chat-log' && !t.el.hidden"))
+    b.js("showView('chats')")
+    b.click('#chat-details-tabs [data-pane="info"]')
+    b.js("showView('client')")
 
     # Sección Contactos: tabla, columnas, filtros y abrir la ficha
     b.click("#nav-contacts")
@@ -230,7 +240,7 @@ try:
 
     # Zonas ajustables: arrastrar, teclado, doble clic, se recuerda y siempre se ven las tres
     width = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().width)")  # noqa: E731
-    check("anchos iniciales", (width(".clients"), width(".chat")) == (290, 400), (width(".clients"), width(".chat")))
+    check("anchos iniciales", (width(".clients"), width("#assistant")) == (290, 400), (width(".clients"), width("#assistant")))
     x = b.js("document.querySelector('.resizer[data-zone=\"clients\"]').getBoundingClientRect().left")
     for kind, px in (("mousePressed", x), ("mouseMoved", x + 60), ("mouseReleased", x + 60)):
         b.send("Input.dispatchMouseEvent", type=kind, x=px, y=400, button="left", buttons=1 if kind != "mouseReleased" else 0,
@@ -238,10 +248,10 @@ try:
     b.pump(0.3)
     check("arrastrar el separador ensancha la lista de clientes", width(".clients") == 350, width(".clients"))
     b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
-    check("con el teclado: flecha izquierda ensancha el asistente", width(".chat") == 416, width(".chat"))
+    check("con el teclado: flecha izquierda ensancha el asistente", width("#assistant") == 416, width("#assistant"))
     b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
     b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new MouseEvent('dblclick'))")
-    check("doble clic vuelve al ancho inicial", width(".chat") == 400, width(".chat"))
+    check("doble clic vuelve al ancho inicial", width("#assistant") == 400, width("#assistant"))
     b.js("document.querySelector('.resizer[data-zone=\"clients\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
     b.send("Emulation.setDeviceMetricsOverride", width=1100, height=900, deviceScaleFactor=1, mobile=False)
     b.js("for (let i = 0; i < 40; i++) document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
@@ -254,7 +264,7 @@ try:
     check("el ancho elegido se recuerda al recargar", width(".clients") == 366, width(".clients"))
     b.send("Emulation.setDeviceMetricsOverride", width=760, height=900, deviceScaleFactor=1, mobile=False)
     b.pump(0.3)
-    visible = b.js("['.clients', '.detail', '.chat'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().width))")
+    visible = b.js("['.clients', '.detail', '#assistant'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().width))")
     check("pantalla estrecha: siguen las tres zonas", all(w >= 150 for w in visible), visible)
     b.shot("04b-estrecha")
     b.send("Emulation.setDeviceMetricsOverride", width=1400, height=900, deviceScaleFactor=1, mobile=False)
