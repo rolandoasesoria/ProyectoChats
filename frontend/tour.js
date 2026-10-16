@@ -9,13 +9,13 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 38;
+const TOUR_VERSION = 39;
 
 const TOUR_STEPS = [
   {
     target: null,
     title: "Bienvenido a Hilvana Chat",
-    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones: Mis Chats, para conversar, y Contactos, con la ficha de cada uno y el asistente. Un recorrido de un minuto.",
+    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones: Mis Chats, para conversar, y Contactos, con todos tus clientes. Un recorrido de un minuto.",
   },
   {
     target: ".chats-pane",
@@ -26,14 +26,36 @@ const TOUR_STEPS = [
   {
     target: ".chat-main",
     view: "chats",
-    title: "La conversación",
-    text: "Al elegir un chat, sus mensajes salen separados por canal (WhatsApp, Email, Telegram) en pestañas, o todos juntos en «Todos los canales». Escribe abajo y pulsa Intro para enviar por tu cuenta conectada (con 📎 adjuntas un archivo; en Email, «✉ Nuevo correo» escribe uno con asunto), o «✨ Redactar con IA» para que te proponga la respuesta. A la derecha, los detalles del contacto y, en la pestaña «Asistente IA», puedes preguntarle sobre ese contacto sin salir del chat; «Abrir ficha» te lleva a su ficha completa.",
+    title: "El contacto",
+    text: "Al elegir un chat se abre el contacto con sus pestañas. «Conversación»: los mensajes por canal (WhatsApp, Email, Telegram) o todos juntos, el buscador 🔍 y la caja de escribir (Intro envía por tu cuenta conectada; 📎 adjunta; / inserta una respuesta guardada; «✨ Redactar con IA» te propone la respuesta y «Retocar» la cambia). «Ficha»: resumen, datos clave, propiedades y documentos. «Tareas» y «Notas» internas. A la derecha, sus detalles y, en «Asistente IA», le preguntas lo que quieras sobre él.",
+  },
+  {
+    target: ".chat-main",
+    view: "chats",
+    title: "Estado y avisos",
+    text: "El estado (Potencial, Activo, Incidencia, Inactivo) lo decide la IA ✨; púlsalo para cambiarlo a mano. Con ✎ editas sus datos, responsable y etiquetas. Encima de las pestañas te aviso si un compañero está respondiendo al mismo cliente, si hay mensajes nuevos desde tu última visita o si puede estar duplicado.",
+  },
+  {
+    target: "#side-inbox-tab",
+    view: "chats",
+    title: "Sin responder",
+    text: "Quién espera respuesta, de más a menos tiempo; avisa cuando está a punto de vencer el plazo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta y «Posponer» la aparta hasta más tarde. Arriba verás también a quien no te ha contestado, si lo pediste al responder.",
   },
   {
     target: ".contacts-table-wrap",
     view: "contacts",
     title: "Contactos",
-    text: "Todos tus contactos en una tabla: filtra por estado, etiqueta, agente, canal o no leídos, elige las columnas que quieres ver (también las propiedades, como el DNI) y crea uno nuevo. Al pulsar uno se abre su ficha.",
+    text: "Todos tus contactos en una tabla: filtra por estado, etiqueta, agente, canal o no leídos, elige las columnas que quieres ver (también las propiedades, como el DNI) y crea uno nuevo. Al pulsar uno se abre igual que un chat, con la lista de contactos a la izquierda y «← Volver a la tabla».",
+  },
+  {
+    target: "#nav-tasks",
+    title: "Tareas",
+    text: "Tus tareas de todos los clientes. El número se pone en rojo si alguna vence hoy o ya ha vencido; pulsa el cliente para abrir su ficha.",
+  },
+  {
+    target: "#nav-assistant",
+    title: "Asistente",
+    text: "Pregunta sobre todos tus clientes a la vez: «¿quién pidió presupuesto este mes?». Para preguntar por uno solo, usa la pestaña «Asistente IA» de su chat. Busca en tus conversaciones; si quieres que mire las de tus compañeros, pídeselo.",
   },
   {
     target: "#nav-templates",
@@ -46,36 +68,6 @@ const TOUR_STEPS = [
     text: "Una IA que contesta a tus clientes por WhatsApp con las instrucciones de tu negocio: en modo supervisado te propone la respuesta en el chat y tú la envías; en automático la envía sola. Si el cliente pide una persona o pregunta algo que no sabe, te avisa. Puedes pausarla en cada chat.",
   },
   {
-    target: ".clients",
-    view: "client",
-    title: "La ficha: lista de clientes",
-    text: "Busca por nombre, empresa, email o teléfono, y filtra por estado, etiqueta o responsable. El número azul indica mensajes nuevos. «Consulta general» pregunta sobre todos los clientes a la vez.",
-  },
-  {
-    target: ".detail",
-    view: "client",
-    title: "Ficha del cliente",
-    text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave, propiedades (DNI, fechas…) y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: el historial separado por canal en pestañas (o «Todos los canales» junto), con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. El estado (Potencial, Activo, Incidencia, Inactivo) lo decide la IA ✨; púlsalo para cambiarlo a mano. Con ✎ editas responsable y etiquetas. Si un compañero está respondiendo al mismo cliente, te lo avisaré aquí.",
-  },
-  {
-    target: "#assistant",
-    view: "client",
-    title: "Asistente",
-    text: "Pregunta cualquier dato: «¿qué CIF nos dio?». Cada cliente tiene su propia conversación. Busca en las tuyas; si quieres que mire las de tus compañeros, pídeselo.",
-  },
-  {
-    target: "#side-inbox-tab",
-    view: "client",
-    title: "Sin responder",
-    text: "Quién espera respuesta, de más a menos tiempo; avisa cuando está a punto de vencer el plazo. Elige «Mías» o «Todo el equipo»; «Atendido» quita lo que no necesita respuesta y «Posponer» la aparta hasta más tarde. Arriba verás también a quien no te ha contestado, si lo pediste al responder.",
-  },
-  {
-    target: "#side-tasks-tab",
-    view: "client",
-    title: "Tareas",
-    text: "Tus tareas de todos los clientes. El número se pone en rojo si alguna vence hoy o ya ha vencido.",
-  },
-  {
     target: "#palette-btn",
     title: "Buscar o ir a… (Ctrl+K)",
     text: "Abre cualquier cliente o acción escribiendo. Con ? ves los atajos de teclado: j/k para cambiar de cliente, r para responder…",
@@ -83,7 +75,7 @@ const TOUR_STEPS = [
   {
     target: ".sidebar",
     title: "Barra lateral",
-    text: "Arriba, tu empresa (su logo o sus iniciales). Debajo, tus secciones: Mis Chats, Contactos, Plantillas, Respuestas con IA y Panel de actividad. Abajo, Respuestas guardadas. Pasa el ratón por cada icono para ver su nombre. Arriba de cada sección, la ruta (Empresa › Sección › lo que tienes abierto) te dice dónde estás; pulsa la sección para volver a su lista.",
+    text: "Arriba, tu empresa (su logo o sus iniciales). Debajo, tus secciones: Mis Chats, Contactos, Tareas, Asistente, Plantillas, Respuestas con IA y Panel de actividad. Abajo, Respuestas guardadas. Pasa el ratón por cada icono para ver su nombre. Arriba de cada sección, la ruta (Empresa › Sección › lo que tienes abierto) te dice dónde estás; pulsa la sección para volver a su lista.",
   },
   {
     target: "#nav-dashboard",
