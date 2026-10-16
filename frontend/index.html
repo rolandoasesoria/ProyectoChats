@@ -55,7 +55,7 @@
     <button class="nav-btn" id="dashboard-btn" aria-label="Inicio: panel de actividad" title="Inicio: panel de actividad">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg>
     </button>
-    <button class="nav-btn" id="nav-chats" data-view="chats" aria-label="Chats" title="Chats">
+    <button class="nav-btn" id="nav-chats" data-view="chats" aria-label="Mis Chats" title="Mis Chats">
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>
     </button>
     <button class="nav-btn" id="nav-contacts" data-view="contacts" aria-label="Contactos" title="Contactos">
@@ -79,7 +79,7 @@
     </button>
   </nav>
 
-  <!-- Sección Chats: lista de conversaciones · conversación por canal · datos del contacto -->
+  <!-- Sección Mis Chats: lista de conversaciones · conversación por canal · datos del contacto -->
   <section class="chats-view" id="view-chats" hidden>
     <aside class="chats-pane">
       <input id="chats-search" type="search" placeholder="Buscar contacto…" autocomplete="off">
@@ -95,6 +95,8 @@
       </div>
       <ul id="chats-list" class="chats-list"></ul>
     </aside>
+    <div class="resizer" data-zone="list" role="separator" aria-orientation="vertical" tabindex="0"
+         aria-label="Ancho de la lista de chats" title="Arrastra para cambiar el ancho (doble clic: restablecer)"></div>
 
     <section class="chat-main">
       <p class="chat-empty muted" id="chat-empty">Elige un chat de la lista para ver la conversación.</p>
@@ -144,6 +146,8 @@
       </div>
     </section>
 
+    <div class="resizer" data-zone="details" role="separator" aria-orientation="vertical" tabindex="0"
+         aria-label="Ancho de los detalles del contacto" title="Arrastra para cambiar el ancho (doble clic: restablecer)"></div>
     <aside class="chat-details" id="chat-details" hidden>
       <div class="segmented details-tabs" id="chat-details-tabs" role="tablist" aria-label="Panel del contacto">
         <button type="button" data-pane="info" class="active">Detalles</button>
@@ -208,6 +212,8 @@
       </div>
       <ul id="tpl-list" class="tpl-list"></ul>
     </aside>
+    <div class="resizer" data-zone="list" role="separator" aria-orientation="vertical" tabindex="0"
+         aria-label="Ancho de la lista de plantillas" title="Arrastra para cambiar el ancho (doble clic: restablecer)"></div>
     <section class="tpl-main">
       <p class="chat-empty muted" id="tpl-empty">Selecciona una plantilla de la lista para verla, o crea una nueva.</p>
       <div class="tpl-detail" id="tpl-detail" hidden></div>

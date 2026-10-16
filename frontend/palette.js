@@ -19,7 +19,7 @@ const SHORTCUTS = [
 
 function paletteActions() {
   const actions = [
-    { label: "Ir a Chats", run: () => showView("chats") },
+    { label: "Ir a Mis Chats", run: () => showView("chats") },
     { label: "Ir a Contactos", run: () => showView("contacts") },
     { label: "Ir a Clientes", hint: "g c", run: () => showSideTab("clients") },
     { label: "Ir a Sin responder", hint: "g s", run: () => showSideTab("inbox") },

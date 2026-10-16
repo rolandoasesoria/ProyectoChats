@@ -4,10 +4,10 @@
 const CONTACT_COLUMNS_KEY = "pc-contact-columns";
 const CONTACT_BASE_COLUMNS = [
   { key: "company", label: "Empresa", value: (c) => escapeHtml(c.company || "") },
-  { key: "phone", label: "Teléfono", value: (c) => escapeHtml(c.phones.join(", ")) },
-  { key: "email", label: "Email", value: (c) => escapeHtml(c.emails.join(", ")) },
+  { key: "phone", label: "Teléfono", value: (c) => cellList(c.phones) },
+  { key: "email", label: "Email", value: (c) => cellList(c.emails) },
   { key: "channels", label: "Canales", value: (c) => c.channels.map(badge).join(" ") },
-  { key: "tags", label: "Etiquetas", value: (c) => tagChips(c.tags, 3) },
+  { key: "tags", label: "Etiquetas", value: (c) => cellList(c.tags, (t) => tagChips([t])) },
   { key: "agent", label: "Agente", value: (c) => escapeHtml(team.find((u) => u.id === c.assignee_user_id)?.name || "") },
   { key: "status", label: "Estado", value: (c) => `${statusDot(c.status)} ${escapeHtml(STATUS_LABELS[c.status] || "")}` },
   { key: "activity", label: "Última actividad", value: (c) => c.last_message_at ? escapeHtml(chatTime(c.last_message_at)) : "" },
@@ -77,6 +77,23 @@ async function loadContacts() {
   } catch (err) {
     $("#contacts-body").innerHTML = `<tr><td class="form-error">${escapeHtml(err.message)}</td></tr>`;
   }
+}
+
+// Celda con varios valores (emails, teléfonos, etiquetas): una sola línea con el primero y «+N», que despliega
+// el resto, para que la fila no crezca. Los textos largos se cortan con «…».
+function cellList(values, render = escapeHtml) {
+  if (values.length <= 1) return `<span class="cell-text">${values.length ? render(values[0]) : ""}</span>`;
+  return `<div class="cell-multi">
+      <span class="cell-text">${render(values[0])}</span>
+      <details class="cell-more">
+        <summary title="Ver los ${values.length}">+${values.length - 1}</summary>
+        <ul>${values.map((v) => `<li>${render(v)}</li>`).join("")}</ul>
+      </details>
+    </div>`;
+}
+
+function closeCellLists(except = null) {
+  document.querySelectorAll("#contacts-body details.cell-more[open]").forEach((d) => { if (d !== except) d.open = false; });
 }
 
 function renderContacts(contacts) {
@@ -231,6 +248,10 @@ function bindContactsEvents() {
   ["#contacts-status", "#contacts-tag", "#contacts-agent", "#contacts-channel", "#contacts-unread"].forEach((sel) =>
     $(sel).addEventListener("change", loadContacts));
   $("#contacts-body").addEventListener("click", (e) => {
+    // El desplegable «+N» de una celda no abre la ficha (y solo queda abierto uno)
+    const more = e.target.closest("details.cell-more");
+    if (more) return closeCellLists(more);
+    closeCellLists();
     const row = e.target.closest("tr[data-client]");
     if (row) selectClient(Number(row.dataset.client)).catch((err) => alert(err.message));
   });
@@ -244,7 +265,10 @@ function bindContactsEvents() {
     saveColumnKeys(keys);
     loadContacts();
   });
-  document.addEventListener("click", () => { if (!$("#contacts-columns").hidden) toggleColumnsMenu(false); });
+  document.addEventListener("click", (e) => {
+    if (!$("#contacts-columns").hidden) toggleColumnsMenu(false);
+    if (!e.target.closest("#contacts-body")) closeCellLists();
+  });
   $("#contacts-new").addEventListener("click", () => openClientDialog("create"));
   $("#client-props").addEventListener("change", saveClientProperty);
   $("#props-admin-list").addEventListener("click", onPropertiesAdminClick);

@@ -9,19 +9,19 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 33;
+const TOUR_VERSION = 34;
 
 const TOUR_STEPS = [
   {
     target: null,
     title: "Bienvenido a Hilvana Chat",
-    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones: Chats, para conversar, y Contactos, con la ficha de cada uno y el asistente. Un recorrido de un minuto.",
+    text: "Todas las conversaciones con tus clientes —email, WhatsApp, Telegram— en un solo sitio, y una IA que encuentra los datos por ti. A la izquierda, la barra con las secciones: Mis Chats, para conversar, y Contactos, con la ficha de cada uno y el asistente. Un recorrido de un minuto.",
   },
   {
     target: ".chats-pane",
     view: "chats",
-    title: "Chats",
-    text: "Tus conversaciones, la más reciente arriba, con el último mensaje y los no leídos. «No leídos» deja solo las que tienen mensajes nuevos. Busca por nombre, empresa o teléfono.",
+    title: "Mis Chats",
+    text: "Tus conversaciones, la más reciente arriba, con el último mensaje y los no leídos. «No leídos» deja solo las que tienen mensajes nuevos. Busca por nombre, empresa o teléfono. Arrastra los bordes entre las columnas para cambiar su ancho.",
   },
   {
     target: ".chat-main",
@@ -83,7 +83,7 @@ const TOUR_STEPS = [
   {
     target: ".sidebar",
     title: "Barra lateral",
-    text: "Tus secciones: Inicio (el panel de actividad), Chats, Contactos, Plantillas e IA. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
+    text: "Tus secciones: Inicio (el panel de actividad), Mis Chats, Contactos, Plantillas e IA. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre.",
   },
   {
     target: "#dashboard-btn",

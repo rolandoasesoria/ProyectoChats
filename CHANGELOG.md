@@ -6,6 +6,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Mis Chats y Plantillas: el ancho de las columnas se ajusta arrastrando los separadores (o con las flechas; doble
+  clic lo restablece), como en la ficha. Se recuerda por página.
+- Contactos: las celdas con varios valores (emails, teléfonos, etiquetas) muestran el primero y «+N», que despliega
+  el resto; los textos largos se cortan con «…», así las filas no crecen.
 - Chats, panel derecho: pestaña **«Asistente IA»** para preguntar al asistente sobre ese contacto sin abrir su ficha
   (es la misma conversación que en la ficha).
 - Estilo de tarjetas: cada zona de las secciones (lista, conversación, detalles…) es una tarjeta con sombra suave
@@ -78,6 +82,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- La sección «Chats» pasa a llamarse **«Mis Chats»**.
 - Código reorganizado sin cambiar el comportamiento: la recepción de WhatsApp en `whatsapp.py`; la bandeja y el
   alta de mensajes fuera de `search.py` (`inbox.py`, `conversations.py`); un único acceso a la API de Meta, a la
   verificación de webhooks y a las llamadas de texto a Claude; el envío desde el borrador en `drafts.js`; un
