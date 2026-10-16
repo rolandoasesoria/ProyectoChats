@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Ruta de navegación sobre cada sección: «Empresa › Sección › lo abierto» (chat, contacto o plantilla); pulsar la
+  sección vuelve a su lista.
+- Administración → Ajustes: **nombre de la empresa**, que encabeza la ruta de navegación.
 - Pestañas de canal en «Mensajes» de la ficha (sustituyen al desplegable) y pestaña «Todos los canales» en Mis
   Chats, que junta los mensajes de todos los canales; desde ella se responde por el canal más reciente.
 - Mis Chats y Plantillas: el ancho de las columnas se ajusta arrastrando los separadores (o con las flechas; doble

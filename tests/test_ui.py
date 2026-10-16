@@ -570,10 +570,14 @@ try:
     # Ajustes: plazo de respuesta
     b.click('[data-admin-tab="settings"]')
     b.wait("document.querySelector('#set-sla').value === '24'")
+    check("ruta: sin nombre de empresa, el administrador ve el enlace para ponerlo",
+          b.js("!!document.querySelector('#breadcrumb [data-crumb=\"company\"]')"))
+    b.fill("#set-company", "  Asesoría   Ocaña ")
     b.fill("#set-sla", "2")
     b.js("document.querySelector('#settings-form').requestSubmit()")
     b.wait("!document.querySelector('#set-saved').hidden")
     check("cambiar el plazo de respuesta", b.js("slaHours") == 2)
+    check("nombre de la empresa guardado (sin espacios de sobra)", b.js("companyName") == "Asesoría Ocaña")
     check("el análisis automático con IA aparece activado", b.js("document.querySelector('#set-auto-analysis').checked"))
     b.fill("#set-retention", "1")
     b.wait("document.querySelector('#retention-preview').textContent.includes('se borrarían')")
@@ -596,6 +600,10 @@ try:
     b.js("document.querySelector('#admin-dialog').close()")
     b.js("selectClient(1)")
     b.wait("document.querySelectorAll('#client-props [data-prop]').length === 2")
+    crumbs = lambda: b.js("[...document.querySelectorAll('#breadcrumb .crumb')].map((c) => c.textContent.trim())")  # noqa: E731
+    check("ruta en la ficha: Empresa › Contactos › contacto",
+          crumbs() == ["Asesoría Ocaña", "Contactos", b.js("state.clientData.name")], crumbs())
+    b.shot("19-ruta-ficha")
     b.js("showDetailTab('profile')")
     b.js("{ const i = document.querySelector('#client-props input[data-prop]'); i.value = '12345678Z';"
          "i.dispatchEvent(new Event('change', {bubbles: true})); }")
@@ -667,6 +675,25 @@ try:
     b.errors[:] = [e for e in b.errors if "ANTHROPIC_API_KEY" not in e and "/api/drafts/rewrite" not in e
                    and "/api/admin/ai-reply" not in e]
     b.shot("18-enviar")
+
+    # Ruta de navegación: cada sección, lo abierto como tercer nivel y volver pulsando la sección
+    b.click('#breadcrumb [data-crumb="section"]')
+    b.wait("!document.querySelector('#view-contacts').hidden")
+    check("ruta: pulsar «Contactos» vuelve a la tabla", crumbs() == ["Asesoría Ocaña", "Contactos"], crumbs())
+    b.js("showView('chats')")
+    b.wait("document.querySelectorAll('#chats-list li[data-client]').length > 0")
+    b.js("document.querySelector('#chats-list li[data-client]').click()")
+    b.wait("!!chatState.data && document.querySelectorAll('#breadcrumb .crumb').length === 3")
+    check("ruta en Mis Chats con un chat abierto", crumbs() == ["Asesoría Ocaña", "Mis Chats", b.js("chatState.data.name")], crumbs())
+    b.shot("19b-ruta-chats")
+    b.click('#breadcrumb [data-crumb="section"]')
+    b.wait("!document.querySelector('#chat-empty').hidden")
+    check("ruta: pulsar «Mis Chats» cierra el chat", crumbs() == ["Asesoría Ocaña", "Mis Chats"]
+          and b.js("chatState.clientId === null && document.querySelector('#chat-details').hidden"), crumbs())
+    b.js("showView('templates')")
+    check("ruta en Plantillas", crumbs() == ["Asesoría Ocaña", "Plantillas de WhatsApp"], crumbs())
+    b.js("showView('ai')")
+    check("ruta en IA", crumbs() == ["Asesoría Ocaña", "IA que responde"], crumbs())
 finally:
     b.pump(0.5)
     b.close()
