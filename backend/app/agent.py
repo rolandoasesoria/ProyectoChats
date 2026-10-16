@@ -264,7 +264,8 @@ guardadas; no envía nada. Solo atiende WhatsApp.
 - Sección "Plantillas" (barra lateral; también el enlace "Plantillas" de una cuenta de WhatsApp en "Mis cuentas"). \
 Las plantillas son de la empresa: solo un administrador las crea y las borra; los demás las ven y envían las \
 aprobadas desde el chat. \
-Arriba se elige la cuenta de WhatsApp (los administradores ven también las del equipo); a la izquierda la lista de \
+Arriba se elige la cuenta de WhatsApp Business de Meta: todos los números de una misma cuenta comparten las \
+plantillas, y debajo se ve qué números la comparten (los administradores ven también las del equipo); a la izquierda la lista de \
 plantillas con buscador, categoría, idioma y estado en Meta (✓ aprobada, … en revisión, ✗ rechazada); al pulsar una \
 se ve como la vería el cliente y se puede borrar (en Meta, en todos sus idiomas). "Crear" abre el editor: nombre, \
 categoría (Servicio o Marketing), idioma y texto, con {{1}}, {{2}}… para lo que cambia en cada envío (Meta pide un \
@@ -295,7 +296,10 @@ trae lo pendiente (en WhatsApp, "↻ Comprobar ahora" vuelve a comprobar las cre
 cuenta; "Desconectar" la quita (lo que ya entró se conserva). Si un servicio deja de aceptar las credenciales (token \
 caducado o revocado, contraseña cambiada), la cuenta aparece como "No conecta" con el motivo y su dueño recibe un \
 aviso en la campana; si una foto o documento de WhatsApp no se puede descargar, el mensaje entra igualmente con una \
-nota. Los administradores tienen además "Todo el equipo" para ver y gestionar las cuentas de todos.
+nota. Los administradores tienen además "Todo el equipo" para ver y gestionar las cuentas de todos. Cada número de \
+WhatsApp muestra su cuenta de WhatsApp Business de Meta y con qué números comparte plantillas; si está en una cuenta \
+distinta de la del resto del equipo, lo avisa en rojo (tendrá sus propias plantillas): lo recomendable es una sola \
+cuenta para la asesoría con todos los números dentro (al conectar el móvil, elegir la cuenta que ya existe).
 - Enviar desde la app: en la caja de escribir de la conversación, si tienes una cuenta conectada del canal y la \
 conversación es tuya, el botón dice "Enviar por …"; el mensaje enviado queda en la conversación. En email se \
 responde en el mismo hilo. Si no tienes cuenta conectada, "Copiar" lo copia para pegarlo en el móvil o el correo.

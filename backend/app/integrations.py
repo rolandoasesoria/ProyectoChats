@@ -203,7 +203,32 @@ def list_integrations(owner_user_id: int | None = None) -> list[dict]:
         state = json.loads(i.pop("state") or "{}")
         i["coexistence"] = bool(state.get("coexistence"))
         i["history"] = state.get("history")
+    _annotate_wabas(found)
     return found
+
+
+def _annotate_wabas(items: list[dict]) -> None:
+    """Para cada número de WhatsApp: su cuenta de WhatsApp Business de Meta (WABA), qué otros números del equipo están
+    en ella (comparten las plantillas) y si está en una cuenta distinta de la principal del equipo (la que tiene más
+    números; a igualdad, la del número conectado antes)."""
+    if not any(i["kind"] == "whatsapp" for i in items):
+        return
+    with get_conn() as conn:
+        team = [i for i in repo.list_all(conn, None) if i["kind"] == "whatsapp"]
+    wabas: dict[str, list[dict]] = {}
+    for i in team:
+        waba = secrets_store.decrypt(i["config"]).get("waba_id") or ""
+        if waba:
+            wabas.setdefault(waba, []).append(i)
+    main = max(wabas, key=lambda w: (len(wabas[w]), -min(i["id"] for i in wabas[w]))) if wabas else ""
+    for item in items:
+        if item["kind"] != "whatsapp":
+            continue
+        waba = item["config"].get("waba_id") or ""
+        item["waba_id"] = waba
+        item["waba_shared_with"] = [f"{i['name']} ({i['owner']})" for i in wabas.get(waba, []) if i["id"] != item["id"]]
+        item["waba_main"] = main
+        item["waba_other"] = bool(waba and len(wabas) > 1 and waba != main)
 
 
 def find_whatsapp(phone_number_id: str) -> dict | None:

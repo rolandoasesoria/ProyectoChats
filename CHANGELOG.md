@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Plantillas por **cuenta de WhatsApp Business de Meta**: en la sección Plantillas se elige la cuenta (no el número) y
+  se ve qué números comparten sus plantillas. En «Mis cuentas», cada número de WhatsApp muestra su cuenta de Meta y
+  con quién comparte plantillas, y avisa si está en una cuenta distinta de la del resto del equipo.
 - Las ventanas (Administración, Mis cuentas, editar cliente…) se cierran también con un clic fuera de ellas.
 - Administración → Usuarios: «Crear usuario» solo lo crea y **«Crear y añadir cuentas»** abre después
   **«Cuentas de …»** para conectarle su correo, bot de
