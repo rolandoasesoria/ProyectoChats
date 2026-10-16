@@ -130,9 +130,19 @@ async function selectClient(id) {
 
   const channels = [...new Set(data.conversations.map((c) => c.channel))];
   state.channel = "";
-  $("#channel-filter").innerHTML = `<option value="">Todos los canales</option>` +
-    channels.map((ch) => `<option value="${escapeHtml(ch)}">${escapeHtml(IDENTITY_LABELS[ch] || ch)}</option>`).join("");
+  $("#channel-tabs").innerHTML = channelTabsHtml(channels, "");
   await Promise.all([loadTimeline(), openClientDetail(id), recordVisit(id), loadDuplicates(id)]);
+}
+
+// Pestañas de canal (ficha y Mis Chats): «Todos los canales» y una por canal. `active` "" = todos.
+function channelTabsHtml(channels, active) {
+  return [`<button role="tab" data-channel="" class="${active === "" ? "active" : ""}">Todos los canales</button>`,
+    ...channels.map((ch) =>
+      `<button role="tab" data-channel="${escapeHtml(ch)}" class="${ch === active ? "active" : ""}">${badge(ch)}</button>`)].join("");
+}
+
+function setActiveChannelTab(container, channel) {
+  container.querySelectorAll("[data-channel]").forEach((t) => t.classList.toggle("active", t.dataset.channel === channel));
 }
 
 async function loadTimeline() {
@@ -429,8 +439,11 @@ function bindEvents() {
     state.scope = e.target.checked ? "mine" : "team";
     loadTimeline();
   });
-  $("#channel-filter").addEventListener("change", (e) => {
-    state.channel = e.target.value;
+  $("#channel-tabs").addEventListener("click", (e) => {
+    const tab = e.target.closest("[data-channel]");
+    if (!tab) return;
+    state.channel = tab.dataset.channel;
+    setActiveChannelTab($("#channel-tabs"), state.channel);
     loadTimeline();
   });
 

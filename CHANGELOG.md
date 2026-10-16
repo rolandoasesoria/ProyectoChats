@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Pestañas de canal en «Mensajes» de la ficha (sustituyen al desplegable) y pestaña «Todos los canales» en Mis
+  Chats, que junta los mensajes de todos los canales; desde ella se responde por el canal más reciente.
 - Mis Chats y Plantillas: el ancho de las columnas se ajusta arrastrando los separadores (o con las flechas; doble
   clic lo restablece), como en la ficha. Se recuerda por página.
 - Contactos: las celdas con varios valores (emails, teléfonos, etiquetas) muestran el primero y «+N», que despliega

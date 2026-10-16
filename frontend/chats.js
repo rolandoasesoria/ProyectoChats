@@ -5,7 +5,7 @@
 const VIEW_KEY = "pc-view";
 const CHATS_REFRESH = 20000; // la lista y la conversación abierta se actualizan solas cada 20 s
 const chatState = {
-  clientId: null, data: null, channel: null, unread: false, scope: "mine", query: "",
+  clientId: null, data: null, channel: null, channels: [], unread: false, scope: "mine", query: "",
   conversationId: null, baseline: null, // conversación por la que se responde y su último mensaje al abrirla
   details: true, // panel «Detalles del contacto» visible
   file: null, // archivo elegido para enviar con el próximo mensaje
@@ -111,15 +111,16 @@ async function openChat(clientId) {
   const channels = [...new Set(chatConversations().map((c) => c.channel))];
   // Con email pero sin conversaciones por correo: la pestaña sale igual, para escribirle un correo nuevo.
   if (data.identities.some((i) => i.channel === "email") && !channels.includes("email")) channels.push("email");
-  if (!channels.includes(chatState.channel)) chatState.channel = channels[0] || null;
+  chatState.channels = channels;
+  // Se mantiene la pestaña elegida («Todos los canales» = "") si este chat la tiene; si no, el canal más reciente.
+  if (chatState.channel !== "" && !channels.includes(chatState.channel)) chatState.channel = channels[0] || null;
   $("#chat-empty").hidden = true;
   $("#chat-open").hidden = false;
   $("#chat-avatar").textContent = initialsOf(data.name);
   $("#chat-name").textContent = data.name;
   $("#chat-sub").textContent = [data.company, STATUS_LABELS[data.status], data.assignee ? `responsable: ${data.assignee}` : ""]
     .filter(Boolean).join(" · ");
-  $("#chat-tabs").innerHTML = channels.map((ch) =>
-    `<button role="tab" data-channel="${escapeHtml(ch)}" class="${ch === chatState.channel ? "active" : ""}">${badge(ch)}</button>`).join("");
+  $("#chat-tabs").innerHTML = channelTabsHtml(channels, chatState.channel);
   renderChatDetails(data);
   toggleChatDetails(chatState.details);
   clientNames.set(clientId, data.name);
@@ -132,11 +133,12 @@ async function openChat(clientId) {
 
 async function loadChatConversation(keepScroll = false) {
   const { clientId, channel } = chatState;
-  if (!clientId || !channel) {
+  if (!clientId || channel === null) {
     $("#chat-timeline").innerHTML = `<li class="muted">Sin mensajes.</li>`;
     return;
   }
-  const params = new URLSearchParams({ scope: chatState.scope, channel });
+  const params = new URLSearchParams({ scope: chatState.scope });
+  if (channel) params.set("channel", channel);
   const messages = await api(`/api/clients/${clientId}/timeline?${params}`);
   if (chatState.clientId !== clientId || chatState.channel !== channel) return;
   const list = $("#chat-timeline");
@@ -162,10 +164,16 @@ function setNewEmail(on) {
   }
 }
 
+// Canal por el que se responde: el de la pestaña o, en «Todos los canales», el más reciente.
+function replyChannel() {
+  return chatState.channel || chatState.channels[0] || null;
+}
+
 async function prepareComposer() {
-  const conv = chatState.data.conversations.find((c) => c.channel === chatState.channel && c.is_mine);
+  const channel = replyChannel();
+  const conv = chatState.data.conversations.find((c) => c.channel === channel && c.is_mine);
   const note = $("#chat-send-note");
-  const email = chatState.channel === "email";
+  const email = channel === "email";
   $("#chat-new-email").hidden = !email;
   if (!email || conv) setNewEmail(false);
   if (email && !chatState.data.conversations.some((c) => c.channel === "email")) {
@@ -186,12 +194,12 @@ async function prepareComposer() {
     loadChatAI(conv?.channel === "whatsapp" ? conv.id : null);
   };
   if (!conv) {
-    const other = chatState.data.conversations.find((c) => c.channel === chatState.channel);
+    const other = chatState.data.conversations.find((c) => c.channel === channel);
     return disable(other ? `Esta conversación la lleva ${other.owner}: responde ella o él.` : "");
   }
   try {
     const s = await api(`/api/conversations/${conv.id}/sender`);
-    if (chatState.channel !== conv.channel) return;
+    if (replyChannel() !== conv.channel) return;
     chatState.baseline = s.last_message_id;
     if (!s.can_send) {
       return disable(`Para responder desde aquí, conecta tu cuenta de ${IDENTITY_LABELS[conv.channel] || conv.channel} en «Mis cuentas».`);
@@ -399,7 +407,7 @@ function bindChatsEvents() {
     const tab = e.target.closest("[data-channel]");
     if (!tab) return;
     chatState.channel = tab.dataset.channel;
-    document.querySelectorAll("#chat-tabs [data-channel]").forEach((t) => t.classList.toggle("active", t === tab));
+    setActiveChannelTab($("#chat-tabs"), chatState.channel);
     loadChatConversation();
   });
   bindComposer($("#chat-composer"), $("#chat-text"), sendChatMessage);

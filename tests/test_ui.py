@@ -103,9 +103,19 @@ try:
     check("correo nuevo: al volver a WhatsApp el botón ya no dice «Enviar correo»",
           b.js("document.querySelector('#chat-send').textContent") != "Enviar correo"
           and b.js("document.querySelector('#chat-subject').hidden"))
-    first_tab = b.js("document.querySelector('#chat-tabs [data-channel]').dataset.channel")
+    first_tab = b.js("document.querySelector('#chat-tabs .active').dataset.channel")
     check("chats: cada pestaña muestra solo su canal",
           b.js(f"[...document.querySelectorAll('#chat-timeline .msg-row')].every((r) => r.classList.contains('{first_tab}'))"))
+    one = b.js("document.querySelectorAll('#chat-timeline .msg-row').length")
+    b.click('#chat-tabs [data-channel=""]')
+    b.wait("chatState.channel === '' && document.querySelectorAll('#chat-timeline .msg-row').length > 0")
+    b.pump(0.8)
+    check("chats: «Todos los canales» junta los mensajes de todos los canales",
+          b.js("document.querySelectorAll('#chat-timeline .msg-row').length") >= one)
+    check("y se responde por el canal más reciente", b.js("replyChannel() === chatState.channels[0]"))
+    b.shot("04a2-chats-todos")
+    b.click(f'#chat-tabs [data-channel="{first_tab}"]')
+    b.wait(f"chatState.channel === '{first_tab}'")
     b.click('#chats-filter [data-unread="true"]')
     b.pump(0.6)
     check("chats: filtro «No leídos»", b.js("document.querySelector('#chats-filter .active').dataset.unread") == "true")
@@ -347,6 +357,16 @@ try:
     check("«Solo mis conversaciones» oculta las de los compañeros",
           b.js("document.querySelectorAll('#timeline .owner-tag').length") == 0)
     b.click("#only-mine")
+    b.wait(f"document.querySelectorAll('#timeline li').length === {total}")
+    check("mensajes: pestañas por canal, con «Todos los canales» activa",
+          b.js("document.querySelector('#channel-tabs .active').dataset.channel === ''"
+               " && document.querySelectorAll('#channel-tabs [data-channel]').length > 2"))
+    b.click('#channel-tabs [data-channel="whatsapp"]')
+    b.wait(f"document.querySelectorAll('#timeline li').length < {total}")
+    check("mensajes: la pestaña de un canal muestra solo ese canal",
+          b.js("[...document.querySelectorAll('#timeline .msg-row')].every((r) => r.classList.contains('whatsapp'))"))
+    b.shot("09b-mensajes-whatsapp")
+    b.click('#channel-tabs [data-channel=""]')
     b.wait(f"document.querySelectorAll('#timeline li').length === {total}")
     b.fill("#msg-search", "direccion")
     b.js("document.querySelector('#msg-search-form').requestSubmit()")

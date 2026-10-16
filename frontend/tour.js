@@ -9,7 +9,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 34;
+const TOUR_VERSION = 35;
 
 const TOUR_STEPS = [
   {
@@ -27,7 +27,7 @@ const TOUR_STEPS = [
     target: ".chat-main",
     view: "chats",
     title: "La conversación",
-    text: "Al elegir un chat, sus mensajes salen separados por canal (WhatsApp, Email, Telegram) en pestañas. Escribe abajo y pulsa Intro para enviar por tu cuenta conectada (con 📎 adjuntas un archivo; en Email, «✉ Nuevo correo» escribe uno con asunto), o «✨ Redactar con IA» para que te proponga la respuesta. A la derecha, los detalles del contacto y, en la pestaña «Asistente IA», puedes preguntarle sobre ese contacto sin salir del chat; «Abrir ficha» te lleva a su ficha completa.",
+    text: "Al elegir un chat, sus mensajes salen separados por canal (WhatsApp, Email, Telegram) en pestañas, o todos juntos en «Todos los canales». Escribe abajo y pulsa Intro para enviar por tu cuenta conectada (con 📎 adjuntas un archivo; en Email, «✉ Nuevo correo» escribe uno con asunto), o «✨ Redactar con IA» para que te proponga la respuesta. A la derecha, los detalles del contacto y, en la pestaña «Asistente IA», puedes preguntarle sobre ese contacto sin salir del chat; «Abrir ficha» te lleva a su ficha completa.",
   },
   {
     target: ".contacts-table-wrap",
@@ -55,7 +55,7 @@ const TOUR_STEPS = [
     target: ".detail",
     view: "client",
     title: "Ficha del cliente",
-    text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave, propiedades (DNI, fechas…) y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. El estado (Potencial, Activo, Incidencia, Inactivo) lo decide la IA ✨; púlsalo para cambiarlo a mano. Con ✎ editas responsable y etiquetas. Si un compañero está respondiendo al mismo cliente, te lo avisaré aquí.",
+    text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave, propiedades (DNI, fechas…) y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: el historial separado por canal en pestañas (o «Todos los canales» junto), con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. El estado (Potencial, Activo, Incidencia, Inactivo) lo decide la IA ✨; púlsalo para cambiarlo a mano. Con ✎ editas responsable y etiquetas. Si un compañero está respondiendo al mismo cliente, te lo avisaré aquí.",
   },
   {
     target: "#assistant",
