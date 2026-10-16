@@ -24,6 +24,23 @@ st, res = carlos.post(f"/api/me/integrations/{with_account}/templates",
 check("crearlas es de un administrador, aunque la cuenta sea suya = 403", st == 403 and "administrador" in res["detail"], res)
 check("y borrarlas también = 403", carlos.delete(f"/api/me/integrations/{with_account}/templates/cita")[0] == 403)
 
+# ---------------------------------------------------------------- Cuentas de WhatsApp Business de Meta (WABA)
+# Los números de una misma cuenta comparten las plantillas; se avisa del que está en otra cuenta que el resto del equipo.
+marta_same = integrations.create("whatsapp", "WhatsApp de Marta", 3, {**CFG, "phone_number_id": "889", "waba_id": "waba-9"})
+ana_other = integrations.create("whatsapp", "WhatsApp de Ana", 1, {**CFG, "phone_number_id": "890", "waba_id": "waba-otra"})
+mine = {i["id"]: i for i in carlos.get("/api/me/integrations")[1]["items"]}
+check("cada número dice con quién comparte las plantillas (aunque sea de un compañero)",
+      mine[with_account]["waba_id"] == "waba-9" and mine[with_account]["waba_shared_with"] == ["WhatsApp de Marta (Marta López)"],
+      mine[with_account])
+check("un número sin identificador de cuenta no se agrupa ni se marca",
+      mine[without_account]["waba_id"] == "" and not mine[without_account]["waba_other"])
+team = {i["id"]: i for i in ana.get("/api/admin/integrations")[1]["items"]}
+check("se marca el número que está en otra cuenta de Meta que el resto del equipo",
+      team[ana_other]["waba_other"] and team[ana_other]["waba_main"] == "waba-9" and not team[with_account]["waba_other"],
+      {k: team[k] for k in (ana_other, with_account)})
+for integration_id in (marta_same, ana_other):
+    integrations.delete(integration_id)
+
 # ---------------------------------------------------------------- Con Meta simulada
 calls = []
 
