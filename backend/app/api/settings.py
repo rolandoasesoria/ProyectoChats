@@ -18,6 +18,7 @@ class SettingsUpdate(BaseModel):
     retention_months: int | None = Field(None, ge=0, le=120)
     inactive_days: int | None = Field(None, ge=0, le=730)
     auto_analysis: int | None = Field(None, ge=0, le=1)
+    company_name: str | None = Field(None, max_length=80)
 
 
 @router.patch("/api/admin/settings")
