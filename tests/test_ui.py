@@ -484,7 +484,25 @@ try:
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: '?', bubbles: true}))")
     b.wait("document.querySelector('#shortcuts-dialog').open")
     check("? muestra los atajos", b.js("document.querySelectorAll('#shortcuts-list tr').length") >= 8)
-    b.js("document.querySelector('#shortcuts-dialog').close()")
+    # Las ventanas se cierran con un clic fuera (ratón real: pulsar y soltar)
+    def mouse(kind, x, y):
+        b.send("Input.dispatchMouseEvent", type=kind, x=x, y=y, button="left",
+               buttons=0 if kind == "mouseReleased" else 1, clickCount=1)
+    ix, iy = b.js("(() => { const r = document.querySelector('#shortcuts-dialog h2').getBoundingClientRect();"
+                  " return [r.left + 5, r.top + 5]; })()")
+    mouse("mousePressed", ix, iy)
+    mouse("mouseReleased", ix, iy)
+    b.pump(0.3)
+    check("ventanas: un clic dentro no la cierra", b.js("document.querySelector('#shortcuts-dialog').open"))
+    mouse("mousePressed", ix, iy)
+    mouse("mouseMoved", 8, 8)
+    mouse("mouseReleased", 8, 8)
+    b.pump(0.3)
+    check("ni pulsar dentro y soltar fuera (al seleccionar texto)", b.js("document.querySelector('#shortcuts-dialog').open"))
+    mouse("mousePressed", 8, 8)
+    mouse("mouseReleased", 8, 8)
+    b.wait("!document.querySelector('#shortcuts-dialog').open")
+    check("ventanas: un clic fuera la cierra", True)
 
     # Editar cliente (Laura, con todo su historial a la vista)
     b.js("selectClient(1)")

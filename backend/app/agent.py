@@ -222,6 +222,7 @@ primer mensaje del cliente sin contestar hasta la respuesta del equipo), el porc
 recibidos por semana y canal (al pasar el ratón por una columna se ven las cifras; "Ver como tabla" las muestra \
 todas) y clientes por estado. Los administradores ven además una tabla por persona: tiempo de primera respuesta, \
 respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de los que es responsable.
+- Ventanas (Administración, Mis cuentas, editar cliente…): se cierran con ×, con Esc o haciendo clic fuera de ellas.
 - Colores de canal (iguales en toda la app): email azul, Telegram naranja, WhatsApp verde agua.
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
 - Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear usuarios, cambiar nombre, email o rol \

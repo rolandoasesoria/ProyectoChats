@@ -6,6 +6,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Las ventanas (Administración, Mis cuentas, editar cliente…) se cierran también con un clic fuera de ellas.
 - Administración → Usuarios: al crear un usuario se abre **«Cuentas de …»** para conectarle su correo, bot de
   Telegram o WhatsApp Business; la columna **«Cuentas conectadas»** muestra las de cada persona (⚠ si alguna no
   conecta) y el botón «Cuentas» de cada fila permite verlas, añadir o quitar.
