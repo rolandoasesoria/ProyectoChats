@@ -58,7 +58,7 @@ const TOUR_STEPS = [
     text: "«Ficha»: resumen (con la prioridad que detecta la IA), datos clave, propiedades (DNI, fechas…) y documentos. «Tareas» pendientes. «Notas» internas (con @ avisas a un compañero). «Mensajes»: todo el historial, con buscador y «Redactar respuesta» (con IA o con respuestas guardadas: escribe /), que la IA puede retocar. El estado (Potencial, Activo, Incidencia, Inactivo) lo decide la IA ✨; púlsalo para cambiarlo a mano. Con ✎ editas responsable y etiquetas. Si un compañero está respondiendo al mismo cliente, te lo avisaré aquí.",
   },
   {
-    target: ".chat",
+    target: "#assistant",
     view: "client",
     title: "Asistente",
     text: "Pregunta cualquier dato: «¿qué CIF nos dio?». Cada cliente tiene su propia conversación. Busca en las tuyas; si quieres que mire las de tus compañeros, pídeselo.",

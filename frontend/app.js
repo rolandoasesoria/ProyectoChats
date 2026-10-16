@@ -220,11 +220,25 @@ function emptyChatHtml(clientId) {
     </div>`;
 }
 
-function createThread(clientId) {
+// El asistente se ve en dos sitios: a la derecha de la ficha y en la pestaña «Asistente IA» de Mis Chats. Es el
+// mismo: los hilos (uno por cliente) se comparten y cada panel muestra el de su cliente, llevándolo a su lista.
+const ASSISTANT_PANELS = {
+  ficha: {
+    log: "#chat-log", form: "#chat-form", input: "#chat-input", send: "#send-btn", reset: "#new-chat",
+    clientId: () => state.clientId,
+  },
+  chats: {
+    log: "#chats-assistant-log", form: "#chats-assistant-form", input: "#chats-assistant-input",
+    send: "#chats-assistant-send", reset: "#chats-assistant-new", clientId: () => chatState.clientId,
+  },
+};
+const FICHA = ASSISTANT_PANELS.ficha;
+
+function createThread(clientId, panel = FICHA) {
   const el = document.createElement("div");
   el.className = "thread";
   el.innerHTML = emptyChatHtml(clientId);
-  $("#chat-log").appendChild(el);
+  $(panel.log).appendChild(el);
   const thread = { el, busy: false, loaded: false };
   state.threads.set(clientId ?? GENERAL, thread);
   loadThreadHistory(clientId, thread);
@@ -239,30 +253,42 @@ async function loadThreadHistory(clientId, thread) {
     const pendingNodes = [...thread.el.querySelectorAll(".msg")];
     turns.forEach((t) => appendBubble(thread.el, t.role === "user" ? "user" : "bot", turnHtml(t), pendingNodes[0] || null));
     thread.loaded = true;
-    if (state.threads.get(state.clientId ?? GENERAL) === thread) scrollChat();
+    if (!thread.el.hidden) scrollLog(thread.el.parentElement);
   } catch (err) {
     appendBubble(thread.el, "error", `No se pudo cargar la conversación: ${escapeHtml(err.message)}`);
   }
 }
 
-function currentThread() {
-  return state.threads.get(state.clientId ?? GENERAL) || createThread(state.clientId);
+function currentThread(panel = FICHA) {
+  const clientId = panel.clientId();
+  return state.threads.get(clientId ?? GENERAL) || createThread(clientId, panel);
 }
 
-function scrollChat() {
-  $("#chat-log").scrollTop = $("#chat-log").scrollHeight;
+function scrollLog(log) {
+  if (log) log.scrollTop = log.scrollHeight;
 }
 
-function showThread(clientId) {
+// Muestra en el panel el hilo del cliente (si estaba en el otro panel, se trae aquí).
+function showThread(clientId, panel = FICHA) {
   const key = clientId ?? GENERAL;
-  const thread = state.threads.get(key) || createThread(clientId);
-  state.threads.forEach((t, k) => { t.el.hidden = k !== key; });
-  $("#send-btn").disabled = thread.busy;
-  scrollChat();
+  const log = $(panel.log);
+  const thread = state.threads.get(key) || createThread(clientId, panel);
+  if (thread.el.parentElement !== log) log.appendChild(thread.el);
+  state.threads.forEach((t, k) => { if (t.el.parentElement === log) t.el.hidden = k !== key; });
+  $(panel.send).disabled = thread.busy;
+  scrollLog(log);
 }
 
-async function resetCurrentThread() {
-  const clientId = state.clientId;
+// «Enviar» de cada panel: desactivado mientras su hilo espera respuesta.
+function refreshSendButtons() {
+  for (const panel of Object.values(ASSISTANT_PANELS)) {
+    const thread = state.threads.get(panel.clientId() ?? GENERAL);
+    if (thread && thread.el.parentElement === $(panel.log)) $(panel.send).disabled = thread.busy;
+  }
+}
+
+async function resetCurrentThread(panel = FICHA) {
+  const clientId = panel.clientId();
   const key = clientId ?? GENERAL;
   const thread = state.threads.get(key);
   if (thread?.busy) return;
@@ -276,7 +302,7 @@ async function resetCurrentThread() {
   thread?.el.remove();
   state.threads.delete(key);
   setThreadDot(clientId, false);
-  if (state.clientId === clientId) showThread(clientId);
+  if (panel.clientId() === clientId) showThread(clientId, panel);
 }
 
 const TOOL_LABELS = {
@@ -297,28 +323,34 @@ function renderTrace(toolCalls) {
   return `<div class="trace">${items.join("")}</div>`;
 }
 
-async function sendMessage(text) {
+async function sendMessage(text, panel = FICHA) {
   if (!text.trim()) return;
-  // Se fija el hilo al enviar: si el usuario cambia de cliente mientras espera,
+  // Se fija el hilo al enviar: si el usuario cambia de cliente (o de panel) mientras espera,
   // la respuesta llega igualmente al hilo correcto.
-  const clientId = state.clientId;
-  const thread = currentThread();
+  const clientId = panel.clientId();
+  const thread = currentThread(panel);
   if (thread.busy) return;
   thread.busy = true;
-  $("#send-btn").disabled = true;
+  refreshSendButtons();
   try {
     const answered = await askBot(thread.el, text, async () => {
       const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: text, client_id: clientId }) });
       return renderMarkdown(res.reply) + renderTrace(res.tool_calls);
-    }, scrollChat);
+    }, () => scrollLog(thread.el.parentElement));
     if (answered) setThreadDot(clientId, true);
   } finally {
     thread.busy = false;
-    if (state.threads.get(state.clientId ?? GENERAL) === thread) {
-      $("#send-btn").disabled = false;
-      scrollChat();
-    }
+    refreshSendButtons();
+    if (!thread.el.hidden) scrollLog(thread.el.parentElement);
   }
+}
+
+function bindAssistant(panel) {
+  bindComposer($(panel.form), $(panel.input), (text) => sendMessage(text, panel));
+  $(panel.log).addEventListener("click", (e) => {
+    if (e.target.classList.contains("chip")) sendMessage(e.target.textContent, panel);
+  });
+  $(panel.reset).addEventListener("click", () => resetCurrentThread(panel));
 }
 
 /* ---------- Mascota de ayuda ---------- */
@@ -402,11 +434,7 @@ function bindEvents() {
     loadTimeline();
   });
 
-  bindComposer($("#chat-form"), $("#chat-input"), sendMessage);
-  $("#chat-log").addEventListener("click", (e) => {
-    if (e.target.classList.contains("chip")) sendMessage(e.target.textContent);
-  });
-  $("#new-chat").addEventListener("click", resetCurrentThread);
+  bindAssistant(FICHA);
 
   bindComposer($("#help-form"), $("#help-input"), sendHelp);
   $("#mascot").addEventListener("click", () => toggleHelp());

@@ -154,13 +154,21 @@
         <button type="button" data-pane="assistant">Asistente IA</button>
       </div>
       <div id="chat-details-body"></div>
-      <div class="chat-assistant" id="chat-assistant" hidden>
-        <div class="chat-assistant-log" id="chat-assistant-log" aria-live="polite"></div>
-        <form class="chat-assistant-form" id="chat-assistant-form">
-          <textarea id="chat-assistant-input" rows="1" maxlength="4000" placeholder="Pregunta algo…"></textarea>
-          <button type="submit" class="primary small-btn" id="chat-assistant-send">Enviar</button>
+      <!-- El mismo asistente que a la derecha de la ficha (ver ASSISTANT_PANELS en app.js) -->
+      <section class="panel chat chats-assistant" id="chats-assistant" hidden>
+        <div class="chat-head">
+          <div>
+            <h1>Asistente</h1>
+            <p id="chats-assistant-context" class="muted"></p>
+          </div>
+          <button id="chats-assistant-new" class="ghost">Nueva conversación</button>
+        </div>
+        <div id="chats-assistant-log" class="chat-log"></div>
+        <form id="chats-assistant-form" class="chat-form">
+          <textarea id="chats-assistant-input" rows="1" maxlength="4000" placeholder="Escribe tu pregunta…" required></textarea>
+          <button type="submit" id="chats-assistant-send">Enviar</button>
         </form>
-      </div>
+      </section>
     </aside>
   </section>
 
@@ -537,7 +545,7 @@
          aria-label="Ancho del asistente" title="Arrastra para cambiar el ancho (doble clic: restablecer)"></div>
 
     <!-- Chat con el agente -->
-    <section class="panel chat">
+    <section class="panel chat" id="assistant">
       <div class="chat-head">
         <div>
           <h1>Asistente</h1>

@@ -11,7 +11,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 - Contactos: las celdas con varios valores (emails, teléfonos, etiquetas) muestran el primero y «+N», que despliega
   el resto; los textos largos se cortan con «…», así las filas no crecen.
 - Chats, panel derecho: pestaña **«Asistente IA»** para preguntar al asistente sobre ese contacto sin abrir su ficha
-  (es la misma conversación que en la ficha).
+  (es el mismo asistente de la ficha: mismo aspecto y misma conversación).
 - Estilo de tarjetas: cada zona de las secciones (lista, conversación, detalles…) es una tarjeta con sombra suave
   sobre el fondo de la ventana; la barra lateral queda aparte. En Chats, la lista y los detalles llevan el tono del
   asistente.
