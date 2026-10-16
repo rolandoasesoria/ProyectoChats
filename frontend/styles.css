@@ -999,7 +999,27 @@ body.resizing iframe { pointer-events: none; }
   color: var(--muted); text-transform: uppercase; letter-spacing: .03em; padding: 9px 12px; border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
-.contacts-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; max-width: 260px; }
+.contacts-table td {
+  padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; max-width: 260px; white-space: nowrap;
+}
+/* Celdas con varios valores: una línea, «…» si no cabe y «+N» que despliega la lista completa */
+.cell-text { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.cell-multi { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.cell-multi .cell-text { flex: 0 1 auto; }
+.cell-more { position: relative; flex-shrink: 0; }
+.cell-more summary {
+  list-style: none; cursor: pointer; padding: 1px 7px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  background: var(--bg); color: var(--muted);
+}
+.cell-more summary::-webkit-details-marker { display: none; }
+.cell-more summary:hover, .cell-more[open] summary { background: var(--accent-soft); color: var(--accent); }
+.cell-more ul {
+  position: absolute; z-index: 5; top: calc(100% + 4px); left: 0; min-width: 200px; max-width: 360px; max-height: 240px;
+  overflow-y: auto; margin: 0; padding: 6px; list-style: none; background: var(--panel); border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: var(--card-shadow); cursor: default;
+}
+.cell-more li { padding: 5px 8px; border-radius: 6px; overflow: hidden; text-overflow: ellipsis; user-select: text; }
+.cell-more li + li { border-top: 1px solid var(--border); }
 .contacts-table tbody tr[data-client] { cursor: pointer; }
 .contacts-table tbody tr[data-client]:hover, .contacts-table tbody tr[data-client]:focus-visible { background: var(--sub-hover); }
 .contact-name { display: flex; align-items: center; gap: 10px; font-weight: 600; white-space: nowrap; }
@@ -1134,3 +1154,12 @@ body { background: var(--canvas); }
   flex: 1; resize: none; max-height: 140px; overflow-y: hidden; padding: 7px 10px; border: 1px solid var(--border); border-radius: 10px;
   background: var(--panel); font-size: 13px;
 }
+
+/* Mis Chats y Plantillas: columnas con ancho ajustable (separadores entre tarjetas, ver layout.js) */
+.app-body > .chats-view, .app-body > .templates-view { gap: 4px; }
+.chats-view > .resizer, .templates-view > .resizer { flex: 0 0 0; }
+.chats-pane { width: var(--w-list, 320px); }
+.chat-details { width: var(--w-details, 300px); }
+.tpl-pane { width: var(--w-list, 300px); }
+.chat-main, .tpl-main { min-width: 280px; }
+.resizer[data-zone="details"]:has(+ .chat-details[hidden]) { display: none; }

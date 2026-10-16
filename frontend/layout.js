@@ -1,79 +1,89 @@
-// Ancho de las tres zonas (clientes · ficha · asistente). Los separadores se arrastran con el ratón o se mueven
-// con las flechas del teclado; doble clic vuelve al ancho inicial. El ancho elegido se recuerda en este navegador.
-// La ficha (centro) ocupa el resto y nunca baja de LAYOUT_MIN_DETAIL.
+// Ancho de las zonas de cada página: ficha (clientes · ficha · asistente), Mis Chats (lista · conversación ·
+// detalles) y Plantillas (lista · plantilla). Los separadores se arrastran con el ratón o se mueven con las flechas
+// del teclado; doble clic vuelve al ancho inicial. El ancho elegido se recuerda en este navegador, por página.
+// La zona central ocupa el resto y nunca baja de su mínimo (`minCenter`).
 
-const LAYOUT_KEY = "pc-layout";
-const LAYOUT_DEFAULTS = { clients: 290, chat: 400 };
-const LAYOUT_LIMITS = { clients: [180, 520], chat: [260, 760] };
-const LAYOUT_MIN_DETAIL = 300;
 const LAYOUT_STEP = 16;
+const LAYOUTS = [
+  {
+    container: ".layout", key: "pc-layout", center: ".detail", minCenter: 300,
+    zones: {
+      clients: { pane: ".clients", side: "left", def: 290, min: 180, max: 520 },
+      chat: { pane: ".chat", side: "right", def: 400, min: 260, max: 760 },
+    },
+  },
+  {
+    container: "#view-chats", key: "pc-layout-chats", center: ".chat-main", minCenter: 340,
+    zones: {
+      list: { pane: ".chats-pane", side: "left", def: 320, min: 240, max: 520 },
+      details: { pane: "#chat-details", side: "right", def: 300, min: 240, max: 560 },
+    },
+  },
+  {
+    container: "#view-templates", key: "pc-layout-templates", center: ".tpl-main", minCenter: 340,
+    zones: { list: { pane: ".tpl-pane", side: "left", def: 300, min: 220, max: 560 } },
+  },
+];
 
-function loadLayoutWidths() {
+function loadLayoutWidths(layout) {
+  const defaults = Object.fromEntries(Object.entries(layout.zones).map(([zone, z]) => [zone, z.def]));
   try {
-    const saved = JSON.parse(localStorage.getItem(LAYOUT_KEY) || "{}");
-    return { ...LAYOUT_DEFAULTS, ...saved };
+    return { ...defaults, ...JSON.parse(localStorage.getItem(layout.key) || "{}") };
   } catch {
-    return { ...LAYOUT_DEFAULTS };
+    return defaults;
   }
 }
 
-function saveLayoutWidths(widths) {
-  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify(widths)); } catch { /* almacenamiento no disponible */ }
+function saveLayoutWidths(layout, widths) {
+  try { localStorage.setItem(layout.key, JSON.stringify(widths)); } catch { /* almacenamiento no disponible */ }
 }
 
-// Espacio que ocupan las tres zonas: el ancho de la ficha sin su margen interior ni los huecos entre tarjetas
-// (cuatro: a cada lado de cada separador).
-function layoutContentWidth() {
-  const layout = $(".layout");
-  const cs = getComputedStyle(layout);
-  const gap = parseFloat(cs.columnGap) || 0;
-  return layout.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - 4 * gap;
-}
-
-// Límite de la zona, sin dejar la ficha por debajo de su mínimo con el ancho actual de la ventana.
-function clampZone(zone, width, widths) {
-  const [min, max] = LAYOUT_LIMITS[zone];
-  const other = zone === "clients" ? widths.chat : widths.clients;
-  const room = layoutContentWidth() - other - LAYOUT_MIN_DETAIL;
-  return Math.round(Math.max(min, Math.min(width, max, room)));
-}
-
-function applyLayoutWidths(widths) {
-  const layout = $(".layout");
-  for (const zone of ["clients", "chat"]) {
-    layout.style.setProperty(`--w-${zone}`, `${widths[zone]}px`);
-    const handle = $(`.resizer[data-zone="${zone}"]`);
+function applyLayoutWidths(layout, widths) {
+  const container = $(layout.container);
+  for (const [zone, z] of Object.entries(layout.zones)) {
+    container.style.setProperty(`--w-${zone}`, `${widths[zone]}px`);
+    const handle = container.querySelector(`:scope > .resizer[data-zone="${zone}"]`);
     handle.setAttribute("aria-valuenow", widths[zone]);
-    handle.setAttribute("aria-valuemin", LAYOUT_LIMITS[zone][0]);
-    handle.setAttribute("aria-valuemax", LAYOUT_LIMITS[zone][1]);
+    handle.setAttribute("aria-valuemin", z.min);
+    handle.setAttribute("aria-valuemax", z.max);
   }
 }
 
-function bindLayoutEvents() {
-  const widths = loadLayoutWidths();
-  applyLayoutWidths(widths);
+// Lo más que puede crecer la zona ahora: lo que la zona central tiene por encima de su mínimo.
+function zoneRoom(layout, zone) {
+  const center = $(layout.center).getBoundingClientRect().width;
+  const pane = $(layout.zones[zone].pane).getBoundingClientRect().width;
+  return pane + Math.max(0, center - layout.minCenter);
+}
 
-  const setZone = (zone, width) => {
-    widths[zone] = clampZone(zone, width, widths);
-    applyLayoutWidths(widths);
+function bindLayout(layout) {
+  const container = $(layout.container);
+  const widths = loadLayoutWidths(layout);
+  applyLayoutWidths(layout, widths);
+
+  const setZone = (zone, width, room = zoneRoom(layout, zone)) => {
+    const z = layout.zones[zone];
+    widths[zone] = Math.round(Math.max(z.min, Math.min(width, z.max, room)));
+    applyLayoutWidths(layout, widths);
   };
 
-  for (const handle of document.querySelectorAll(".resizer")) {
+  for (const handle of container.querySelectorAll(":scope > .resizer")) {
     const zone = handle.dataset.zone;
+    const z = layout.zones[zone];
 
     handle.addEventListener("pointerdown", (event) => {
       event.preventDefault();
       handle.setPointerCapture(event.pointerId);
       document.body.classList.add("resizing");
       // El ancho se mide desde el borde exterior de la zona; el separador está en medio del hueco entre tarjetas.
-      const gap = parseFloat(getComputedStyle($(".layout")).columnGap) || 0;
-      const left = $(".clients").getBoundingClientRect().left;
-      const right = $(".chat").getBoundingClientRect().right;
-      const onMove = (e) => setZone(zone, zone === "clients" ? e.clientX - left - gap : right - e.clientX - gap);
+      const gap = parseFloat(getComputedStyle(container).columnGap) || 0;
+      const rect = $(z.pane).getBoundingClientRect();
+      const room = zoneRoom(layout, zone);
+      const onMove = (e) => setZone(zone, z.side === "left" ? e.clientX - rect.left - gap : rect.right - e.clientX - gap, room);
       const onUp = () => {
         handle.removeEventListener("pointermove", onMove);
         document.body.classList.remove("resizing");
-        saveLayoutWidths(widths);
+        saveLayoutWidths(layout, widths);
       };
       handle.addEventListener("pointermove", onMove);
       handle.addEventListener("pointerup", onUp, { once: true });
@@ -81,18 +91,22 @@ function bindLayoutEvents() {
     });
 
     handle.addEventListener("dblclick", () => {
-      setZone(zone, LAYOUT_DEFAULTS[zone]);
-      saveLayoutWidths(widths);
+      setZone(zone, z.def);
+      saveLayoutWidths(layout, widths);
     });
 
-    // Teclado: la flecha mueve el separador en su dirección (el asistente crece hacia la izquierda).
+    // Teclado: la flecha mueve el separador en su dirección (las zonas de la derecha crecen hacia la izquierda).
     handle.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
       event.preventDefault();
       const towardsRight = event.key === "ArrowRight";
-      const grows = zone === "clients" ? towardsRight : !towardsRight;
+      const grows = z.side === "left" ? towardsRight : !towardsRight;
       setZone(zone, widths[zone] + (grows ? LAYOUT_STEP : -LAYOUT_STEP));
-      saveLayoutWidths(widths);
+      saveLayoutWidths(layout, widths);
     });
   }
+}
+
+function bindLayoutEvents() {
+  LAYOUTS.forEach(bindLayout);
 }
