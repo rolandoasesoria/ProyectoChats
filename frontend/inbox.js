@@ -181,8 +181,9 @@ async function recordVisit(clientId) {
   $("#whats-new-summary").hidden = true;
   const v = await api(`/api/clients/${clientId}/visit`, { method: "POST" });
   if (state.clientId !== clientId) return;
-  // Ya visto: se quita el contador de no leídos de la lista.
-  document.querySelector(`#client-list li[data-id="${clientId}"] .unread`)?.remove();
+  // Ya visto: se quita el contador de no leídos de las listas.
+  document.querySelectorAll(`#chats-list li[data-client="${clientId}"], #contacts-mini li[data-client="${clientId}"]`)
+    .forEach((li) => { li.classList.remove("has-unread"); li.querySelector(".unread")?.remove(); });
   if (!v.previous_visit_at || !v.new_messages) return;
   whatsNewSince = v.since_message_id;
   $("#whats-new-text").textContent =

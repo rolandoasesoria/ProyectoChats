@@ -1,6 +1,6 @@
 // Presencia: avisa de qué compañeros tienen abierto el mismo cliente y de quién está respondiendo,
-// para no contestar dos veces. La interfaz da un «latido» al cambiar de cliente, al abrir o cerrar el
-// borrador y cada 15 segundos.
+// para no contestar dos veces. La interfaz da un «latido» al cambiar de cliente, al empezar o dejar de escribir
+// en la caja de la conversación y cada 15 segundos.
 
 const PRESENCE_INTERVAL = 15000;
 
@@ -8,7 +8,7 @@ async function heartbeat() {
   const clientId = state.clientId;
   try {
     const others = await api("/api/presence", {
-      method: "POST", body: JSON.stringify({ client_id: clientId, composing: !!clientId && !$("#draft-panel").hidden }),
+      method: "POST", body: JSON.stringify({ client_id: clientId, composing: !!clientId && chatState.composing }),
     });
     if (state.clientId === clientId) renderPresence(others);
   } catch { /* no crítico: se reintenta en el siguiente latido */ }

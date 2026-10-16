@@ -1,30 +1,47 @@
-// Sección Mis Chats: la lista de conversaciones por cliente (Todos / No leídos), la conversación separada por canal
-// (WhatsApp, Email, Telegram) con la caja de escribir abajo, y los datos del contacto a la derecha. Se envía por la
-// cuenta conectada del canal, igual que desde el borrador. También cambia entre las secciones de la barra lateral.
+// Mis Chats y la vista de contacto. A la izquierda, la lista de la que se viene: los chats (Todos / No leídos /
+// Sin responder) o, si el contacto se abrió desde Contactos, la lista de contactos. En el centro, el contacto con sus
+// pestañas: Conversación (por canal, con la caja de escribir), Ficha, Tareas y Notas. A la derecha, Detalles o el
+// asistente. Se envía por la cuenta conectada del canal. También cambia entre las secciones de la barra lateral.
 
 const VIEW_KEY = "pc-view";
 const CHATS_REFRESH = 20000; // la lista y la conversación abierta se actualizan solas cada 20 s
 const chatState = {
-  clientId: null, data: null, channel: null, channels: [], unread: false, scope: "mine", query: "",
+  clientId: null, data: null, channel: null, channels: [], filter: "all", scope: "mine", query: "",
+  origin: "chats", // de dónde se abrió el contacto: «chats» (Mis Chats) o «contacts» (Contactos)
+  tab: "conversation", // pestaña del contacto: conversation, profile, tasks o notes
   conversationId: null, baseline: null, // conversación por la que se responde y su último mensaje al abrirla
-  details: true, // panel «Detalles del contacto» visible
+  details: true, // panel derecho visible
   file: null, // archivo elegido para enviar con el próximo mensaje
   newEmail: false, // escribiendo un correo nuevo (con asunto) en vez de responder en el hilo
   detailsPane: "info", // panel derecho: «info» (detalles del contacto) o «assistant» (asistente IA)
+  composing: false, // hay texto en la caja de escribir (se avisa a los compañeros: «está respondiendo»)
 };
 const CHAT_MAX_FILE = 15 * 1024 * 1024;
 let chatsSearchTimer = null;
+let contactsMiniTimer = null;
 
 /* ---------- Secciones de la barra lateral ---------- */
 
-// Vistas: «chats», «contacts» (la tabla), «client» (la ficha de un contacto, con el asistente), «templates» y «ai». La ficha cuenta como
-// parte de Contactos en la barra lateral.
-const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout", templates: "#view-templates",
-                ai: "#view-ai", dashboard: "#view-dashboard" };
+// Vistas. «client» es la vista de contacto abierta desde Contactos: usa la misma pantalla que Mis Chats, con la lista
+// de contactos a la izquierda, y en la barra lateral cuenta como Contactos.
+const VIEWS = { chats: "#view-chats", client: "#view-chats", contacts: "#view-contacts", tasks: "#view-tasks",
+                assistant: "#view-assistant", templates: "#view-templates", ai: "#view-ai", dashboard: "#view-dashboard" };
+let viewName = null;
+
+function currentView() {
+  return viewName;
+}
 
 function showView(name) {
   if (!VIEWS[name]) name = "chats";
-  Object.entries(VIEWS).forEach(([view, selector]) => { $(selector).hidden = view !== name; });
+  new Set(Object.values(VIEWS)).forEach((sel) => { $(sel).hidden = sel !== VIEWS[name]; });
+  viewName = name;
+  if (name === "chats" || name === "client") {
+    const origin = name === "client" ? "contacts" : "chats";
+    if (chatState.origin !== origin) closeChat(); // el contacto abierto era del otro sitio
+    chatState.origin = origin;
+    $("#view-chats").dataset.origin = origin;
+  }
   const section = name === "client" ? "contacts" : name;
   document.querySelectorAll(".sidebar [data-view]").forEach((b) => {
     const active = b.dataset.view === section;
@@ -34,7 +51,13 @@ function showView(name) {
   try { localStorage.setItem(VIEW_KEY, section); } catch { /* almacenamiento no disponible */ }
   updateBreadcrumb();
   if (name === "chats") loadChats();
+  if (name === "client") {
+    $("#contacts-mini-search").value = $("#contacts-search").value;
+    loadContactsMini();
+  }
   if (name === "contacts") loadContacts();
+  if (name === "tasks") loadMyTasks().catch((err) => alert(err.message));
+  if (name === "assistant") showGeneralAssistant();
   if (name === "ai") loadAISettings().catch((err) => alert(err.message));
   if (name === "dashboard") loadDashboard().catch((err) => alert(err.message));
   else hideTooltip();
@@ -46,7 +69,7 @@ function showView(name) {
 function savedView() {
   try {
     const saved = localStorage.getItem(VIEW_KEY);
-    return ["contacts", "templates", "ai", "dashboard"].includes(saved) ? saved : "chats";
+    return ["contacts", "tasks", "assistant", "templates", "ai", "dashboard"].includes(saved) ? saved : "chats";
   } catch { return "chats"; }
 }
 
@@ -67,15 +90,18 @@ function chatTime(iso) {
   return at.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
 
+function unreadBadge(n) {
+  return n ? `<span class="unread" title="Mensajes sin leer">${n > 99 ? "99+" : n}</span>` : "";
+}
+
 function chatItemHtml(c) {
-  const unread = c.unread ? `<span class="unread" title="Mensajes sin leer">${c.unread > 99 ? "99+" : c.unread}</span>` : "";
   return `
     <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread ? " has-unread" : ""}">
       <span class="chat-avatar">${escapeHtml(initialsOf(c.name))}</span>
       <div class="chat-item-body">
         <div class="chat-item-top"><strong>${escapeHtml(c.name)}</strong><span class="chat-item-time">${escapeHtml(chatTime(c.last_at))}</span></div>
         <div class="chat-item-bottom">
-          <span class="chat-preview">${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}</span>${unread}
+          <span class="chat-preview">${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}</span>${unreadBadge(c.unread)}
         </div>
         <div class="chat-item-meta">${c.channels.map(badge).join("")}${tagChips(c.tags, 2)}</div>
       </div>
@@ -83,65 +109,127 @@ function chatItemHtml(c) {
 }
 
 async function loadChats() {
+  if (chatState.filter === "inbox") return loadInbox().catch(() => { /* se reintenta en la siguiente actualización */ });
   const params = new URLSearchParams({ scope: chatState.scope, q: chatState.query });
-  if (chatState.unread) params.set("unread", "true");
+  if (chatState.filter === "unread") params.set("unread", "true");
   try {
     const items = await api(`/api/chats?${params}`);
     $("#chats-list").innerHTML = items.length ? items.map(chatItemHtml).join("")
-      : `<li class="chats-empty muted small">${chatState.unread ? "No tienes chats sin leer." : chatState.query
+      : `<li class="chats-empty muted small">${chatState.filter === "unread" ? "No tienes chats sin leer." : chatState.query
         ? "Ningún chat coincide con la búsqueda." : "Todavía no hay conversaciones. Conecta tus cuentas en «Mis cuentas»."}</li>`;
   } catch (err) {
     $("#chats-list").innerHTML = `<li class="form-error">${escapeHtml(err.message)}</li>`;
   }
 }
 
-/* ---------- Conversación abierta ---------- */
-
-function chatConversations() {
-  const convs = chatState.data?.conversations || [];
-  return chatState.scope === "team" ? convs : convs.filter((c) => c.is_mine);
+// Todos · No leídos · Sin responder (la bandeja: quién espera respuesta, con sus plazos).
+function setChatsFilter(filter) {
+  chatState.filter = filter;
+  document.querySelectorAll("#chats-filter [data-filter]").forEach((b) => b.classList.toggle("active", b.dataset.filter === filter));
+  const inbox = filter === "inbox";
+  $("#chats-list").hidden = inbox;
+  $("#chats-search").hidden = inbox;
+  $("#chats-scope").hidden = inbox || currentUser.role !== "admin"; // la bandeja tiene su propio «Mías / Todo el equipo»
+  $("#side-inbox").hidden = !inbox;
+  loadChats();
 }
 
-async function openChat(clientId) {
-  if (chatState.clientId !== clientId) setChatFile(null); // el archivo elegido era para otro chat
-  chatState.clientId = clientId;
-  document.querySelectorAll("#chats-list li[data-client]").forEach((li) =>
-    li.classList.toggle("active", Number(li.dataset.client) === clientId));
-  const data = await api(`/api/clients/${clientId}`);
-  if (chatState.clientId !== clientId) return; // ya se eligió otro chat
-  chatState.data = data;
-  updateBreadcrumb();
-  // Pestañas: los canales en los que hay conversación, el más reciente primero.
+/* ---------- Lista de contactos (al abrir uno desde Contactos) ---------- */
+
+// Los mismos contactos que la tabla, con sus filtros, en formato compacto.
+function contactMiniHtml(c) {
+  return `
+    <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread ? " has-unread" : ""}">
+      <span class="chat-avatar">${escapeHtml(initialsOf(c.name))}</span>
+      <div class="chat-item-body">
+        <div class="chat-item-top"><strong>${statusDot(c.status)}${escapeHtml(c.name)}</strong>
+          ${c.last_message_at ? `<span class="chat-item-time">${escapeHtml(chatTime(c.last_message_at))}</span>` : ""}</div>
+        <div class="chat-item-bottom"><span class="chat-preview">${escapeHtml(c.company || "")}</span>${unreadBadge(c.unread)}</div>
+        <div class="chat-item-meta">${c.channels.map(badge).join("")}${tagChips(c.tags, 2)}</div>
+      </div>
+    </li>`;
+}
+
+async function loadContactsMini() {
+  try {
+    const items = await api(`/api/contacts?${contactsQuery()}`);
+    $("#contacts-mini").innerHTML = items.length ? items.map(contactMiniHtml).join("")
+      : `<li class="chats-empty muted small">Ningún contacto coincide con los filtros.</li>`;
+  } catch (err) {
+    $("#contacts-mini").innerHTML = `<li class="form-error">${escapeHtml(err.message)}</li>`;
+  }
+}
+
+/* ---------- Contacto abierto ---------- */
+
+// Conversaciones que se ven: todas las del cliente o, con «Solo mis conversaciones», las tuyas.
+function chatConversations() {
+  const convs = chatState.data?.conversations || [];
+  return state.scope === "team" ? convs : convs.filter((c) => c.is_mine);
+}
+
+function syncScope() {
+  state.scope = $("#only-mine").checked ? "mine" : "team";
+}
+
+// Pestañas de canal: los canales con conversación (la más reciente primero) y, si tiene email, también Email para
+// escribirle un correo nuevo aunque no haya hilos. Se mantiene la elegida («Todos los canales» = "") si la hay.
+function renderChannelTabs() {
   const channels = [...new Set(chatConversations().map((c) => c.channel))];
-  // Con email pero sin conversaciones por correo: la pestaña sale igual, para escribirle un correo nuevo.
-  if (data.identities.some((i) => i.channel === "email") && !channels.includes("email")) channels.push("email");
+  if (chatState.data.identities.some((i) => i.channel === "email") && !channels.includes("email")) channels.push("email");
   chatState.channels = channels;
-  // Se mantiene la pestaña elegida («Todos los canales» = "") si este chat la tiene; si no, el canal más reciente.
   if (chatState.channel !== "" && !channels.includes(chatState.channel)) chatState.channel = channels[0] || null;
+  $("#chat-tabs").innerHTML = channelTabsHtml(channels, chatState.channel);
+}
+
+function markActiveContact() {
+  document.querySelectorAll("#chats-list li[data-client], #contacts-mini li[data-client]").forEach((li) =>
+    li.classList.toggle("active", Number(li.dataset.client) === chatState.clientId));
+}
+
+// Abre un contacto en esta vista (o lo recarga, si ya estaba abierto).
+async function openChat(clientId) {
+  const changed = chatState.clientId !== clientId;
+  if (changed) {
+    setChatFile(null); // el archivo elegido era para otro contacto
+    resetComposerExtras();
+    closeResults();
+    $("#presence-bar").hidden = true;
+  }
+  chatState.clientId = clientId;
+  state.clientId = clientId;
+  markActiveContact();
+  if (changed) heartbeat();
+  const data = await api(`/api/clients/${clientId}`);
+  if (chatState.clientId !== clientId) return; // ya se eligió otro
+  chatState.data = data;
+  state.clientData = data;
+  clientNames.set(clientId, data.name);
+  // Desde Mis Chats se ven tus conversaciones (o las del equipo, si un administrador lo eligió); desde Contactos,
+  // todo el historial del cliente.
+  if (changed) $("#only-mine").checked = chatState.origin === "chats" && chatState.scope === "mine";
+  syncScope();
+  renderChannelTabs();
   $("#chat-empty").hidden = true;
   $("#chat-open").hidden = false;
   $("#chat-avatar").textContent = initialsOf(data.name);
-  $("#chat-name").textContent = data.name;
-  $("#chat-sub").textContent = [data.company, STATUS_LABELS[data.status], data.assignee ? `responsable: ${data.assignee}` : ""]
-    .filter(Boolean).join(" · ");
-  $("#chat-tabs").innerHTML = channelTabsHtml(channels, chatState.channel);
+  renderClientHeader(data);
   renderChatDetails(data);
   toggleChatDetails(chatState.details);
-  clientNames.set(clientId, data.name);
   showDetailsPane(chatState.detailsPane);
-  await Promise.all([loadChatConversation(), api(`/api/clients/${clientId}/visit`, { method: "POST" })]);
-  const item = document.querySelector(`#chats-list li[data-client="${clientId}"]`);
-  item?.classList.remove("has-unread");
-  item?.querySelector(".unread")?.remove();
+  showDetailTab(chatState.tab);
+  await Promise.all([loadChatConversation(), openClientDetail(clientId), recordVisit(clientId), loadDuplicates(clientId)]);
 }
 
 async function loadChatConversation(keepScroll = false) {
   const { clientId, channel } = chatState;
   if (!clientId || channel === null) {
-    $("#chat-timeline").innerHTML = `<li class="muted">Sin mensajes.</li>`;
+    $("#chat-timeline").innerHTML = `<li class="muted">${state.scope === "mine" && chatState.data?.conversations.length
+      ? "Tú no has hablado con este cliente. Desmarca «Solo mis conversaciones» para ver las del equipo." : "Sin mensajes."}</li>`;
+    if (chatState.data) await prepareComposer();
     return;
   }
-  const params = new URLSearchParams({ scope: chatState.scope });
+  const params = new URLSearchParams({ scope: state.scope });
   if (channel) params.set("channel", channel);
   const messages = await api(`/api/clients/${clientId}/timeline?${params}`);
   if (chatState.clientId !== clientId || chatState.channel !== channel) return;
@@ -162,6 +250,7 @@ function setNewEmail(on) {
   if (on) {
     $("#chat-send").disabled = false;
     $("#chat-file").disabled = false;
+    $("#draft-copy").hidden = true;
     $("#chat-send").textContent = "Enviar correo";
     $("#chat-send-note").hidden = true;
     $("#chat-subject").focus();
@@ -194,6 +283,7 @@ async function prepareComposer() {
     $("#chat-send").disabled = true;
     $("#chat-file").disabled = true;
     $("#chat-ai-draft").disabled = !conv;
+    $("#draft-copy").hidden = !conv; // sin cuenta conectada: se copia para pegarlo en el móvil o el correo
     $("#chat-template").hidden = true;
     loadChatAI(conv?.channel === "whatsapp" ? conv.id : null);
   };
@@ -214,6 +304,7 @@ async function prepareComposer() {
     $("#chat-send").disabled = false;
     $("#chat-file").disabled = false;
     $("#chat-ai-draft").disabled = false;
+    $("#draft-copy").hidden = true;
     $("#chat-send").textContent = `Enviar por ${s.via}`;
     loadChatAI(conv.channel === "whatsapp" ? conv.id : null);
   } catch {
@@ -301,6 +392,10 @@ async function sendChatMessage(text) {
       await send(true);
     }
     setChatFile(null);
+    resetComposerExtras({ keepFollowUp: true });
+    const note = await scheduleFollowUp(convId);
+    showComposerNote(note);
+    setComposing(false);
     await loadChatConversation();
     loadChats();
     refreshInboxCount();
@@ -312,25 +407,11 @@ async function sendChatMessage(text) {
   }
 }
 
-async function draftChatReply() {
-  const btn = $("#chat-ai-draft");
-  if (!chatState.conversationId) return;
-  btn.disabled = true;
-  btn.textContent = "✨ Redactando…";
-  try {
-    const res = await api(`/api/conversations/${chatState.conversationId}/draft`, {
-      method: "POST", body: JSON.stringify({ instructions: "" }),
-    });
-    const input = $("#chat-text");
-    input.value = res.draft;
-    input.dispatchEvent(new Event("input"));
-    input.focus();
-  } catch (err) {
-    alert(err.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "✨ Redactar con IA";
-  }
+// Avisa a los compañeros de que estás respondiendo a este cliente mientras hay algo escrito.
+function setComposing(on) {
+  if (chatState.composing === on) return;
+  chatState.composing = on;
+  heartbeat();
 }
 
 /* ---------- Detalles del contacto ---------- */
@@ -377,22 +458,24 @@ function toggleChatDetails(show) {
   $("#chat-details-toggle").setAttribute("aria-pressed", String(open));
 }
 
-// Vuelve a Mis Chats sin ningún chat abierto (desde la ruta de navegación).
+// Sin ningún contacto abierto (al pulsar la sección en la ruta de navegación, al cambiar de sección, al borrarlo…).
 function closeChat() {
+  const had = chatState.clientId !== null;
   chatState.clientId = null;
   chatState.data = null;
-  document.querySelectorAll("#chats-list li.active").forEach((li) => li.classList.remove("active"));
+  state.clientId = null;
+  state.clientData = null;
+  markActiveContact();
   $("#chat-open").hidden = true;
   $("#chat-empty").hidden = false;
+  $("#chat-empty").textContent = chatState.origin === "contacts"
+    ? "Elige un contacto de la lista para ver su ficha y sus conversaciones."
+    : "Elige un chat de la lista para ver la conversación.";
   $("#chat-details").hidden = true;
+  setChatFile(null);
+  chatState.composing = false;
+  if (had) heartbeat();
   updateBreadcrumb();
-}
-
-// «Abrir ficha»: la ficha completa del contacto (datos, tareas, notas, mensajes y asistente).
-async function openChatClient() {
-  if (!chatState.clientId) return;
-  showView("client");
-  await selectClient(chatState.clientId);
 }
 
 /* ---------- Eventos ---------- */
@@ -404,20 +487,28 @@ function bindChatsEvents() {
     clearTimeout(chatsSearchTimer);
     chatsSearchTimer = setTimeout(() => { chatState.query = e.target.value; loadChats(); }, 200);
   });
-  document.querySelectorAll("#chats-filter [data-unread]").forEach((b) => b.addEventListener("click", () => {
-    chatState.unread = b.dataset.unread === "true";
-    document.querySelectorAll("#chats-filter [data-unread]").forEach((x) => x.classList.toggle("active", x === b));
-    loadChats();
-  }));
+  document.querySelectorAll("#chats-filter [data-filter]").forEach((b) =>
+    b.addEventListener("click", () => setChatsFilter(b.dataset.filter)));
   $("#chats-scope").addEventListener("change", (e) => {
     chatState.scope = e.target.value;
     loadChats();
-    if (chatState.clientId) openChat(chatState.clientId);
+    if (chatState.clientId) {
+      $("#only-mine").checked = chatState.scope === "mine";
+      openChat(chatState.clientId);
+    }
   });
-  $("#chats-list").addEventListener("click", (e) => {
+  ["#chats-list", "#contacts-mini"].forEach((sel) => $(sel).addEventListener("click", (e) => {
     const li = e.target.closest("li[data-client]");
     if (li) openChat(Number(li.dataset.client)).catch((err) => alert(err.message));
+  }));
+  $("#contacts-back").addEventListener("click", () => showView("contacts"));
+  $("#contacts-mini-search").addEventListener("input", (e) => {
+    $("#contacts-search").value = e.target.value; // la misma búsqueda que la tabla
+    clearTimeout(contactsMiniTimer);
+    contactsMiniTimer = setTimeout(loadContactsMini, 200);
   });
+  document.querySelectorAll(".contact-tabs [data-tab]").forEach((b) =>
+    b.addEventListener("click", () => showDetailTab(b.dataset.tab)));
   $("#chat-tabs").addEventListener("click", (e) => {
     const tab = e.target.closest("[data-channel]");
     if (!tab) return;
@@ -425,14 +516,24 @@ function bindChatsEvents() {
     setActiveChannelTab($("#chat-tabs"), chatState.channel);
     loadChatConversation();
   });
+  $("#only-mine").addEventListener("change", () => {
+    syncScope();
+    renderChannelTabs();
+    loadChatConversation();
+  });
+  $("#msg-search-toggle").addEventListener("click", () => {
+    const form = $("#msg-search-form");
+    form.hidden = !form.hidden;
+    $("#msg-search-toggle").setAttribute("aria-pressed", String(!form.hidden));
+    if (form.hidden) closeResults(); else $("#msg-search").focus();
+  });
   bindComposer($("#chat-composer"), $("#chat-text"), sendChatMessage);
+  $("#chat-text").addEventListener("input", (e) => setComposing(!!e.target.value.trim()));
   $("#chat-file").addEventListener("change", (e) => setChatFile(e.target.files[0]));
   $("#chat-new-email").addEventListener("click", () => {
     if (chatState.newEmail) prepareComposer().then(() => setNewEmail(false)); else setNewEmail(true);
   });
   $("#chat-file-chip").addEventListener("click", (e) => { if (e.target.closest("#chat-file-remove")) setChatFile(null); });
-  $("#chat-ai-draft").addEventListener("click", draftChatReply);
-  $("#chat-open-client").addEventListener("click", openChatClient);
   $("#chat-details-toggle").addEventListener("click", () => toggleChatDetails());
   $("#chat-details-tabs").addEventListener("click", (e) => {
     const tab = e.target.closest("[data-pane]");
@@ -441,7 +542,7 @@ function bindChatsEvents() {
   bindAssistant(ASSISTANT_PANELS.chats);
   setInterval(() => {
     if (document.hidden || $("#view-chats").hidden) return;
-    loadChats();
-    if (chatState.clientId && !$("#chat-text").value) loadChatConversation(true).catch(() => {});
+    if (chatState.origin === "chats") loadChats(); else loadContactsMini();
+    if (chatState.clientId && chatState.tab === "conversation" && !$("#chat-text").value) loadChatConversation(true).catch(() => {});
   }, CHATS_REFRESH);
 }
