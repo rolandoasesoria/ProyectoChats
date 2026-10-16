@@ -1202,3 +1202,9 @@ body { background: var(--canvas); }
 .company-logo-actions p { margin: 0; }
 .file-btn { cursor: pointer; }
 .crumb.company { color: var(--text); }
+
+/* Aviso de solo lectura (p. ej. Respuestas con IA para quien no es administrador) */
+.readonly-note {
+  margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; font-size: 14px;
+  background: var(--accent-soft); color: var(--text); border: 1px solid var(--border);
+}

@@ -20,7 +20,7 @@ function breadcrumbParts(view) {
     const open = tplState.selected?.name || (!$("#tpl-form").hidden ? "Nueva plantilla" : null);
     return ["Plantillas de WhatsApp", open ? closeTemplate : null, open];
   }
-  if (view === "ai") return ["IA que responde", null, null];
+  if (view === "ai") return ["Respuestas con IA", null, null];
   if (view === "dashboard") return ["Panel de actividad", null, null];
   return [null, null, null];
 }

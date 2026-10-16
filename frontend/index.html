@@ -65,7 +65,7 @@
         </div>
         <button role="menuitem" id="menu-company-data" data-admin-only hidden>Datos de la empresa</button>
         <button role="menuitem" id="menu-admin" data-admin-only hidden>Usuarios del equipo</button>
-        <button role="menuitem" id="menu-accounts">Mis cuentas <span class="muted small">· correo, WhatsApp y Telegram</span></button>
+        <button role="menuitem" id="menu-accounts" title="Conecta tu correo, WhatsApp y Telegram">Mis cuentas</button>
         <button role="menuitem" id="menu-settings" data-admin-only hidden>Ajustes</button>
         <button role="menuitem" id="menu-properties" data-admin-only hidden>Propiedades de contacto</button>
         <button role="menuitem" id="menu-audit" data-admin-only hidden>Registro de accesos</button>
@@ -80,7 +80,7 @@
     <button class="nav-btn" id="nav-templates" data-view="templates" aria-label="Plantillas de WhatsApp" title="Plantillas de WhatsApp">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
     </button>
-    <button class="nav-btn" id="nav-ai" data-view="ai" aria-label="IA que responde" title="IA que responde">
+    <button class="nav-btn" id="nav-ai" data-view="ai" aria-label="Respuestas con IA" title="Respuestas con IA">
       <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="8" width="14" height="11" rx="3"/><path d="M12 4v4M9 13h.01M15 13h.01M9.5 16.5h5M3 12v3M21 12v3"/></svg>
     </button>
     <button class="nav-btn" id="nav-dashboard" data-view="dashboard" aria-label="Panel de actividad" title="Panel de actividad">
@@ -122,7 +122,7 @@
           </div>
           <span class="spacer"></span>
           <button type="button" class="ghost small-btn ai-toggle" id="chat-ai-toggle" hidden aria-pressed="false"
-                  title="Pausar o reanudar la IA que responde, solo en este chat"></button>
+                  title="Pausar o reanudar las respuestas con IA, solo en este chat"></button>
           <button type="button" class="ghost small-btn" id="chat-open-client" title="Ficha completa, tareas, notas y asistente">Abrir ficha</button>
           <button type="button" class="icon-btn" id="chat-details-toggle" aria-label="Detalles del contacto" title="Detalles del contacto" aria-pressed="true">
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>
@@ -279,20 +279,21 @@
     </section>
   </section>
 
-  <!-- Sección IA: la IA que responde a los clientes por WhatsApp (configuración y «Probar la IA») -->
+  <!-- Sección Respuestas con IA: la IA que responde a los clientes por WhatsApp (configuración y «Probar la IA») -->
   <section class="ai-view" id="view-ai" hidden>
     <div class="zone-card ai-card">
     <div class="ai-page">
       <header class="ai-head">
         <div>
-          <h2>IA que responde</h2>
+          <h2>Respuestas con IA</h2>
           <p class="muted small">Responde por WhatsApp a tus clientes con las instrucciones de tu negocio. En modo supervisado
             propone la respuesta y una persona la envía; en automático la envía sola. Si el cliente pide hablar con alguien,
             se queja o pregunta algo que no sabe, no responde y avisa al responsable.</p>
         </div>
         <label class="switch"><input type="checkbox" id="ai-enabled"><span>Activada</span></label>
       </header>
-      <p class="muted small" id="ai-readonly" hidden>Solo un administrador puede cambiar esta configuración.</p>
+      <p class="readonly-note" id="ai-readonly" role="note" hidden>🔒 Solo un administrador puede cambiar esta
+        configuración. Puedes verla, pero no modificarla; si necesitas cambiar algo, pídeselo a un administrador.</p>
       <form id="ai-form" class="form ai-form">
         <div class="ai-row">
           <span class="ai-label">Modo</span>
