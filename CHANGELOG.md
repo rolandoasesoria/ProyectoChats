@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Administración → Usuarios: al crear un usuario se abre **«Cuentas de …»** para conectarle su correo, bot de
+  Telegram o WhatsApp Business; la columna **«Cuentas conectadas»** muestra las de cada persona (⚠ si alguna no
+  conecta) y el botón «Cuentas» de cada fila permite verlas, añadir o quitar.
 - **Vista de contacto única**: al abrir un chat (Mis Chats) o un contacto (Contactos) se ve lo mismo: a la izquierda
   la lista de la que vienes (en Contactos, la de contactos con «← Volver a la tabla»), en el centro el contacto con
   las pestañas **Conversación · Ficha · Tareas · Notas** y a la derecha Detalles / Asistente IA. La ficha ya no saca
