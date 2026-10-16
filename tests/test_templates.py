@@ -19,6 +19,10 @@ st, _ = carlos.post(f"/api/me/integrations/{with_account}/templates",
                     {"name": "x", "category": "OTRA", "body": "Hola"})
 check("solo categorías de Meta (servicio o marketing)", st == 422)
 check("un administrador puede consultarlas", ana.get(f"/api/admin/integrations/{without_account}/templates")[0] == 400)
+st, res = carlos.post(f"/api/me/integrations/{with_account}/templates",
+                      {"name": "Cita", "category": "UTILITY", "body": "Hola {{1}}, te esperamos."})
+check("crearlas es de un administrador, aunque la cuenta sea suya = 403", st == 403 and "administrador" in res["detail"], res)
+check("y borrarlas también = 403", carlos.delete(f"/api/me/integrations/{with_account}/templates/cita")[0] == 403)
 
 # ---------------------------------------------------------------- Con Meta simulada
 calls = []

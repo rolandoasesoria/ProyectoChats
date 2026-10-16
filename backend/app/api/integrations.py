@@ -143,6 +143,13 @@ class TemplateIn(BaseModel):
     examples: list[str] = Field(default_factory=list, max_length=20)
 
 
+# Las plantillas son de la empresa (la cuenta de WhatsApp Business en Meta): las crea y las borra un administrador.
+# Cualquiera las ve y envía las aprobadas desde el chat.
+def _admin_only(user: dict, action: str) -> None:
+    if user["role"] != "admin":
+        raise Forbidden(f"Solo un administrador puede {action} plantillas de WhatsApp.")
+
+
 def _create_template(integ: dict, req: TemplateIn, user: dict) -> dict:
     result = whatsapp_templates.create_template(integ, req.name, req.category, req.language, req.body, req.examples)
     audit.log(user["id"], "integration_change", detail=f"creó la plantilla de WhatsApp «{result['name']}» en «{integ['name']}»")
@@ -156,6 +163,7 @@ def my_templates(integration_id: int, user: CurrentUser):
 
 @router.post("/api/me/integrations/{integration_id}/templates")
 def create_my_template(integration_id: int, req: TemplateIn, user: CurrentUser):
+    _admin_only(user, "crear")
     return _create_template(_my_integration(integration_id, user), req, user)
 
 
@@ -177,6 +185,7 @@ def _delete_template(integ: dict, name: str, user: dict) -> dict:
 
 @router.delete("/api/me/integrations/{integration_id}/templates/{name}")
 def delete_my_template(integration_id: int, name: str, user: CurrentUser):
+    _admin_only(user, "borrar")
     return _delete_template(_my_integration(integration_id, user), name, user)
 
 
