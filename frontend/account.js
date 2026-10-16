@@ -104,6 +104,7 @@ async function loadSettingsForm() {
   $("#set-error").hidden = true;
   $("#set-saved").hidden = true;
   const s = await api("/api/settings");
+  $("#set-company").value = s.company_name;
   $("#set-sla").value = s.sla_hours;
   $("#set-retention").value = s.retention_months;
   $("#set-inactive").value = s.inactive_days;
@@ -144,6 +145,7 @@ async function submitSettings(e) {
     const res = await api("/api/admin/settings", {
       method: "PATCH",
       body: JSON.stringify({
+        company_name: $("#set-company").value,
         sla_hours: Number($("#set-sla").value),
         retention_months: Number($("#set-retention").value),
         inactive_days: Number($("#set-inactive").value),
@@ -151,6 +153,7 @@ async function submitSettings(e) {
       }),
     });
     slaHours = res.sla_hours;
+    setCompanyName(res.company_name);
     $("#retention-apply").hidden = !res.retention_months;
     $("#set-saved").hidden = false;
     refreshInboxCount();

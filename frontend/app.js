@@ -113,6 +113,7 @@ async function selectClient(id) {
   heartbeat();
 
   if (id === null) {
+    updateBreadcrumb();
     $("#chat-context").textContent = "Consulta general · puede buscar en todos los clientes";
     $(".detail-empty").hidden = false;
     $(".detail-body").hidden = true;
@@ -123,6 +124,7 @@ async function selectClient(id) {
   clientNames.set(id, data.name);
   state.clientData = data;
   if (state.clientId !== id) return; // el usuario ya cambió de cliente
+  updateBreadcrumb();
   $("#chat-context").textContent = `Conversación sobre ${data.name}`;
   $(".detail-empty").hidden = true;
   $(".detail-body").hidden = false;
@@ -481,6 +483,7 @@ function bindEvents() {
   bindSearchEvents();
   bindIntegrationEvents();
   bindChatsEvents();
+  bindBreadcrumbEvents();
   bindContactsEvents();
   bindTemplatesEvents();
   bindAIEvents();

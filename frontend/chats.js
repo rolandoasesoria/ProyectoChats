@@ -32,6 +32,7 @@ function showView(name) {
     if (active) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   });
   try { localStorage.setItem(VIEW_KEY, section); } catch { /* almacenamiento no disponible */ }
+  updateBreadcrumb();
   if (name === "chats") loadChats();
   if (name === "contacts") loadContacts();
   if (name === "ai") loadAISettings().catch((err) => alert(err.message));
@@ -107,6 +108,7 @@ async function openChat(clientId) {
   const data = await api(`/api/clients/${clientId}`);
   if (chatState.clientId !== clientId) return; // ya se eligió otro chat
   chatState.data = data;
+  updateBreadcrumb();
   // Pestañas: los canales en los que hay conversación, el más reciente primero.
   const channels = [...new Set(chatConversations().map((c) => c.channel))];
   // Con email pero sin conversaciones por correo: la pestaña sale igual, para escribirle un correo nuevo.
@@ -371,6 +373,17 @@ function toggleChatDetails(show) {
   chatState.details = open;
   panel.hidden = !open;
   $("#chat-details-toggle").setAttribute("aria-pressed", String(open));
+}
+
+// Vuelve a Mis Chats sin ningún chat abierto (desde la ruta de navegación).
+function closeChat() {
+  chatState.clientId = null;
+  chatState.data = null;
+  document.querySelectorAll("#chats-list li.active").forEach((li) => li.classList.remove("active"));
+  $("#chat-open").hidden = true;
+  $("#chat-empty").hidden = false;
+  $("#chat-details").hidden = true;
+  updateBreadcrumb();
 }
 
 // «Abrir ficha»: la ficha completa del contacto (datos, tareas, notas, mensajes y asistente).

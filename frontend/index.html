@@ -50,6 +50,8 @@
   </header>
 
   <div class="app-body">
+  <!-- Ruta de navegación: Empresa › Sección › lo abierto (ver breadcrumb.js) -->
+  <nav class="breadcrumb" id="breadcrumb" aria-label="Estás en" hidden></nav>
   <!-- Barra lateral: secciones de la app (arriba) y configuración (abajo) -->
   <nav class="sidebar" aria-label="Secciones">
     <button class="nav-btn" id="dashboard-btn" aria-label="Inicio: panel de actividad" title="Inicio: panel de actividad">
@@ -654,6 +656,10 @@
     </section>
     <section id="admin-settings" class="admin-pane" hidden>
       <form id="settings-form" class="form">
+        <label>Nombre de la empresa
+          <input id="set-company" maxlength="80" placeholder="p. ej. Asesoría Ocaña" autocomplete="organization">
+        </label>
+        <p class="muted small">Encabeza la ruta de navegación de todas las secciones (Empresa › Contactos › …).</p>
         <label>Plazo de respuesta (horas)
           <input id="set-sla" type="number" min="1" max="168" required>
         </label>
@@ -971,6 +977,7 @@
   <script src="contacts.js"></script>
   <script src="templates.js"></script>
   <script src="ai.js"></script>
+  <script src="breadcrumb.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

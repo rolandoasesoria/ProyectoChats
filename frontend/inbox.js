@@ -125,7 +125,9 @@ function setInboxCount(items, followUps = []) {
 
 async function loadSettings() {
   try {
-    slaHours = (await api("/api/settings")).sla_hours;
+    const s = await api("/api/settings");
+    slaHours = s.sla_hours;
+    setCompanyName(s.company_name);
   } catch { /* se queda el plazo por defecto */ }
 }
 
