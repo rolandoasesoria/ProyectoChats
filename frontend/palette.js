@@ -29,7 +29,7 @@ function paletteActions() {
     { label: "Respuestas guardadas", run: () => openRepliesDialog() },
     { label: "Mis cuentas (correo, Telegram, WhatsApp)", run: () => openAccountsDialog() },
     { label: "Cambiar tema claro / oscuro", run: () => toggleTheme() },
-    { label: "Ver el tutorial", run: () => startTour() },
+    ...(TOUR_ENABLED ? [{ label: "Ver el tutorial", run: () => startTour() }] : []),
     { label: "Preguntar a Chispa (ayuda)", run: () => toggleHelp(true) },
     { label: "Ver los atajos de teclado", hint: "?", run: () => showShortcuts() },
   ];

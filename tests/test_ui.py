@@ -32,20 +32,13 @@ try:
 
     b.fill("#password", "demo1234")
     b.click("#login-btn")
-    b.wait("location.pathname === '/' && document.querySelector('.tour-card')")
-    check("login correcto y arranca el tutorial", True)
-    b.shot("02-tour-inicio")
-
-    # Recorre el tutorial entero
-    steps = b.js("document.querySelector('.tour-progress').textContent.split('/')[1].trim()")
-    for i in range(int(steps) - 1):
-        b.click('.tour-card [data-tour="next"]')
-        if i in (1, 4, 7):
-            b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 18, steps)
-    b.click('.tour-card [data-tour="next"]')
-    b.wait("!document.querySelector('.tour-card')")
-    check("tutorial se cierra al terminar", True)
+    b.wait("location.pathname === '/' && !!currentUser && !document.body.classList.contains('booting')")
+    b.pump(1.5)
+    check("login correcto", True)
+    # El tutorial está en pausa (TOUR_ENABLED = false en tour.js) mientras la interfaz cambia a menudo
+    check("el tutorial no arranca ni se ofrece en el menú",
+          b.js("!document.querySelector('.tour-card') && document.querySelector('#menu-tour').hidden"))
+    b.shot("02-inicio")
 
     crumbs = lambda: b.js("[...document.querySelectorAll('#breadcrumb .crumb')].map((c) => c.textContent.trim())")  # noqa: E731
 
