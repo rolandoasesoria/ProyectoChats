@@ -1,4 +1,4 @@
-// Respuestas guardadas y macros: selector en el borrador (botón o escribiendo /atajo) y gestión en un diálogo.
+// Respuestas guardadas y macros: selector en la caja de escribir (botón o escribiendo /atajo) y gestión en un diálogo.
 
 let savedReplies = [];
 
@@ -32,30 +32,28 @@ function replyOption(r, i, active) {
   </li>`;
 }
 
-// Inserta el texto de la respuesta (con las variables rellenas) en el borrador y aplica la macro, si lo es.
+// Inserta el texto de la respuesta (con las variables rellenas) en la caja de escribir y aplica la macro, si lo es.
 async function useSavedReply(reply, replaceFrom = null) {
   const clientId = state.clientId;
+  if (!clientId) return;
   const res = await api(`/api/replies/${reply.id}/use`, {
     method: "POST",
-    body: JSON.stringify({ client_id: clientId, conversation_id: Number($("#draft-conversation").value) || null }),
+    body: JSON.stringify({ client_id: clientId, conversation_id: chatState.conversationId || null }),
   });
   if (state.clientId !== clientId) return;
-  const text = $("#draft-text");
-  text.hidden = false;
-  $("#draft-result-actions").hidden = false;
+  const text = $("#chat-text");
   const end = text.selectionEnd;
   const start = replaceFrom ?? text.selectionStart;
-  text.value = text.value.slice(0, start) + res.text + text.value.slice(end);
+  setComposerText(text.value.slice(0, start) + res.text + text.value.slice(end));
   text.selectionStart = text.selectionEnd = start + res.text.length;
-  text.focus();
-  const note = $("#draft-applied");
-  note.textContent = res.applied.length ? `Aplicado: ${res.applied.join(", ")}.` : "";
-  note.hidden = !res.applied.length;
+  showComposerNote(res.applied.length ? `Aplicado: ${res.applied.join(", ")}.` : "");
   if (res.applied.length) {
     const data = await api(`/api/clients/${clientId}`);
     if (state.clientId === clientId) {
       state.clientData = data;
+      chatState.data = data;
       renderClientHeader(data);
+      renderChatDetails(data);
     }
     refreshInboxCount();
   }
@@ -193,7 +191,9 @@ async function onRepliesListClick(e) {
 }
 
 function bindReplyEvents() {
-  $("#reply-open").addEventListener("click", () => toggleReplyPicker());
+  $("#reply-open").addEventListener("click", (e) => { e.stopPropagation(); toggleReplyPicker(); });
+  $("#reply-picker").addEventListener("click", (e) => e.stopPropagation());
+  document.addEventListener("click", () => { if (!$("#reply-picker").hidden) toggleReplyPicker(false); });
   $("#reply-filter").addEventListener("input", renderReplyPicker);
   $("#reply-filter").addEventListener("keydown", (e) => {
     if (e.key === "Escape") { e.stopPropagation(); toggleReplyPicker(false); }
@@ -218,6 +218,6 @@ function bindReplyEvents() {
   $("#reply-form").addEventListener("submit", submitReplyForm);
   $("#rf-cancel").addEventListener("click", resetReplyForm);
   $("#replies-list").addEventListener("click", onRepliesListClick);
-  attachReplyShortcuts($("#draft-text"), $("#reply-suggest"));
+  attachReplyShortcuts($("#chat-text"), $("#reply-suggest"));
   loadSavedReplies().catch(() => { /* se reintenta al abrir el selector */ });
 }
