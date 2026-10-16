@@ -1156,7 +1156,7 @@ body { background: var(--canvas); }
 .app-body > .chats-view, .app-body > .templates-view { gap: 4px; }
 .chats-view > .resizer, .templates-view > .resizer { flex: 0 0 0; }
 .chats-pane { width: var(--w-list, 320px); }
-.chat-details { width: var(--w-details, 300px); }
+.chat-details { width: var(--w-details, 400px); }
 .tpl-pane { width: var(--w-list, 300px); }
 .chat-main, .tpl-main { min-width: 280px; }
 .resizer[data-zone="details"]:has(+ .chat-details[hidden]) { display: none; }

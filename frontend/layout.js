@@ -16,7 +16,7 @@ const LAYOUTS = [
     container: "#view-chats", key: "pc-layout-chats", center: ".chat-main", minCenter: 340,
     zones: {
       list: { pane: ".chats-pane", side: "left", def: 320, min: 240, max: 520 },
-      details: { pane: "#chat-details", side: "right", def: 300, min: 240, max: 560 },
+      details: { pane: "#chat-details", side: "right", def: 400, min: 260, max: 760 }, // como el asistente de la ficha
     },
   },
   {
