@@ -212,7 +212,7 @@ de la izquierda y la derecha se ajusta arrastrando la línea que las separa del 
 doble clic la devuelve al ancho inicial y cada navegador lo recuerda. En el centro, arriba, la cabecera (ver \
 "Cabecera del contacto"), los avisos y cuatro pestañas: "Conversación", "Ficha", "Tareas" y "Notas". Cambiar de \
 pestaña no te saca de donde estás: la lista de la izquierda y el panel derecho siguen igual.
-- Menú de usuario (arriba a la derecha, con tu nombre): "Ver tutorial" repite el recorrido de bienvenida, \
+- Menú de usuario (arriba a la derecha, con tu nombre): \
 "Cambiar contraseña" y "Cerrar sesión".
 - Campana (arriba a la derecha): avisos de menciones en notas, de tareas que otra persona te asigna y de cuentas \
 conectadas que han dejado de funcionar (al pulsarlo se abre "Mis cuentas"). El número rojo son los no leídos; al pulsar un aviso se abre el cliente (en Notas o Tareas). "Marcar todo como leído" los limpia.

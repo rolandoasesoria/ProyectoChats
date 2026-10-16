@@ -1,6 +1,9 @@
 // Tutorial de bienvenida: recorre los apartados de la app la primera vez que se entra.
 //
-// ⚠️ MANTENER AL DÍA: cada vez que se añada, quite o cambie un apartado de la interfaz:
+// ⏸ EN PAUSA (TOUR_ENABLED = false) mientras la interfaz cambia a menudo: no se muestra ni se ofrece, y sus pasos
+// no se mantienen al día. Al reactivarlo, revisa TOUR_STEPS entero contra la interfaz de ese momento.
+//
+// Cuando esté activo, cada vez que se añada, quite o cambie un apartado de la interfaz:
 //   1. Actualiza TOUR_STEPS (un paso por apartado, en el orden en que se recorre la pantalla).
 //   2. Sube TOUR_VERSION: así quienes ya vieron el tutorial lo verán de nuevo con los cambios.
 //   3. Actualiza también HELP_SYSTEM_PROMPT (la mascota Chispa) en backend/app/agent.py.
@@ -9,6 +12,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
+const TOUR_ENABLED = false;
 const TOUR_VERSION = 39;
 
 const TOUR_STEPS = [
@@ -239,5 +243,5 @@ function endTour(markSeen) {
 
 // Se muestra solo si el usuario no ha visto la versión actual del tutorial.
 function maybeStartTour() {
-  if (currentUser && currentUser.tour_version < TOUR_VERSION) startTour();
+  if (TOUR_ENABLED && currentUser && currentUser.tour_version < TOUR_VERSION) startTour();
 }

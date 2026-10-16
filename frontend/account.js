@@ -277,6 +277,7 @@ function bindAccountEvents() {
     if (!e.target.closest(".user-menu")) toggleMenu(false);
   });
   $("#user-menu").addEventListener("click", (e) => { if (e.target.closest("button")) toggleMenu(false); });
+  $("#menu-tour").hidden = !TOUR_ENABLED;
   $("#menu-tour").addEventListener("click", () => startTour());
   $("#menu-password").addEventListener("click", openPasswordDialog);
   $("#menu-admin").addEventListener("click", openAdminDialog);
