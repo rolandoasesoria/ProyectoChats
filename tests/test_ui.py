@@ -615,15 +615,24 @@ try:
     check("administración de usuarios", True)
     check("usuarios: columna de cuentas conectadas",
           "Cuentas conectadas" in b.js("document.querySelector('#admin-users .users-table thead').textContent"))
-    # Al dar de alta a alguien se abren sus cuentas para conectarle su correo, WhatsApp o Telegram
+    # «Crear usuario» solo lo crea
+    b.fill("#uf-username", "javier")
+    b.fill("#uf-name", "Javier Moreno")
+    b.fill("#uf-password", "demo12345")
+    b.js("document.querySelector('#user-form').requestSubmit(document.querySelector('#uf-submit'))")
+    b.wait("document.querySelector('#users-tbody').textContent.includes('Javier Moreno')")
+    check("«Crear usuario» solo lo crea (sin abrir sus cuentas)",
+          not b.js("document.querySelector('#accounts-dialog').open")
+          and "Javier Moreno" in b.js("document.querySelector('#uf-done').textContent"))
+    # «Crear y añadir cuentas» abre sus cuentas para conectarle su correo, WhatsApp o Telegram
     b.fill("#uf-username", "lucia")
     b.fill("#uf-name", "Lucía Fernández")
     b.fill("#uf-password", "demo12345")
-    b.js("document.querySelector('#user-form').requestSubmit()")
+    b.js("document.querySelector('#user-form').requestSubmit(document.querySelector('#uf-submit-accounts'))")
     b.wait("document.querySelector('#accounts-dialog').open"
            " && document.querySelector('#accounts-title').textContent === 'Cuentas de Lucía Fernández'")
     b.wait("document.querySelector('#integrations-list').textContent.includes('todavía no tiene cuentas')")
-    check("al crear un usuario se abren sus cuentas, con él como responsable",
+    check("«Crear y añadir cuentas» abre sus cuentas, con él como responsable",
           b.js("{ const o = document.querySelector('#if-owner'); o.disabled && o.selectedOptions[0].textContent === 'Lucía Fernández' }"))
     b.js("document.querySelector('#if-kind').value = 'telegram'; document.querySelector('#if-kind').dispatchEvent(new Event('change'))")
     b.fill("#if-name", "Bot de Lucía")

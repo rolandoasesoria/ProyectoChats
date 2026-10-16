@@ -663,11 +663,14 @@
           <input id="uf-password" type="password" autocomplete="new-password" minlength="8" required>
         </label>
       </div>
-      <p class="muted small" id="uf-accounts-hint">Al crearlo podrás añadir sus cuentas: correo, WhatsApp y Telegram.</p>
+      <p class="muted small" id="uf-accounts-hint">«Crear y añadir cuentas» abre después sus cuentas para conectarle su
+        correo, WhatsApp o Telegram; también puedes hacerlo luego con «Cuentas» en su fila.</p>
       <p class="form-error" id="uf-error" role="alert" hidden></p>
       <div class="dialog-actions">
+        <span class="muted small" id="uf-done" role="status" hidden></span>
         <button type="button" class="ghost" id="uf-cancel" hidden>Cancelar edición</button>
-        <button type="submit" class="primary" id="uf-submit">Crear usuario</button>
+        <button type="submit" class="ghost" id="uf-submit">Crear usuario</button>
+        <button type="submit" class="primary" id="uf-submit-accounts">Crear y añadir cuentas</button>
       </div>
     </form>
     </section>

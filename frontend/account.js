@@ -218,6 +218,8 @@ function resetUserForm() {
   $("#user-form").reset();
   $("#user-form-title").textContent = "Nuevo usuario";
   $("#uf-submit").textContent = "Crear usuario";
+  $("#uf-submit").className = "ghost";
+  $("#uf-submit-accounts").hidden = false;
   $("#uf-accounts-hint").hidden = false;
   $("#uf-username").disabled = false;
   $("#uf-password").required = true;
@@ -232,6 +234,9 @@ function startEditUser(id) {
   editingUserId = id;
   $("#user-form-title").textContent = `Editar a ${user.name}`;
   $("#uf-submit").textContent = "Guardar cambios";
+  $("#uf-submit").className = "primary";
+  $("#uf-submit-accounts").hidden = true;
+  $("#uf-done").hidden = true;
   $("#uf-username").value = user.username || "";
   $("#uf-username").disabled = true; // el nombre de usuario no se cambia
   $("#uf-name").value = user.name;
@@ -247,8 +252,11 @@ function startEditUser(id) {
   $("#uf-name").focus();
 }
 
+// Dos botones al crear: «Crear usuario» solo lo crea; «Crear y añadir cuentas» abre después sus cuentas.
 async function submitUserForm(e) {
   e.preventDefault();
+  const withAccounts = e.submitter?.id === "uf-submit-accounts";
+  $("#uf-done").hidden = true;
   const body = {
     name: $("#uf-name").value.trim(),
     email: $("#uf-email").value.trim() || null,
@@ -270,8 +278,11 @@ async function submitUserForm(e) {
     $("#uf-role").disabled = false;
     resetUserForm();
     await loadUsersTable();
-    // Recién creado: directamente a conectar sus cuentas (correo, WhatsApp, Telegram).
-    if (created) await openAccountsDialog({ id: created.id, name: created.name });
+    if (created && withAccounts) await openAccountsDialog({ id: created.id, name: created.name });
+    else if (created) {
+      $("#uf-done").textContent = `✓ Usuario «${created.name}» creado.`;
+      $("#uf-done").hidden = false;
+    }
   } catch (err) {
     showError($("#uf-error"), err.message);
   }
