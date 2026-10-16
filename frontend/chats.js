@@ -20,7 +20,7 @@ let chatsSearchTimer = null;
 // Vistas: «chats», «contacts» (la tabla), «client» (la ficha de un contacto, con el asistente), «templates» y «ai». La ficha cuenta como
 // parte de Contactos en la barra lateral.
 const VIEWS = { chats: "#view-chats", contacts: "#view-contacts", client: ".layout", templates: "#view-templates",
-                ai: "#view-ai" };
+                ai: "#view-ai", dashboard: "#view-dashboard" };
 
 function showView(name) {
   if (!VIEWS[name]) name = "chats";
@@ -36,6 +36,8 @@ function showView(name) {
   if (name === "chats") loadChats();
   if (name === "contacts") loadContacts();
   if (name === "ai") loadAISettings().catch((err) => alert(err.message));
+  if (name === "dashboard") loadDashboard().catch((err) => alert(err.message));
+  else hideTooltip();
   if (name === "templates") {
     if (tplState.accounts.length) loadTemplateList(); else openTemplatesView(); // el estado en Meta cambia: se relee
   }
@@ -44,7 +46,7 @@ function showView(name) {
 function savedView() {
   try {
     const saved = localStorage.getItem(VIEW_KEY);
-    return ["contacts", "templates", "ai"].includes(saved) ? saved : "chats";
+    return ["contacts", "templates", "ai", "dashboard"].includes(saved) ? saved : "chats";
   } catch { return "chats"; }
 }
 

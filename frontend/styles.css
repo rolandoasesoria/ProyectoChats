@@ -666,8 +666,10 @@ a.icon-link { text-decoration: none; }
 .att-chip:hover { border-color: var(--accent); color: var(--accent); }
 
 /* Panel de actividad (gráficos) */
-.dashboard { width: min(1000px, calc(100vw - 32px)); }
-.dash-range { margin-bottom: 14px; }
+.app-body > .dashboard-view { display: flex; }
+.dashboard-card { display: block; overflow-y: auto; padding: 18px 24px; }
+.dash-head { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.dash-head h2 { margin: 0; font-size: 17px; }
 .stat-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .stat-tile { border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
 .stat-label { font-size: 12px; color: var(--muted); }
@@ -1177,3 +1179,26 @@ body { background: var(--canvas); }
 .crumb-sep { opacity: .6; }
 .link-crumb { background: none; border: 0; padding: 0; font: inherit; color: inherit; cursor: pointer; }
 .link-crumb:hover { color: var(--text); text-decoration: underline; }
+
+/* La empresa: su marca (logo o iniciales) arriba de la barra lateral y su menú */
+.company-menu-wrap { position: relative; margin-bottom: 6px; }
+.company-btn { width: 44px; height: 44px; }
+.company-mark {
+  width: 34px; height: 34px; flex-shrink: 0; border-radius: 9px; display: grid; place-items: center; overflow: hidden;
+  background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: 13px; letter-spacing: .02em;
+}
+.company-mark svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.company-mark.has-logo { background: #fff; border: 1px solid var(--border); }
+.company-mark img { width: 100%; height: 100%; object-fit: contain; }
+.company-mark.large { width: 40px; height: 40px; font-size: 15px; }
+.company-mark.xlarge { width: 72px; height: 72px; font-size: 24px; border-radius: 14px; }
+.company-btn:hover .company-mark, .company-btn[aria-expanded="true"] .company-mark { box-shadow: 0 0 0 2px var(--accent); }
+.company-menu { left: calc(100% + 8px); right: auto; top: 0; min-width: 270px; }
+.company-head { flex-direction: row; align-items: center; gap: 10px; }
+.company-head > div { display: flex; flex-direction: column; min-width: 0; }
+.company-head strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.company-logo-row { display: flex; align-items: center; gap: 16px; }
+.company-logo-actions { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.company-logo-actions p { margin: 0; }
+.file-btn { cursor: pointer; }
+.crumb.company { color: var(--text); }
