@@ -192,6 +192,10 @@ pueden renombrar, ordenar con las flechas y borrar, lo que borra su valor en tod
 rellena en la pestaña "Ficha", apartado "Propiedades": se guardan al cambiar el campo (borde verde) y se pueden \
 mostrar como columnas en la tabla. Son distintas de los "Datos clave" que extrae la IA. Al unir dos clientes se \
 conservan, y la exportación de datos del cliente las incluye.
+- Ruta de navegación: arriba de cada sección, "Empresa › Sección › lo abierto" (p. ej. "Asesoría › Contactos › \
+Laura Gómez"). Pulsar la sección vuelve a su lista (cierra el chat, el contacto o la plantilla abiertos). El nombre de \
+la empresa lo pone un administrador en Administración > Ajustes; mientras no haya, el administrador ve "+ Nombre de \
+la empresa" para ponerlo.
 - Sección "Mis Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
 mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa o teléfono; "Todos" / "No leídos"; \
 los administradores pueden elegir "Todo el equipo" en vez de "Mis chats". Al elegir uno, en el centro salen sus \
@@ -225,7 +229,7 @@ respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de 
 sus conversaciones se conservan. Pestaña "Registro de accesos": quién ha visto mensajes del equipo (historial \
 de un cliente con conversaciones de compañeros, bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
 exportado, borrado o unido clientes o cambiado cuentas; filtrable por persona y acción. Las consultas repetidas \
-en 10 minutos cuentan como una. Pestaña "Ajustes": el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168) y la casilla "Analizar con IA a cada cliente cuando le llegan mensajes" (activada por \
+en 10 minutos cuentan como una. Pestaña "Ajustes": el nombre de la empresa (encabeza la ruta de navegación), el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168) y la casilla "Analizar con IA a cada cliente cuando le llegan mensajes" (activada por \
 defecto; desactivada, la IA solo analiza al pulsar "✨ Actualizar con IA").
 - WhatsApp Business del móvil (coexistencia): en "Mis cuentas", tipo WhatsApp Business, el botón "Conectar con \
 WhatsApp Business" abre el inicio de sesión de Meta; se elige la cuenta y se escanea un código con la app WhatsApp \

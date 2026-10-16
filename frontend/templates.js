@@ -107,6 +107,14 @@ function showTemplatePane(mode) {
   $("#tpl-detail").hidden = mode !== "detail";
   $("#tpl-form").hidden = mode !== "create";
   $("#tpl-preview-box").hidden = mode !== "create";
+  updateBreadcrumb();
+}
+
+// Vuelve a la lista de plantillas sin ninguna abierta (desde la ruta de navegación).
+function closeTemplate() {
+  tplState.selected = null;
+  renderTemplateList();
+  showTemplatePane(null);
 }
 
 function selectTemplate(name, language) {

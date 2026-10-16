@@ -10,7 +10,7 @@ from app.db import get_conn
 ana, carlos = Session("ana"), Session("carlos")
 
 check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0, "inactive_days": 90,
-                                                                   "auto_analysis": 1})
+                                                                   "auto_analysis": 1, "company_name": ""})
 check("solo administradores lo cambian = 403", carlos.patch("/api/admin/settings", {"sla_hours": 4})[0] == 403)
 check("fuera de rango = 422", ana.patch("/api/admin/settings", {"sla_hours": 0})[0] == 422
       and ana.patch("/api/admin/settings", {"sla_hours": 500})[0] == 422)
@@ -29,6 +29,15 @@ check("el panel calcula el % respondido en plazo", d["totals"]["within_sla_pct"]
 check("y por persona", all("within_sla_pct" in p for p in d["people"]))
 ana.patch("/api/admin/settings", {"sla_hours": 168})
 check("con un plazo amplio, todo en plazo", ana.get("/api/dashboard?days=365")[1]["totals"]["within_sla_pct"] == 100)
+
+# Nombre de la empresa (encabeza la ruta de navegación): texto, lo pone un administrador y lo ven todos
+check("nombre de la empresa: solo administradores = 403", carlos.patch("/api/admin/settings", {"company_name": "X"})[0] == 403)
+check("más de 80 caracteres = 422", ana.patch("/api/admin/settings", {"company_name": "x" * 81})[0] == 422)
+st, r = ana.patch("/api/admin/settings", {"company_name": "  Asesoría   Ocaña\n"})
+check("se guarda sin espacios de sobra y sin tocar los demás ajustes",
+      st == 200 and r["company_name"] == "Asesoría Ocaña" and r["sla_hours"] == 168, r)
+check("y lo ven todos", carlos.get("/api/settings")[1]["company_name"] == "Asesoría Ocaña")
+check("se puede dejar vacío", ana.patch("/api/admin/settings", {"company_name": ""})[1]["company_name"] == "")
 
 # Análisis automático con IA al entrar mensajes (con «clave» simulada; no se llega a llamar a Claude)
 agent.credentials_configured = lambda: True
