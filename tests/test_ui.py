@@ -245,7 +245,7 @@ try:
     check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
     b.shot("04-inicio")
     check("barra lateral con sus secciones (y Administración para un administrador)",
-          b.js("['#dashboard-btn', '#nav-chats', '#menu-accounts', '#menu-replies', '#menu-admin']"
+          b.js("['#company-btn', '#nav-chats', '#nav-dashboard', '#menu-accounts', '#menu-replies', '#menu-admin']"
                ".every((s) => { const e = document.querySelector(s); return e && e.closest('.sidebar') && !e.hidden; })"))
 
     # Zonas ajustables: arrastrar, teclado, doble clic, se recuerda y siempre se ven las tres
@@ -534,9 +534,10 @@ try:
 
     # Panel de actividad (en oscuro y en claro)
     b.click("#help-close")
-    b.click("#dashboard-btn")
+    b.click("#nav-dashboard")
     # Los datos de ejemplo tienen fechas fijas (julio a septiembre de 2026): con «1 año» siguen dentro del periodo.
-    b.wait("document.querySelector('#dashboard-dialog').open")
+    b.wait("!document.querySelector('#view-dashboard').hidden")
+    check("panel: es una sección de la barra lateral", b.js("document.querySelector('#nav-dashboard').classList.contains('active')"))
     b.click('#dash-range [data-days="365"]')
     b.wait("document.querySelectorAll('#dash-weekly .viz-seg').length > 0")
     b.wait("document.querySelector('#dash-tiles').textContent.includes('14')")  # mensajes recibidos en el año
@@ -554,15 +555,23 @@ try:
     b.js("loadDashboard()")
     b.pump(0.6)
     b.shot("16-panel-claro")
-    b.js("document.querySelector('#dashboard-dialog').close()")
     b.click("#nav-chats")
     b.js("document.querySelector('#chats-list li[data-client]').click()")
     b.wait("document.querySelectorAll('#chat-timeline .msg-row').length > 0")
     b.pump(0.6)
     b.shot("16b-chats-claro")
 
+    # Menú de la empresa (su marca, arriba de la barra lateral)
+    b.click("#company-btn")
+    check("menú de la empresa: se abre con todos sus apartados (admin)",
+          b.js("!document.querySelector('#company-menu').hidden && ['#menu-company-data', '#menu-admin', '#menu-accounts',"
+               " '#menu-settings', '#menu-properties', '#menu-audit'].every((s) => !document.querySelector(s).hidden)"))
+    check("sin nombre ni logo, la marca es un icono", b.js("!!document.querySelector('#company-btn .company-mark svg')"))
+    b.shot("14a-menu-empresa")
+
     # Administración
     b.click("#menu-admin")
+    check("el menú se cierra al elegir un apartado", b.js("document.querySelector('#company-menu').hidden"))
     b.wait("document.querySelectorAll('#users-tbody tr').length === 3")
     b.shot("14-admin")
     check("administración de usuarios", True)
@@ -571,13 +580,11 @@ try:
     b.click('[data-admin-tab="settings"]')
     b.wait("document.querySelector('#set-sla').value === '24'")
     check("ruta: sin nombre de empresa, el administrador ve el enlace para ponerlo",
-          b.js("!!document.querySelector('#breadcrumb [data-crumb=\"company\"]')"))
-    b.fill("#set-company", "  Asesoría   Ocaña ")
+          b.js("!!document.querySelector('#breadcrumb [data-crumb=\"company-setup\"]')"))
     b.fill("#set-sla", "2")
     b.js("document.querySelector('#settings-form').requestSubmit()")
     b.wait("!document.querySelector('#set-saved').hidden")
     check("cambiar el plazo de respuesta", b.js("slaHours") == 2)
-    check("nombre de la empresa guardado (sin espacios de sobra)", b.js("companyName") == "Asesoría Ocaña")
     check("el análisis automático con IA aparece activado", b.js("document.querySelector('#set-auto-analysis').checked"))
     b.fill("#set-retention", "1")
     b.wait("document.querySelector('#retention-preview').textContent.includes('se borrarían')")
@@ -598,6 +605,20 @@ try:
     b.shot("14c-propiedades")
 
     b.js("document.querySelector('#admin-dialog').close()")
+
+    # Datos de la empresa: nombre (iniciales en la barra) y logo
+    b.click('#breadcrumb [data-crumb="company-setup"]')
+    b.wait("document.querySelector('#company-dialog').open")
+    b.fill("#company-name", "  Asesoría   Ocaña ")
+    b.js("document.querySelector('#company-form').requestSubmit()")
+    b.wait("!document.querySelector('#company-saved').hidden")
+    check("nombre de la empresa guardado (sin espacios de sobra)", b.js("companyName") == "Asesoría Ocaña")
+    check("sus iniciales, arriba de la barra lateral", b.js("document.querySelector('#company-btn .company-mark').textContent") == "AO")
+    b.js("uploadCompanyLogo(new File([Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=='), (c) => c.charCodeAt(0))], 'logo.png', {type: 'image/png'}))")
+    b.wait("document.querySelector('#company-btn .company-mark img')?.naturalWidth === 1")
+    check("el logo sustituye a las iniciales", b.js("!document.querySelector('#company-logo-remove').hidden"))
+    b.shot("14d-datos-empresa")
+    b.js("document.querySelector('#company-dialog').close()")
     b.js("selectClient(1)")
     b.wait("document.querySelectorAll('#client-props [data-prop]').length === 2")
     crumbs = lambda: b.js("[...document.querySelectorAll('#breadcrumb .crumb')].map((c) => c.textContent.trim())")  # noqa: E731
@@ -694,6 +715,11 @@ try:
     check("ruta en Plantillas", crumbs() == ["Asesoría Ocaña", "Plantillas de WhatsApp"], crumbs())
     b.js("showView('ai')")
     check("ruta en IA", crumbs() == ["Asesoría Ocaña", "IA que responde"], crumbs())
+    b.js("showView('dashboard')")
+    check("ruta en el Panel de actividad", crumbs() == ["Asesoría Ocaña", "Panel de actividad"], crumbs())
+    b.click('#breadcrumb [data-crumb="company"]')
+    check("ruta: pulsar la empresa abre su menú", b.js("!document.querySelector('#company-menu').hidden"))
+    b.click("#company-btn")
 finally:
     b.pump(0.5)
     b.close()
