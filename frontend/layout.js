@@ -1,22 +1,15 @@
-// Ancho de las zonas de cada página: ficha (clientes · ficha · asistente), Mis Chats (lista · conversación ·
-// detalles) y Plantillas (lista · plantilla). Los separadores se arrastran con el ratón o se mueven con las flechas
+// Ancho de las zonas de cada página: Mis Chats y la vista de contacto (lista · contacto · detalles) y Plantillas
+// (lista · plantilla). Los separadores se arrastran con el ratón o se mueven con las flechas
 // del teclado; doble clic vuelve al ancho inicial. El ancho elegido se recuerda en este navegador, por página.
 // La zona central ocupa el resto y nunca baja de su mínimo (`minCenter`).
 
 const LAYOUT_STEP = 16;
 const LAYOUTS = [
   {
-    container: ".layout", key: "pc-layout", center: ".detail", minCenter: 300,
-    zones: {
-      clients: { pane: ".clients", side: "left", def: 290, min: 180, max: 520 },
-      chat: { pane: "#assistant", side: "right", def: 400, min: 260, max: 760 },
-    },
-  },
-  {
     container: "#view-chats", key: "pc-layout-chats", center: ".chat-main", minCenter: 340,
     zones: {
       list: { pane: ".chats-pane", side: "left", def: 320, min: 240, max: 520 },
-      details: { pane: "#chat-details", side: "right", def: 400, min: 260, max: 760 }, // como el asistente de la ficha
+      details: { pane: "#chat-details", side: "right", def: 400, min: 260, max: 760 },
     },
   },
   {

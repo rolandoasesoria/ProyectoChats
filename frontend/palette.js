@@ -1,17 +1,17 @@
 // Paleta de comandos (Ctrl+K) y atajos de teclado.
 //
 // Atajos (fuera de los cuadros de texto):
-//   Ctrl+K / ⌘K  paleta          /  buscar cliente     ?  ver atajos
-//   j / k        cliente siguiente / anterior          r  redactar respuesta
-//   g y luego c, s, t   ir a Clientes, Sin responder, Tareas
+//   Ctrl+K / ⌘K  paleta          /  buscar en la lista     ?  ver atajos
+//   j / k        chat o contacto siguiente / anterior      r  escribir la respuesta
+//   g y luego c, s, t   ir a Contactos, Sin responder, Tareas
 
 const SHORTCUTS = [
   ["Ctrl + K", "Abrir esta paleta: clientes y acciones"],
-  ["/", "Buscar cliente"],
-  ["j / k", "Cliente siguiente / anterior"],
-  ["r", "Redactar respuesta al cliente abierto"],
-  ["g  c", "Ir a Clientes"],
-  ["g  s", "Ir a Sin responder"],
+  ["/", "Buscar en la lista (chats o contactos)"],
+  ["j / k", "Chat o contacto siguiente / anterior"],
+  ["r", "Escribir la respuesta al contacto abierto"],
+  ["g  c", "Ir a Contactos"],
+  ["g  s", "Ir a Sin responder (Mis Chats)"],
   ["g  t", "Ir a Tareas"],
   ["?", "Ver los atajos"],
   ["Esc", "Cerrar"],
@@ -20,11 +20,10 @@ const SHORTCUTS = [
 function paletteActions() {
   const actions = [
     { label: "Ir a Mis Chats", run: () => showView("chats") },
-    { label: "Ir a Contactos", run: () => showView("contacts") },
-    { label: "Ir a Clientes", hint: "g c", run: () => showSideTab("clients") },
-    { label: "Ir a Sin responder", hint: "g s", run: () => showSideTab("inbox") },
-    { label: "Ir a Tareas", hint: "g t", run: () => showSideTab("tasks") },
-    { label: "Consulta general al asistente", run: () => selectClient(null) },
+    { label: "Ir a Contactos", hint: "g c", run: () => goToSide("contacts") },
+    { label: "Ir a Sin responder", hint: "g s", run: () => goToSide("inbox") },
+    { label: "Ir a Tareas", hint: "g t", run: () => goToSide("tasks") },
+    { label: "Consulta general al asistente", run: () => showView("assistant") },
     { label: "Nuevo cliente", run: () => openClientDialog("create") },
     { label: "Panel de actividad", run: () => openDashboard() },
     { label: "Respuestas guardadas", run: () => openRepliesDialog() },
@@ -36,7 +35,7 @@ function paletteActions() {
   ];
   if (state.clientId) {
     actions.unshift(
-      { label: "Redactar respuesta", hint: "r", run: () => startReply() },
+      { label: "Escribir la respuesta", hint: "r", run: () => startReply() },
       { label: "Actualizar la ficha con IA", run: () => { showDetailTab("profile"); analyzeClient(); } },
       { label: "Editar cliente", run: () => openClientDialog("edit") },
     );
@@ -76,7 +75,7 @@ async function updatePalette() {
     ...clients.map((c) => ({
       kind: "Cliente",
       html: `${statusDot(c.status)}${escapeHtml(c.name)}${c.company ? ` <span class="muted">· ${escapeHtml(c.company)}</span>` : ""}`,
-      run: () => { showSideTab("clients"); selectClient(c.id); },
+      run: () => selectClient(c.id),
     })),
     ...actions,
   ];
@@ -108,19 +107,41 @@ function showShortcuts() {
 
 function startReply() {
   if (!state.clientId) return;
-  showDetailTab("messages");
-  openDraftPanel();
+  showDetailTab("conversation");
+  $("#chat-text").focus();
 }
 
-// Cliente siguiente (+1) o anterior (-1) de la lista visible.
+// Atajos «g c / g s / g t»: Contactos, Sin responder (en Mis Chats) y Tareas.
+function goToSide(side) {
+  if (side === "contacts") return showView("contacts");
+  if (side === "tasks") return showView("tasks");
+  if (currentView() !== "chats") showView("chats");
+  setChatsFilter("inbox");
+}
+
+// La lista de la izquierda que se ve: los chats o, en un contacto abierto desde Contactos, los contactos.
+function visibleList() {
+  return currentView() === "client" ? $("#contacts-mini") : $("#chats-list");
+}
+
+// Chat o contacto siguiente (+1) o anterior (-1) de la lista visible.
 function moveClient(step) {
-  const items = [...document.querySelectorAll("#client-list li[data-id]")];
+  if (currentView() !== "chats" && currentView() !== "client") showView("chats");
+  if (chatState.filter === "inbox") setChatsFilter("all");
+  const items = [...visibleList().querySelectorAll("li[data-client]")];
   if (!items.length) return;
   const current = items.findIndex((li) => li.classList.contains("active"));
   const next = items[Math.min(items.length - 1, Math.max(0, current + step))];
-  showSideTab("clients");
   next.scrollIntoView({ block: "nearest" });
-  selectClient(next.dataset.id ? Number(next.dataset.id) : null);
+  openChat(Number(next.dataset.client));
+}
+
+function focusListSearch() {
+  if (currentView() === "contacts") return $("#contacts-search").focus();
+  if (currentView() === "client") return $("#contacts-mini-search").focus();
+  if (currentView() !== "chats") showView("chats");
+  if (chatState.filter === "inbox") setChatsFilter("all");
+  $("#chats-search").focus();
 }
 
 function isTyping(e) {
@@ -139,12 +160,12 @@ function onGlobalKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || document.querySelector("dialog[open]") || tour) return;
   if (Date.now() - pendingG < 1500) {
     pendingG = 0;
-    const side = { c: "clients", s: "inbox", t: "tasks" }[e.key];
-    if (side) { e.preventDefault(); showSideTab(side); }
+    const side = { c: "contacts", s: "inbox", t: "tasks" }[e.key];
+    if (side) { e.preventDefault(); goToSide(side); }
     return;
   }
   const actions = {
-    "/": () => { showSideTab("clients"); $("#client-search").focus(); },
+    "/": focusListSearch,
     "?": showShortcuts,
     j: () => moveClient(1),
     k: () => moveClient(-1),

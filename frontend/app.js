@@ -4,8 +4,8 @@ const GENERAL = "general"; // clave del hilo sin cliente seleccionado
 
 const state = {
   clientId: null,
+  clientData: null, // el contacto abierto (ver openChat en chats.js)
   scope: "team",  // historial del cliente: todo el equipo, salvo «Solo mis conversaciones»
-  channel: "",
   // Un hilo del asistente por cliente: clave -> { el (div.thread), busy, loaded }
   threads: new Map(),
   convClients: new Set(), // clientes con conversación guardada
@@ -66,74 +66,28 @@ async function askBot(log, text, answer, scroll) {
 
 const clientNames = new Map();
 
-function threadDot() {
-  return `<span class="has-thread" title="Tienes una conversación abierta"></span>`;
+// Tras crear, editar, unir o borrar clientes: se refrescan las listas que se ven.
+async function loadClients() {
+  const jobs = [loadChats()];
+  if (currentView() === "contacts") jobs.push(loadContacts());
+  if (currentView() === "client") jobs.push(loadContactsMini());
+  await Promise.all(jobs);
 }
 
-async function loadClients(q = "") {
-  const params = clientFilterParams();
-  params.set("q", q);
-  const clients = await api(`/api/clients?${params}`);
-  clients.forEach((c) => clientNames.set(c.id, c.name));
-  const general = `
-    <li data-id="" class="general ${state.clientId === null ? "active" : ""}">
-      <span class="client-name">Consulta general</span>
-      <span class="muted">Buscar en todos los clientes</span>
-    </li>`;
-  const items = clients.map((c) => `
-    <li data-id="${c.id}" class="${c.id === state.clientId ? "active" : ""}">
-      <span class="client-name">${statusDot(c.status)}${escapeHtml(c.name)}${state.convClients.has(c.id) ? threadDot() : ""}${c.unread ? `<span class="unread" title="Mensajes nuevos desde tu última visita">${c.unread}</span>` : ""}</span>
-      ${c.company ? `<span class="muted">${escapeHtml(c.company)}</span>` : ""}
-      <span class="client-meta">${(c.channels || "").split(",").filter(Boolean).map(badge).join("")}${tagChips(c.tags, 2)}</span>
-    </li>`).join("");
-  $("#client-list").innerHTML = general + (items || `<li class="muted">Sin resultados</li>`);
-}
-
+// Clientes con conversación guardada con el asistente.
 function setThreadDot(clientId, on) {
   if (clientId === null) return;
   if (on) state.convClients.add(clientId);
   else state.convClients.delete(clientId);
-  const name = document.querySelector(`#client-list li[data-id="${clientId}"] .client-name`);
-  if (!name) return;
-  const dot = name.querySelector(".has-thread");
-  if (on && !dot) name.insertAdjacentHTML("beforeend", threadDot());
-  if (!on) dot?.remove();
 }
 
+// Abre un contacto (desde la tabla, el buscador, los avisos, la bandeja, las tareas…): en Mis Chats si se está ahí;
+// si no, en Contactos. Sin cliente (null), la consulta general del asistente.
 async function selectClient(id) {
-  // Un cliente se abre en su ficha (desde la tabla de contactos, el buscador, los avisos, la bandeja, el chat…).
-  if (id !== null && $(".layout").hidden) showView("client");
-  state.clientId = id;
-  document.querySelectorAll("#client-list li[data-id]").forEach((li) =>
-    li.classList.toggle("active", (li.dataset.id ? Number(li.dataset.id) : null) === id));
-  showThread(id);
-  closeDraftPanel();
-  closeResults();
-  $("#presence-bar").hidden = true;
-  heartbeat();
-
-  if (id === null) {
-    updateBreadcrumb();
-    $("#chat-context").textContent = "Consulta general · puede buscar en todos los clientes";
-    $(".detail-empty").hidden = false;
-    $(".detail-body").hidden = true;
-    return;
-  }
-
-  const data = await api(`/api/clients/${id}`);
-  clientNames.set(id, data.name);
-  state.clientData = data;
-  if (state.clientId !== id) return; // el usuario ya cambió de cliente
-  updateBreadcrumb();
-  $("#chat-context").textContent = `Conversación sobre ${data.name}`;
-  $(".detail-empty").hidden = true;
-  $(".detail-body").hidden = false;
-  renderClientHeader(data);
-
-  const channels = [...new Set(data.conversations.map((c) => c.channel))];
-  state.channel = "";
-  $("#channel-tabs").innerHTML = channelTabsHtml(channels, "");
-  await Promise.all([loadTimeline(), openClientDetail(id), recordVisit(id), loadDuplicates(id)]);
+  if (id === null) return showView("assistant");
+  const view = currentView() === "chats" ? "chats" : "client";
+  if (currentView() !== view) showView(view);
+  await openChat(id);
 }
 
 // Pestañas de canal (ficha y Mis Chats): «Todos los canales» y una por canal. `active` "" = todos.
@@ -145,24 +99,6 @@ function channelTabsHtml(channels, active) {
 
 function setActiveChannelTab(container, channel) {
   container.querySelectorAll("[data-channel]").forEach((t) => t.classList.toggle("active", t.dataset.channel === channel));
-}
-
-async function loadTimeline() {
-  if (!state.clientId) return;
-  const clientId = state.clientId;
-  const params = new URLSearchParams({ scope: state.scope });
-  if (state.channel) params.set("channel", state.channel);
-  const messages = await api(`/api/clients/${clientId}/timeline?${params}`);
-  if (state.clientId !== clientId) return;
-  const list = $("#timeline");
-  if (!messages.length) {
-    list.innerHTML = `<li class="muted">${state.scope === "mine"
-      ? "Tú no has hablado con este cliente. Desmarca «Solo mis conversaciones» para ver las del equipo."
-      : "Sin mensajes."}</li>`;
-    return;
-  }
-  list.innerHTML = timelineHtml(messages);
-  list.scrollTop = list.scrollHeight;
 }
 
 // Conversación al estilo de un chat: el cliente a la izquierda, el equipo a la derecha, un separador por día y
@@ -232,19 +168,25 @@ function emptyChatHtml(clientId) {
     </div>`;
 }
 
-// El asistente se ve en dos sitios: a la derecha de la ficha y en la pestaña «Asistente IA» de Mis Chats. Es el
-// mismo: los hilos (uno por cliente) se comparten y cada panel muestra el de su cliente, llevándolo a su lista.
+// El asistente se ve en dos sitios: en la sección Asistente (la consulta general, sobre todos los clientes) y en la
+// pestaña «Asistente IA» del contacto abierto (una conversación por cliente). Los hilos se guardan en state.threads
+// y cada panel muestra el suyo, llevándolo a su lista.
 const ASSISTANT_PANELS = {
-  ficha: {
+  general: {
     log: "#chat-log", form: "#chat-form", input: "#chat-input", send: "#send-btn", reset: "#new-chat",
-    clientId: () => state.clientId,
+    clientId: () => null,
   },
   chats: {
     log: "#chats-assistant-log", form: "#chats-assistant-form", input: "#chats-assistant-input",
     send: "#chats-assistant-send", reset: "#chats-assistant-new", clientId: () => chatState.clientId,
   },
 };
-const FICHA = ASSISTANT_PANELS.ficha;
+const FICHA = ASSISTANT_PANELS.general;
+
+function showGeneralAssistant() {
+  showThread(null, FICHA);
+  $("#chat-input").focus();
+}
 
 function createThread(clientId, panel = FICHA) {
   const el = document.createElement("div");
@@ -415,7 +357,8 @@ function bindComposer(form, input, onSend) {
     onSend(text);
   });
   input.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
+    // (Si un desplegable de la caja, como el de /respuestas, ya ha usado el Intro, no se envía.)
+    if (e.key === "Enter" && !e.shiftKey && !e.defaultPrevented) {
       e.preventDefault();
       form.requestSubmit();
     }
@@ -427,28 +370,6 @@ function bindComposer(form, input, onSend) {
 }
 
 function bindEvents() {
-  let searchTimer;
-  $("#client-search").addEventListener("input", (e) => {
-    clearTimeout(searchTimer);
-    searchTimer = setTimeout(() => loadClients(e.target.value), 200);
-  });
-  $("#client-list").addEventListener("click", (e) => {
-    const li = e.target.closest("li[data-id]");
-    if (li) selectClient(li.dataset.id ? Number(li.dataset.id) : null);
-  });
-
-  $("#only-mine").addEventListener("change", (e) => {
-    state.scope = e.target.checked ? "mine" : "team";
-    loadTimeline();
-  });
-  $("#channel-tabs").addEventListener("click", (e) => {
-    const tab = e.target.closest("[data-channel]");
-    if (!tab) return;
-    state.channel = tab.dataset.channel;
-    setActiveChannelTab($("#channel-tabs"), state.channel);
-    loadTimeline();
-  });
-
   bindAssistant(FICHA);
 
   bindComposer($("#help-form"), $("#help-input"), sendHelp);
@@ -495,8 +416,6 @@ function bindEvents() {
     await loadTagOptions();
     refreshInboxCount();
     loadNotifications();
-    await loadClients();
-    await selectClient(null);
     showView(savedView());
   } catch (err) {
     appendBubble($("#chat-log"), "error", `No se pudo conectar con el servidor: ${escapeHtml(err.message)}`);

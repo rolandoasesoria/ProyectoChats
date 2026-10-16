@@ -6,6 +6,15 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Vista de contacto única**: al abrir un chat (Mis Chats) o un contacto (Contactos) se ve lo mismo: a la izquierda
+  la lista de la que vienes (en Contactos, la de contactos con «← Volver a la tabla»), en el centro el contacto con
+  las pestañas **Conversación · Ficha · Tareas · Notas** y a la derecha Detalles / Asistente IA. La ficha ya no saca
+  de Mis Chats. La ruta de navegación añade la pestaña abierta.
+- La caja de escribir de la conversación reúne lo que tenía el antiguo «Redactar respuesta»: «✨ Redactar con IA» con
+  indicaciones, respuestas guardadas (botón o «/»), «✨ Retocar…», «Copiar» sin cuenta conectada y «⏰ Avisar si no
+  contesta». El buscador de mensajes se abre con la lupa 🔍.
+- Secciones nuevas en la barra lateral: **Tareas** (tus tareas de todos los clientes, con contador) y **Asistente**
+  (la consulta general sobre todos los clientes).
 - **Menú de la empresa**: arriba de la barra lateral, el logo o las iniciales de la empresa (en lugar de la casita)
   abren su menú: Mis cuentas y, para administradores, Datos de la empresa (nombre y logo PNG/JPG/WebP de hasta
   256 KB), Usuarios del equipo, Ajustes, Propiedades de contacto y Registro de accesos. El nombre de la empresa en la
@@ -91,6 +100,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- «Sin responder» pasa a ser un filtro de Mis Chats («Todos · No leídos · Sin responder»). Desaparece la pantalla
+  antigua de la ficha con su columna «Clientes / Sin responder / Tareas»; los atajos g c / g s / g t llevan a
+  Contactos, Sin responder y Tareas.
 - La sección «IA que responde» pasa a llamarse **«Respuestas con IA»**; a quien no es administrador le avisa
   claramente, arriba, de que solo un administrador puede cambiarla.
 - El **Panel de actividad** pasa a ser una sección de la barra lateral (debajo de «Respuestas con IA») en vez de una

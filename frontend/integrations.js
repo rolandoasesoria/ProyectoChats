@@ -195,7 +195,7 @@ async function submitIntegration(e) {
     await loadIntegrations();
     loadNotifications();
     if (res.test?.imported) {
-      loadClients($("#client-search").value);
+      loadClients();
       refreshInboxCount();
     }
   } catch (err) {
@@ -225,7 +225,7 @@ async function onIntegrationsClick(e) {
           alert(`✓ Meta acepta las credenciales${r.detail ? ` (${r.detail})` : ""}.`);
         } else {
           alert(r.imported ? `${r.imported} mensaje${r.imported === 1 ? "" : "s"} nuevo${r.imported === 1 ? "" : "s"}.` : "No hay mensajes nuevos.");
-          loadClients($("#client-search").value);
+          loadClients();
           refreshInboxCount();
         }
         loadNotifications();

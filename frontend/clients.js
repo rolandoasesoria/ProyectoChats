@@ -1,27 +1,14 @@
-// Gestión de clientes: filtros de la lista, cabecera de la ficha, edición, identificadores, duplicados y unir.
+// Gestión de clientes: cabecera del contacto, edición, identificadores, duplicados y unir.
 
 const STATUS_LABELS = { lead: "Potencial", active: "Activo", issue: "Incidencia", inactive: "Inactivo" };
 const IDENTITY_LABELS = { email: "Email", whatsapp: "WhatsApp", telegram: "Telegram", phone: "Teléfono", other: "Otro" };
 
 let clientDialogMode = "edit";
 
-/* ---------- Filtros de la lista ---------- */
-
-function clientFilterParams() {
-  const params = new URLSearchParams();
-  if ($("#filter-status").value) params.set("status", $("#filter-status").value);
-  if ($("#filter-tag").value) params.set("tag", $("#filter-tag").value);
-  if ($("#filter-mine").checked) params.set("mine", "true");
-  return params;
-}
+/* ---------- Etiquetas que usa el equipo (para el selector al editar) ---------- */
 
 async function loadTagOptions() {
-  const tags = await api("/api/tags");
-  const current = $("#filter-tag").value;
-  $("#filter-tag").innerHTML = `<option value="">Etiquetas</option>` +
-    tags.map((t) => `<option value="${escapeHtml(t.tag)}">${escapeHtml(t.tag)} (${t.clients})</option>`).join("");
-  $("#filter-tag").value = tags.some((t) => t.tag === current) ? current : "";
-  knownTags = tags;
+  knownTags = await api("/api/tags");
 }
 
 /* ---------- Selector de etiquetas (editar cliente) ----------
@@ -160,8 +147,6 @@ function renderClientHeader(data) {
   $("#status-menu").hidden = true;
   $("#detail-company").textContent = [data.company, data.assignee && `Responsable: ${data.assignee}`].filter(Boolean).join(" · ");
   $("#detail-tags").innerHTML = tagChips(data.tags);
-  $("#detail-identities").innerHTML = data.identities
-    .map((i) => `<div>${badge(i.channel)} ${escapeHtml(i.handle)}</div>`).join("");
 }
 
 
@@ -215,7 +200,7 @@ async function mergeInto(sourceIds, targetId, question) {
       state.convClients.delete(sourceId);
     }
     $("#client-dialog").close();
-    await Promise.all([loadClients($("#client-search").value), loadTagOptions()]);
+    await Promise.all([loadClients(), loadTagOptions()]);
     await selectClient(targetId);
   } catch (err) {
     alert(err.message);
@@ -273,8 +258,8 @@ async function onStatusMenuClick(e) {
     if (state.clientId !== clientId) return;
     state.clientData = { ...state.clientData, ...data };
     renderClientHeader(state.clientData);
-    const dot = document.querySelector(`#client-list li[data-id="${clientId}"] .status-dot`);
-    if (dot) dot.className = `status-dot ${data.status}`;
+    chatState.data = state.clientData;
+    renderChatDetails(state.clientData);
   } catch (err) {
     alert(err.message);
   }
@@ -301,7 +286,7 @@ async function onSensitiveClick(e) {
   if (!confirm("Se sustituirán por «[… oculto]». El dato original no se podrá recuperar. ¿Continuar?")) return;
   try {
     await api(`/api/messages/${li.dataset.message}/redact`, { method: "POST", body: JSON.stringify({}) });
-    await Promise.all([loadSensitive(), loadTimeline()]);
+    await Promise.all([loadSensitive(), loadChatConversation(true)]);
   } catch (err) {
     alert(err.message);
   }
@@ -335,8 +320,8 @@ async function deleteClient() {
     thread?.el.remove();
     state.threads.delete(c.id);
     alert(`Cliente borrado (${res.conversations} conversaciones y ${res.messages} mensajes).`);
-    await Promise.all([loadClients($("#client-search").value), loadTagOptions(), refreshMyTasksCount(), refreshInboxCount()]);
-    await selectClient(null);
+    closeChat();
+    await Promise.all([loadClients(), loadTagOptions(), refreshMyTasksCount(), refreshInboxCount()]);
   } catch (err) {
     alert(err.message);
   }
@@ -352,7 +337,10 @@ function renderIdentities(identities) {
 async function refreshCurrentClient() {
   const data = await api(`/api/clients/${state.clientId}`);
   state.clientData = data;
+  chatState.data = data;
   renderClientHeader(data);
+  renderChatDetails(data);
+  updateBreadcrumb();
   return data;
 }
 
@@ -365,7 +353,7 @@ async function submitClientForm(e) {
         method: "POST", body: JSON.stringify({ name: $("#cf-name").value.trim(), company: $("#cf-company").value.trim() || null }),
       });
       $("#client-dialog").close();
-      await loadClients($("#client-search").value);
+      await loadClients();
       await selectClient(id);
       return;
     }
@@ -381,7 +369,7 @@ async function submitClientForm(e) {
     const tags = [...editorTags];
     await api(`/api/clients/${id}/tags`, { method: "PUT", body: JSON.stringify({ tags }) });
     $("#client-dialog").close();
-    await Promise.all([refreshCurrentClient(), loadClients($("#client-search").value), loadTagOptions()]);
+    await Promise.all([refreshCurrentClient(), loadClients(), loadTagOptions()]);
   } catch (err) {
     showError($("#cf-error"), err.message);
   }
@@ -413,9 +401,6 @@ async function submitIdentity(e) {
 }
 
 function bindClientEvents() {
-  ["#filter-status", "#filter-tag", "#filter-mine"].forEach((sel) =>
-    $(sel).addEventListener("change", () => loadClients($("#client-search").value)));
-  $("#new-client-btn").addEventListener("click", () => openClientDialog("create"));
   $("#edit-client-btn").addEventListener("click", () => openClientDialog("edit"));
   $("#client-form").addEventListener("submit", submitClientForm);
   $("#cf-identities").addEventListener("click", onIdentitiesClick);

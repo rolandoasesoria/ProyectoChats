@@ -1,7 +1,7 @@
 """Recorrido de la interfaz en Edge: login, tutorial, cliente, pestañas, notas, tareas, diálogos, tema, Chispa."""
 import sys
 
-from apitest import BASE, check, results
+from apitest import BASE, check, receive, results
 from browser import Browser
 from testdb import TMP
 
@@ -42,10 +42,12 @@ try:
         b.click('.tour-card [data-tour="next"]')
         if i in (1, 4, 7):
             b.shot(f"03-tour-paso-{i + 2}")
-    check(f"tutorial de {steps} pasos (admin)", int(steps) == 19, steps)
+    check(f"tutorial de {steps} pasos (admin)", int(steps) == 18, steps)
     b.click('.tour-card [data-tour="next"]')
     b.wait("!document.querySelector('.tour-card')")
     check("tutorial se cierra al terminar", True)
+
+    crumbs = lambda: b.js("[...document.querySelectorAll('#breadcrumb .crumb')].map((c) => c.textContent.trim())")  # noqa: E731
 
     # Sección Chats: lista, conversación por canal y detalles del contacto
     b.click("#nav-chats")
@@ -94,7 +96,7 @@ try:
     b.wait("document.querySelector('#chat-subject').hidden")
     check("correo nuevo: «Responder en el hilo» vuelve a la respuesta normal", True)
     b.js("[...document.querySelectorAll('#chats-list li[data-client]')].find((li) => li.textContent.includes('Laura')).click()")
-    b.wait("document.querySelector('#chat-name').textContent === 'Laura Gómez' && !!document.querySelector('#chat-tabs [data-channel=\"whatsapp\"]')")
+    b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez' && !!document.querySelector('#chat-tabs [data-channel=\"whatsapp\"]')")
     check("correo nuevo: con email pero sin hilos de correo propios, sale igualmente la pestaña Email",
           b.js("!!document.querySelector('#chat-tabs [data-channel=\"email\"]')"))
     b.js("document.querySelector('#chat-tabs [data-channel=\"whatsapp\"]').click()")
@@ -116,21 +118,25 @@ try:
     b.shot("04a2-chats-todos")
     b.click(f'#chat-tabs [data-channel="{first_tab}"]')
     b.wait(f"chatState.channel === '{first_tab}'")
-    b.click('#chats-filter [data-unread="true"]')
+    b.click('#chats-filter [data-filter="unread"]')
     b.pump(0.6)
-    check("chats: filtro «No leídos»", b.js("document.querySelector('#chats-filter .active').dataset.unread") == "true")
-    b.click('#chats-filter [data-unread="false"]')
+    check("chats: filtro «No leídos»", b.js("document.querySelector('#chats-filter .active').dataset.filter") == "unread")
+    b.click('#chats-filter [data-filter="all"]')
     b.shot("04a-chats")
+    # La ficha es una pestaña del contacto: no se sale de Mis Chats y el resto de la pantalla no cambia
     b.click('#chat-details-tabs [data-pane="assistant"]')
     b.wait("state.threads.get(chatState.clientId)?.el.parentElement.id === 'chats-assistant-log'")
-    b.click("#chat-open-client")
-    b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
-    check("chats: «Abrir ficha» lleva a la ficha del contacto", True)
-    check("y su asistente es la misma conversación, de vuelta en la ficha",
-          b.js("const t = state.threads.get(state.clientId); t.el.parentElement.id === 'chat-log' && !t.el.hidden"))
-    b.js("showView('chats')")
+    b.click('.contact-tabs [data-tab="profile"]')
+    check("ficha: es una pestaña del contacto, sin salir de Mis Chats",
+          b.js("currentView() === 'chats' && !document.querySelector('#tab-profile').hidden"
+               " && document.querySelector('#nav-chats').classList.contains('active')"))
+    check("y la lista de chats y el asistente siguen igual",
+          b.js("document.querySelector('#chats-list').offsetHeight > 0 && !document.querySelector('#chats-assistant').hidden"))
+    check("la ruta añade la pestaña", crumbs()[-2:] == [b.js("chatState.data.name"), "Ficha"], crumbs())
+    b.shot("04a3-ficha-en-chats")
+    b.click('#breadcrumb [data-crumb="level-1"]')
+    check("pulsar el contacto en la ruta vuelve a su conversación", b.js("chatState.tab") == "conversation")
     b.click('#chat-details-tabs [data-pane="info"]')
-    b.js("showView('client')")
 
     # Sección Contactos: tabla, columnas, filtros y abrir la ficha
     b.click("#nav-contacts")
@@ -162,8 +168,15 @@ try:
     check("y se cierra al pulsar fuera", b.js("!document.querySelector('#contacts-body details.cell-more[open]')"))
     b.shot("04b-contactos")
     b.js("document.querySelector('#contacts-body tr[data-client]').click()")
-    b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
-    check("contactos: al pulsar uno se abre su ficha", b.js("document.querySelector('#nav-contacts').classList.contains('active')"))
+    b.wait("currentView() === 'client' && !!chatState.data")
+    check("contactos: al pulsar uno se abre como un chat, con la lista de contactos a la izquierda",
+          b.js("document.querySelector('#nav-contacts').classList.contains('active')"
+               " && document.querySelector('#contacts-mini').offsetHeight > 0 && document.querySelector('#chats-list').offsetHeight === 0"))
+    check("la ruta: Contactos › contacto", crumbs()[-2:] == ["Contactos", b.js("chatState.data.name")], crumbs())
+    b.shot("04b3-contacto")
+    b.click("#contacts-back")
+    b.wait("!document.querySelector('#view-contacts').hidden")
+    check("«← Volver a la tabla»", True)
 
     # Sección Plantillas: sin cuenta de WhatsApp conectada explica qué hacer
     b.click("#nav-templates")
@@ -241,60 +254,55 @@ try:
           b.js("document.querySelector('#chat-ai-suggestion').getBoundingClientRect().height") > 60)
     b.shot("04h-ia-propuesta")
     b.js("document.querySelector('#chat-ai-suggestion').hidden = true; document.querySelector('#chat-ai-toggle').hidden = true;")
-    b.js("showView('client')")  # lo que sigue es de la ficha del contacto
-    b.js("showView('client')")  # lo que sigue (zonas, ficha, pestañas) es de la ficha del contacto
 
-    # Lista de clientes y filtros
-    check("3 clientes + consulta general", b.js("document.querySelectorAll('#client-list li[data-id]').length") == 4)
-    b.shot("04-inicio")
+    # Barra lateral
     check("barra lateral con sus secciones (y Administración para un administrador)",
-          b.js("['#company-btn', '#nav-chats', '#nav-dashboard', '#menu-accounts', '#menu-replies', '#menu-admin']"
-               ".every((s) => { const e = document.querySelector(s); return e && e.closest('.sidebar') && !e.hidden; })"))
+          b.js("['#company-btn', '#nav-chats', '#nav-contacts', '#nav-tasks', '#nav-assistant', '#nav-dashboard', '#menu-accounts',"
+               " '#menu-replies', '#menu-admin'].every((s) => { const e = document.querySelector(s); return e && e.closest('.sidebar') && !e.hidden; })"))
 
-    # Zonas ajustables: arrastrar, teclado, doble clic, se recuerda y siempre se ven las tres
+    # Las zonas de la vista de contacto: se recuerdan al recargar y en pantalla estrecha se ven las tres
     width = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().width)")  # noqa: E731
-    check("anchos iniciales", (width(".clients"), width("#assistant")) == (290, 400), (width(".clients"), width("#assistant")))
-    x = b.js("document.querySelector('.resizer[data-zone=\"clients\"]').getBoundingClientRect().left")
+    check("anchos iniciales", (width(".chats-pane"), width("#chat-details")) == (320, 400), (width(".chats-pane"), width("#chat-details")))
+    x = b.js("document.querySelector('#view-chats > .resizer[data-zone=\"list\"]').getBoundingClientRect().left")
     for kind, px in (("mousePressed", x), ("mouseMoved", x + 60), ("mouseReleased", x + 60)):
         b.send("Input.dispatchMouseEvent", type=kind, x=px, y=400, button="left", buttons=1 if kind != "mouseReleased" else 0,
                clickCount=1)
     b.pump(0.3)
-    check("arrastrar el separador ensancha la lista de clientes", width(".clients") == 350, width(".clients"))
-    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
-    check("con el teclado: flecha izquierda ensancha el asistente", width("#assistant") == 416, width("#assistant"))
-    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
-    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new MouseEvent('dblclick'))")
-    check("doble clic vuelve al ancho inicial", width("#assistant") == 400, width("#assistant"))
-    b.js("document.querySelector('.resizer[data-zone=\"clients\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
+    check("arrastrar el separador ensancha la lista", width(".chats-pane") == 380, width(".chats-pane"))
     b.send("Emulation.setDeviceMetricsOverride", width=1100, height=900, deviceScaleFactor=1, mobile=False)
-    b.js("for (let i = 0; i < 40; i++) document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
-    check("el asistente no crece tanto como para dejar la ficha por debajo de su mínimo", width(".detail") >= 300, width(".detail"))
-    b.js("document.querySelector('.resizer[data-zone=\"chat\"]').dispatchEvent(new MouseEvent('dblclick'))")
+    b.js("for (let i = 0; i < 40; i++) document.querySelector('#view-chats > .resizer[data-zone=\"details\"]')"
+         ".dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
+    check("los detalles no crecen a costa del contacto si ya está en su mínimo",
+          width("#chat-details") == 400 and width(".chat-main") >= 280, (width("#chat-details"), width(".chat-main")))
+    b.js("document.querySelector('#view-chats > .resizer[data-zone=\"details\"]').dispatchEvent(new MouseEvent('dblclick'))")
     b.send("Emulation.setDeviceMetricsOverride", width=1400, height=900, deviceScaleFactor=1, mobile=False)
     b.goto(BASE + "/")
-    b.wait("document.querySelectorAll('#client-list li[data-id]').length > 1")
-    b.js("showView('client')")  # al recargar se abre la última sección (Contactos): estas zonas son las de la ficha
-    check("el ancho elegido se recuerda al recargar", width(".clients") == 366, width(".clients"))
-    b.send("Emulation.setDeviceMetricsOverride", width=760, height=900, deviceScaleFactor=1, mobile=False)
+    b.wait("document.querySelectorAll('#chats-list li[data-client]').length > 0")
+    check("el ancho elegido se recuerda al recargar", width(".chats-pane") == 380, width(".chats-pane"))
+    b.js("document.querySelector('#chats-list li[data-client]').click()")
+    b.wait("!!chatState.data")
+    b.send("Emulation.setDeviceMetricsOverride", width=900, height=900, deviceScaleFactor=1, mobile=False)
     b.pump(0.3)
-    visible = b.js("['.clients', '.detail', '#assistant'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().width))")
+    visible = b.js("['.chats-pane', '.chat-main', '#chat-details'].map(s => Math.round(document.querySelector(s).getBoundingClientRect().width))")
     check("pantalla estrecha: siguen las tres zonas", all(w >= 150 for w in visible), visible)
     b.shot("04b-estrecha")
     b.send("Emulation.setDeviceMetricsOverride", width=1400, height=900, deviceScaleFactor=1, mobile=False)
-    b.js("localStorage.removeItem('pc-layout')")
+    b.js("localStorage.removeItem('pc-layout-chats')")
     b.goto(BASE + "/")
-    b.wait("document.querySelectorAll('#client-list li[data-id]').length > 1")
-    b.js("showView('client')")  # al recargar se abre la última sección (Contactos): estas zonas son las de la ficha
-    check("sin preferencia guardada vuelve a los anchos iniciales", width(".clients") == 290, width(".clients"))
+    b.wait("document.querySelectorAll('#chats-list li[data-client]').length > 0")
+    check("sin preferencia guardada vuelve a los anchos iniciales", width(".chats-pane") == 320, width(".chats-pane"))
 
-    # Abrir Laura (Carlos la tiene abierta y está respondiendo)
+    # Abrir Laura desde Contactos (Carlos la tiene abierta y está respondiendo)
     with get_conn() as conn:
         conn.execute("INSERT INTO presence (user_id, client_id, composing, seen_at) VALUES (2, 1, 1, localtimestamp(0))")
-    b.click('#client-list li[data-id="1"]')
+    b.js("showView('contacts')")
+    b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
+    b.js("[...document.querySelectorAll('#contacts-body tr[data-client]')].find((tr) => tr.textContent.includes('Laura')).click()")
     b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
     b.wait("!document.querySelector('#presence-bar').hidden")
     check("avisa de que un compañero está respondiendo al mismo cliente",
           b.js("document.querySelector('#presence-bar').textContent") == "Carlos Pérez está respondiendo a este cliente")
+    b.click('.contact-tabs [data-tab="profile"]')
     b.wait("document.querySelector('#summary-text').textContent.length > 0")
     check("ficha de Laura con estado", b.js("document.querySelector('#detail-status').textContent") == "Activo")
     b.shot("05-ficha")
@@ -320,7 +328,7 @@ try:
     check("añadir dato en la ficha", True)
 
     # Tareas
-    b.click('.detail-tabs [data-tab="tasks"]')
+    b.click('.contact-tabs [data-tab="tasks"]')
     b.fill("#task-title", "Llamar a Laura por el pedido")
     b.js("document.querySelector('#task-due').value = '2020-01-01'")
     b.js("document.querySelector('#task-form').requestSubmit()")
@@ -328,16 +336,18 @@ try:
     check("crear tarea (vencida en rojo)", b.js("!!document.querySelector('#client-tasks .due.overdue')"))
     b.wait("document.querySelector('#my-tasks-count').textContent === '1'")
     check("contador de mis tareas en rojo", b.js("document.querySelector('#my-tasks-count').classList.contains('alert')"))
-    b.click('.side-tabs [data-side="tasks"]')
+    b.click("#nav-tasks")
     b.wait("document.querySelector('#my-tasks .task-title')")
-    check("en la columna izquierda la tarea se ve (sin desbordarse)",
+    check("en la sección Tareas se ve (sin desbordarse)",
           b.js("document.querySelector('#my-tasks .task-title').getBoundingClientRect().width > 80 && "
-               "document.querySelector('#side-tasks').scrollWidth <= document.querySelector('#side-tasks').clientWidth"))
-    b.click('.side-tabs [data-side="clients"]')
+               "document.querySelector('.tasks-card').scrollWidth <= document.querySelector('.tasks-card').clientWidth"))
     b.shot("06-tareas")
+    b.click("#my-tasks [data-open-client]")
+    b.wait("currentView() === 'client' && chatState.tab === 'tasks' && document.querySelector('#detail-name').textContent === 'Laura Gómez'")
+    check("pulsar el cliente de una tarea abre su ficha en Tareas", True)
 
     # Notas con mención (autocompletado)
-    b.click('.detail-tabs [data-tab="notes"]')
+    b.click('.contact-tabs [data-tab="notes"]')
     b.js("const t = document.querySelector('#note-body'); t.focus(); t.value = 'Paga tarde, avisar a @car'; "
          "t.selectionStart = t.selectionEnd = t.value.length; t.dispatchEvent(new Event('input'))")
     b.wait("!document.querySelector('#mention-list').hidden")
@@ -349,63 +359,68 @@ try:
     check("nota guardada con la mención resaltada", True)
     b.shot("07-notas")
 
-    # Mensajes y borrador
-    b.click('.detail-tabs [data-tab="messages"]')
-    b.wait("document.querySelectorAll('#timeline li').length > 0")
-    total = b.js("document.querySelectorAll('#timeline li').length")
-    check("por defecto se ve el historial completo, con quién lleva cada conversación",
-          b.js("document.querySelectorAll('#timeline .owner-tag').length") > 0)
+    # La conversación: todo el historial, por canal, el buscador y la caja de escribir
+    b.click('.contact-tabs [data-tab="conversation"]')
+    b.click('#chat-tabs [data-channel=""]')
+    b.wait("chatState.channel === '' && document.querySelectorAll('#chat-timeline li').length > 0")
+    b.pump(0.5)
+    total = b.js("document.querySelectorAll('#chat-timeline li').length")
+    check("desde Contactos se ve el historial completo, con quién lleva cada conversación",
+          not b.js("document.querySelector('#only-mine').checked") and b.js("document.querySelectorAll('#chat-timeline .owner-tag').length") > 0)
     b.click("#only-mine")
-    b.wait(f"document.querySelectorAll('#timeline li').length < {total}")
+    b.wait(f"document.querySelectorAll('#chat-timeline li').length < {total}")
     check("«Solo mis conversaciones» oculta las de los compañeros",
-          b.js("document.querySelectorAll('#timeline .owner-tag').length") == 0)
+          b.js("document.querySelectorAll('#chat-timeline .owner-tag').length") == 0)
     b.click("#only-mine")
-    b.wait(f"document.querySelectorAll('#timeline li').length === {total}")
-    check("mensajes: pestañas por canal, con «Todos los canales» activa",
-          b.js("document.querySelector('#channel-tabs .active').dataset.channel === ''"
-               " && document.querySelectorAll('#channel-tabs [data-channel]').length > 2"))
-    b.click('#channel-tabs [data-channel="whatsapp"]')
-    b.wait(f"document.querySelectorAll('#timeline li').length < {total}")
-    check("mensajes: la pestaña de un canal muestra solo ese canal",
-          b.js("[...document.querySelectorAll('#timeline .msg-row')].every((r) => r.classList.contains('whatsapp'))"))
+    b.wait(f"document.querySelectorAll('#chat-timeline li').length === {total}")
+    check("conversación: pestañas por canal, con «Todos los canales»",
+          b.js("document.querySelectorAll('#chat-tabs [data-channel]').length") > 2)
+    b.click('#chat-tabs [data-channel="whatsapp"]')
+    b.wait(f"chatState.channel === 'whatsapp' && document.querySelectorAll('#chat-timeline li').length < {total}")
+    check("conversación: la pestaña de un canal muestra solo ese canal",
+          b.js("[...document.querySelectorAll('#chat-timeline .msg-row')].every((r) => r.classList.contains('whatsapp'))"))
     b.shot("09b-mensajes-whatsapp")
-    b.click('#channel-tabs [data-channel=""]')
-    b.wait(f"document.querySelectorAll('#timeline li').length === {total}")
+    b.click('#chat-tabs [data-channel=""]')
+    b.wait(f"document.querySelectorAll('#chat-timeline li').length === {total}")
+    b.click("#msg-search-toggle")
+    check("🔍 abre el buscador de mensajes", not b.js("document.querySelector('#msg-search-form').hidden"))
     b.fill("#msg-search", "direccion")
     b.js("document.querySelector('#msg-search-form').requestSubmit()")
     b.wait("document.querySelector('#msg-results mark')")
     check("buscador de mensajes con resaltado", "dirección" in b.js("document.querySelector('#msg-results mark').textContent"))
     b.shot("08b-buscador")
     b.click("#msg-results .result")
-    b.wait("document.querySelector('#timeline li.flash')")
+    b.wait("document.querySelector('#chat-timeline li.flash')")
     check("clic en un resultado lleva al mensaje", True)
     b.click("#msg-results-close")
-    b.click("#draft-open")
-    check("panel de borrador con las conversaciones", b.js("document.querySelectorAll('#draft-conversation option').length") >= 1)
+    b.click("#msg-search-toggle")
+    # En su conversación de WhatsApp (de Ana, sin cuenta conectada): respuestas guardadas, macro y copiar con aviso
+    b.click('#chat-tabs [data-channel="whatsapp"]')
+    b.wait("chatState.channel === 'whatsapp' && !document.querySelector('#draft-copy').hidden")
     b.shot("08-mensajes-borrador")
-    # Respuestas guardadas: desde el botón y escribiendo /atajo
     b.click("#reply-open")
     b.wait("document.querySelectorAll('#reply-options .reply-option').length >= 4")
     b.fill("#reply-filter", "factur")
     check("el selector filtra las respuestas guardadas", b.js("document.querySelectorAll('#reply-options .reply-option').length") == 1)
     b.shot("08c-respuestas-guardadas")
     b.click("#reply-options .reply-option")
-    b.wait("document.querySelector('#draft-text').value.startsWith('Hola Laura, para preparar la factura')")
-    check("insertar respuesta guardada rellena el nombre", b.js("document.querySelector('#draft-text').value").endswith("Ana Ruiz"))
-    b.fill("#draft-text", "")
-    b.fill("#draft-text", "/presu")
+    b.wait("document.querySelector('#chat-text').value.startsWith('Hola Laura, para preparar la factura')")
+    check("insertar respuesta guardada rellena el nombre", b.js("document.querySelector('#chat-text').value").endswith("Ana Ruiz"))
+    b.fill("#chat-text", "")
+    b.fill("#chat-text", "/presu")
     b.wait("!document.querySelector('#reply-suggest').hidden")
-    b.js("document.querySelector('#draft-text').dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true}))")
-    b.wait("document.querySelector('#draft-text').value.startsWith('Hola Laura, te acabo de enviar el presupuesto')")
+    b.js("document.querySelector('#chat-text').dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}))")
+    b.wait("document.querySelector('#chat-text').value.startsWith('Hola Laura, te acabo de enviar el presupuesto')")
     b.wait("!document.querySelector('#draft-applied').hidden")
     check("una macro avisa de lo que ha aplicado y actualiza la ficha",
           "Potencial" in b.js("document.querySelector('#draft-applied').textContent")
           and b.js("document.querySelector('#detail-status').textContent") == "Potencial")
+    check("el Intro que elige la respuesta no la envía", b.js("document.querySelector('#chat-text').value.length") > 20)
     b.js("document.querySelector('#draft-followup').value = '3'")
     b.click("#draft-copy")
     b.wait("document.querySelector('#draft-applied').textContent.includes('Te avisaré')")
     check("al copiar programa el aviso de seguimiento", True)
-    b.click("#draft-close")
+    b.fill("#chat-text", "")
     b.click("#menu-replies")
     b.wait("document.querySelector('#replies-dialog').open && document.querySelectorAll('#replies-list .reply-row').length >= 4")
     b.fill("#rf-title", "Horario")
@@ -416,8 +431,9 @@ try:
     b.shot("08d-gestionar-respuestas")
     b.js("document.querySelector('#replies-dialog').close()")
 
-    # Bandeja sin responder
-    b.click('.side-tabs [data-side="inbox"]')
+    # Bandeja sin responder: el filtro «Sin responder» de Mis Chats
+    b.click("#nav-chats")
+    b.click('#chats-filter [data-filter="inbox"]')
     b.wait("document.querySelectorAll('#inbox-list .inbox-item').length > 0")
     check("la bandeja marca la prioridad y el tono que detectó la IA",
           b.js("[...document.querySelectorAll('#inbox-list .inbox-item')].find(li => li.textContent.includes('Jorge Martín'))"
@@ -445,8 +461,8 @@ try:
     check("«Volver ahora» la devuelve", True)
     b.shot("09-bandeja")
     b.click("#inbox-list .inbox-item strong")
-    b.wait("document.querySelector('#timeline li.flash')")
-    check("clic en la bandeja lleva al mensaje resaltado", True)
+    b.wait("document.querySelector('#chat-timeline li.flash')")
+    check("clic en la bandeja lleva al mensaje resaltado, sin salir de Mis Chats", b.js("currentView()") == "chats")
 
     # Paleta de comandos y atajos
     b.js("document.dispatchEvent(new KeyboardEvent('keydown', {key: 'k', ctrlKey: true, bubbles: true}))")
@@ -465,17 +481,23 @@ try:
     check("la paleta también ejecuta acciones", True)
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'g', bubbles: true}))")
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'c', bubbles: true}))")
-    b.wait("!document.querySelector('#side-clients').hidden")
+    b.wait("!document.querySelector('#view-contacts').hidden && document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
+    b.js("document.querySelector('#contacts-body tr[data-client]').click()")
+    b.wait("currentView() === 'client' && document.querySelectorAll('#contacts-mini li[data-client]').length === 3")
+    expected = b.js("document.querySelectorAll('#contacts-mini li[data-client]')[1].querySelector('strong').textContent.trim()")
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'j', bubbles: true}))")
-    b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
-    check("atajos: g c va a Clientes y j pasa al cliente siguiente", True)
+    b.wait(f"document.querySelector('#detail-name').textContent === {expected!r}")
+    check("atajos: g c va a Contactos y j pasa al contacto siguiente", True)
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: '?', bubbles: true}))")
     b.wait("document.querySelector('#shortcuts-dialog').open")
     check("? muestra los atajos", b.js("document.querySelectorAll('#shortcuts-list tr').length") >= 8)
     b.js("document.querySelector('#shortcuts-dialog').close()")
 
-    # Editar cliente
-    b.click('.side-tabs [data-side="clients"]')
+    # Editar cliente (Laura, con todo su historial a la vista)
+    b.js("selectClient(1)")
+    b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
+    b.click('#chat-tabs [data-channel=""]')
+    b.wait("chatState.channel === ''")
     b.click("#edit-client-btn")
     b.wait("document.querySelector('#client-dialog').open")
     b.click("#sensitive-btn")
@@ -483,7 +505,8 @@ try:
     check("encuentra el IBAN en sus mensajes", "IBAN" in b.js("document.querySelector('#sensitive-list li').textContent"))
     b.click("#sensitive-list [data-redact]")
     b.wait("document.querySelectorAll('#sensitive-list li[data-message]').length === 0")
-    check("ocultarlo lo quita de la ficha", "[IBAN oculto]" in b.js("document.querySelector('#timeline').textContent"))
+    b.wait("document.querySelector('#chat-timeline').textContent.includes('[IBAN oculto]')")
+    check("ocultarlo lo quita de la conversación", True)
     b.js("document.querySelector('#cf-status').value = 'issue'")
     # Etiquetas: desplegable con las básicas y las del equipo, y también a mano
     b.js("document.querySelector('#tag-input').focus()")
@@ -510,7 +533,8 @@ try:
     b.shot("10b-menu-estado")
     b.click('#status-menu [data-status="active"]')
     b.wait("document.querySelector('#detail-status').textContent === 'Activo'")
-    check("cambiar el estado desde la cabecera", b.js("document.querySelector('#client-list li[data-id=\"1\"] .status-dot').className") == "status-dot active")
+    check("cambiar el estado desde la cabecera (y se ve en los detalles)",
+          "Activo" in b.js("document.querySelector('#chat-details-body').textContent"))
     b.click("#detail-status")
     b.click("#status-menu [data-status-auto]")
     b.wait("document.querySelector('#detail-status').classList.contains('auto') && document.querySelector('#status-note').hidden")
@@ -622,9 +646,10 @@ try:
     check("el logo sustituye a las iniciales", b.js("!document.querySelector('#company-logo-remove').hidden"))
     b.shot("14d-datos-empresa")
     b.js("document.querySelector('#company-dialog').close()")
+    b.js("showView('contacts')")
     b.js("selectClient(1)")
     b.wait("document.querySelectorAll('#client-props [data-prop]').length === 2")
-    crumbs = lambda: b.js("[...document.querySelectorAll('#breadcrumb .crumb')].map((c) => c.textContent.trim())")  # noqa: E731
+    b.js("showDetailTab('conversation')")
     check("ruta en la ficha: Empresa › Contactos › contacto",
           crumbs() == ["Asesoría Ocaña", "Contactos", b.js("state.clientData.name")], crumbs())
     b.shot("19-ruta-ficha")
@@ -678,27 +703,35 @@ try:
     check("el aviso de una cuenta que no funciona abre «Mis cuentas»", True)
     b.js("document.querySelector('#accounts-dialog').close()")
 
-    # Con la integración de Telegram, el borrador de Laura (Telegram) permite enviar
-    b.click('#client-list li[data-id="1"]')
-    b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
-    b.click('.detail-tabs [data-tab="messages"]')
-    b.click("#draft-open")
-    tg_option = b.js("[...document.querySelectorAll('#draft-conversation option')].find(o => o.textContent.startsWith('Telegram')).value")
-    b.js(f"document.querySelector('#draft-conversation').value = '{tg_option}'; document.querySelector('#draft-conversation').dispatchEvent(new Event('change'))")
-    b.wait("!document.querySelector('#draft-send').hidden")
-    check("botón de enviar por la integración", "Bot de pruebas" in b.js("document.querySelector('#draft-send').textContent"))
-    b.click("#draft-write")
-    check("escribir sin IA abre el cuadro", b.js("!document.querySelector('#draft-text').hidden"))
-    b.fill("#draft-text", "hola, te paso el presu")
+    # Con la integración de Telegram de Ana, en su conversación de Telegram con Laura se envía desde la caja de escribir
+    receive("telegram", "laura_tg", "¿Me pasas el presupuesto por aquí?", client_id=1, owner=1)
+    b.js("openChat(1); showDetailTab('conversation')")
+    b.wait("!!document.querySelector('#chat-tabs [data-channel=\"telegram\"]')")
+    b.click('#chat-tabs [data-channel="telegram"]')
+    b.wait("document.querySelector('#chat-send').textContent.includes('Bot de pruebas')")
+    check("botón de enviar por la integración", not b.js("document.querySelector('#chat-send').disabled"))
+    b.fill("#chat-text", "hola, te paso el presu")
     b.js("{ const s = document.querySelector('#draft-rewrite'); s.value = 'fix'; s.dispatchEvent(new Event('change')); }")
     b.wait("!document.querySelector('#draft-rewrite').disabled && document.querySelector('#draft-rewrite').value === ''")
     check("retocar sin clave de IA avisa y deja el texto como estaba",
-          "ANTHROPIC_API_KEY" in b.dialogs[-1] and b.js("document.querySelector('#draft-text').value") == "hola, te paso el presu"
+          "ANTHROPIC_API_KEY" in b.dialogs[-1] and b.js("document.querySelector('#chat-text').value") == "hola, te paso el presu"
           and b.js("document.querySelector('#draft-undo').hidden"), b.dialogs[-1:])
     # Ese aviso (y el 503 que lo provoca) era el esperado: no cuenta como error.
     b.errors[:] = [e for e in b.errors if "ANTHROPIC_API_KEY" not in e and "/api/drafts/rewrite" not in e
                    and "/api/admin/ai-reply" not in e]
     b.shot("18-enviar")
+    b.fill("#chat-text", "")
+
+    # Secciones Tareas y Asistente (la consulta general)
+    b.click("#nav-assistant")
+    b.wait("!document.querySelector('#view-assistant').hidden && !!document.querySelector('#chat-log .thread:not([hidden])')")
+    check("Asistente: la consulta general sobre todos los clientes",
+          "Consulta general" in b.js("document.querySelector('#chat-context').textContent") and crumbs()[-1] == "Asistente")
+    b.shot("20-asistente")
+    b.js("showView('client')")
+    b.js("selectClient(1)")
+    b.wait("document.querySelector('#detail-name').textContent === 'Laura Gómez'")
+    b.js("showDetailTab('conversation')")
 
     # Ruta de navegación: cada sección, lo abierto como tercer nivel y volver pulsando la sección
     b.click('#breadcrumb [data-crumb="section"]')

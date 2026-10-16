@@ -1208,3 +1208,46 @@ body { background: var(--canvas); }
   margin: 0 0 14px; padding: 10px 14px; border-radius: 10px; font-size: 14px;
   background: var(--accent-soft); color: var(--text); border: 1px solid var(--border);
 }
+
+/* ---------- Vista de contacto (Mis Chats y Contactos) ----------
+   A la izquierda, la lista de la que se viene; en el centro, el contacto con sus pestañas. */
+.chats-view[data-origin="chats"] .pane-contacts, .chats-view[data-origin="contacts"] .pane-chats { display: none; }
+.pane-chats, .pane-contacts { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.chats-filters { flex-wrap: wrap; }
+.chats-filters .segmented button .count { margin-left: 2px; }
+.inbox-pane { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+.back-link { align-self: flex-start; font-size: 13px; }
+.chat-open { min-height: 0; }
+.chat-head-title .detail-title strong { font-size: 15px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-head-title #detail-tags:empty { display: none; }
+.chat-head-title .tag-chips { margin-top: 2px; }
+.contact-notices { display: flex; flex-direction: column; gap: 6px; padding: 8px 16px 0; }
+.contact-notices:not(:has(> :not([hidden]))) { display: none; }
+.contact-notices p { margin: 0; font-size: 13px; }
+.contact-tabs { padding: 0 16px; }
+.chat-open > .tab-pane:not(.conv-pane) { padding: 14px 20px; }
+.conv-pane { padding-top: 0; overflow: hidden; }
+.conv-toolbar { display: flex; align-items: center; gap: 10px; padding: 0 12px 0 16px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.conv-toolbar .chat-tabs { padding: 0; border-bottom: 0; overflow-x: auto; scrollbar-width: none; }
+.conv-toolbar .check { white-space: nowrap; font-size: 12px; }
+.conv-pane > .msg-search { padding: 8px 16px 0; margin: 0; }
+.conv-pane > .msg-results { margin: 8px 16px 0; max-height: 40%; overflow-y: auto; flex-shrink: 0; }
+.conv-pane > .chat-timeline { flex: 1; min-height: 0; }
+.chat-composer-actions { flex-wrap: wrap; row-gap: 6px; }
+.chat-composer .mention-wrap { position: relative; }
+/* Menús de la caja de escribir: se abren hacia arriba */
+.chat-composer .menu { top: auto; bottom: calc(100% + 6px); left: 0; right: auto; }
+.draft-ai-wrap, .chat-composer .reply-picker-wrap { position: relative; }
+.draft-ai-menu { width: min(380px, 70vw); flex-direction: row; gap: 6px; padding: 6px; }
+.draft-ai-menu input { flex: 1; min-width: 0; }
+.chat-composer #draft-applied { margin: 0; }
+/* Secciones Tareas y Asistente */
+.nav-count { position: absolute; top: 1px; right: 0; font-size: 10px; min-width: 16px; padding: 0 4px; line-height: 15px; }
+.app-body > .tasks-view, .app-body > .assistant-view { display: flex; }
+.tasks-card { display: block; overflow-y: auto; padding: 18px 24px; }
+.tasks-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.tasks-head h2 { margin: 0; font-size: 17px; }
+.assistant-view > #assistant { flex: 1; min-width: 0; max-width: 960px; margin: 0 auto; border-left: 1px solid var(--border); }
+.chat-composer #draft-rewrite { max-width: 120px; }
+.chat-composer #draft-followup { max-width: 160px; }
+#tab-profile > .section-title:not(:first-child), #tab-profile > .docs-title { margin-top: 18px; }

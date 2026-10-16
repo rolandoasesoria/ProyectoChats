@@ -1,4 +1,4 @@
-// Buscador de la pestaña Mensajes: por palabras (índice de texto) o ✨ por significado (IA).
+// Buscador de la conversación del contacto (🔍): por palabras (índice de texto) o ✨ por significado (IA).
 
 function highlight(snippet) {
   // El servidor marca las coincidencias con ⟦ ⟧; se escapa todo y luego se convierten en <mark>.

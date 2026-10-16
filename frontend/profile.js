@@ -4,21 +4,17 @@ let team = [];              // miembros del equipo (para asignar tareas)
 
 /* ---------- Pestañas ---------- */
 
+// Pestañas del contacto abierto (Conversación, Ficha, Tareas, Notas). «messages» era la antigua pestaña Mensajes.
+const CONTACT_TABS = { conversation: "Conversación", profile: "Ficha", tasks: "Tareas", notes: "Notas" };
+
 function showDetailTab(tab) {
-  document.querySelectorAll(".detail-tabs [data-tab]").forEach((b) => {
+  if (tab === "messages" || !CONTACT_TABS[tab]) tab = "conversation";
+  chatState.tab = tab;
+  document.querySelectorAll(".contact-tabs [data-tab]").forEach((b) => {
     b.classList.toggle("active", b.dataset.tab === tab);
     $(`#tab-${b.dataset.tab}`).hidden = b.dataset.tab !== tab;
   });
-}
-
-function showSideTab(side) {
-  if ($(".layout").hidden) showView("client"); // las pestañas de la columna izquierda están en la vista de ficha
-  document.querySelectorAll(".side-tabs [data-side]").forEach((b) => {
-    b.classList.toggle("active", b.dataset.side === side);
-    $(`#side-${b.dataset.side}`).hidden = b.dataset.side !== side;
-  });
-  if (side === "tasks") loadMyTasks();
-  if (side === "inbox") loadInbox();
+  updateBreadcrumb();
 }
 
 /* ---------- Utilidades de fechas ---------- */
@@ -246,7 +242,7 @@ async function refreshMyTasksCount() {
   try {
     const tasks = await api("/api/tasks?scope=mine&status=open");
     setMyTasksCount(tasks);
-    if (!$("#side-tasks").hidden) loadMyTasks();
+    if (currentView() === "tasks") loadMyTasks();
   } catch { /* no crítico */ }
 }
 
@@ -341,14 +337,14 @@ async function onTaskSubmit(e) {
 /* ---------- Ir al mensaje de origen ---------- */
 
 async function showSourceMessage(messageId) {
-  showDetailTab("messages");
-  // El mensaje puede ser de la conversación de un compañero: se muestra todo el historial.
-  state.scope = "team";
+  showDetailTab("conversation");
+  // El mensaje puede ser de la conversación de un compañero: se muestra todo el historial, en todos los canales.
   $("#only-mine").checked = false;
-  state.channel = "";
-  setActiveChannelTab($("#channel-tabs"), "");
-  await loadTimeline();
-  const li = document.querySelector(`#timeline li[data-id="${messageId}"]`);
+  syncScope();
+  chatState.channel = "";
+  renderChannelTabs();
+  await loadChatConversation();
+  const li = document.querySelector(`#chat-timeline li[data-id="${messageId}"]`);
   if (li) {
     li.scrollIntoView({ block: "center", behavior: "smooth" });
     li.classList.add("flash");
@@ -365,10 +361,6 @@ async function openClientDetail(clientId) {
 }
 
 function bindProfileEvents() {
-  document.querySelectorAll(".detail-tabs [data-tab]").forEach((b) =>
-    b.addEventListener("click", () => showDetailTab(b.dataset.tab)));
-  document.querySelectorAll(".side-tabs [data-side]").forEach((b) =>
-    b.addEventListener("click", () => showSideTab(b.dataset.side)));
   $("#analyze-btn").addEventListener("click", analyzeClient);
   $("#fact-form").addEventListener("submit", submitFact);
   $("#facts").addEventListener("click", onFactsClick);
@@ -378,7 +370,7 @@ function bindProfileEvents() {
     $(sel).addEventListener("click", onTaskClick);
     $(sel).addEventListener("submit", onTaskSubmit);
   });
-  $("#detail").addEventListener("click", (e) => {
+  $("#chat-open").addEventListener("click", (e) => {
     const src = e.target.closest("[data-source]");
     if (src) showSourceMessage(Number(src.dataset.source));
   });
