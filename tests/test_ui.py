@@ -615,6 +615,13 @@ try:
     check("administración de usuarios", True)
     check("usuarios: columna de cuentas conectadas",
           "Cuentas conectadas" in b.js("document.querySelector('#admin-users .users-table thead').textContent"))
+    top = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().top)")  # noqa: E731
+    check("nuevo usuario: la contraseña alineada con el resto de campos",
+          top("#uf-password") == top("#uf-name") == top("#uf-username"), (top("#uf-username"), top("#uf-password")))
+    b.click('#users-tbody [data-edit="2"]')
+    check("y también al editar (con la aclaración larga)", top("#uf-password") == top("#uf-name"),
+          (top("#uf-name"), top("#uf-password")))
+    b.click("#uf-cancel")
     # «Crear usuario» solo lo crea
     b.fill("#uf-username", "javier")
     b.fill("#uf-name", "Javier Moreno")
