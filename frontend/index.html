@@ -634,7 +634,7 @@
   </dialog>
 
   <!-- Administrar usuarios (solo administradores) -->
-  <dialog id="admin-dialog" class="dialog wide">
+  <dialog id="admin-dialog" class="dialog wide admin-dialog">
     <div class="dialog-head">
       <h2>Administración</h2>
       <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
@@ -647,11 +647,11 @@
     </div>
     <section id="admin-users" class="admin-pane">
     <table class="users-table">
-      <thead><tr><th>Usuario</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+      <thead><tr><th>Usuario</th><th>Nombre</th><th>Email</th><th>Rol</th><th>Estado</th><th>Cuentas conectadas</th><th></th></tr></thead>
       <tbody id="users-tbody"></tbody>
     </table>
     <form id="user-form" class="form user-form">
-      <h3 id="user-form-title">Nueva cuenta</h3>
+      <h3 id="user-form-title">Nuevo usuario</h3>
       <div class="form-grid">
         <label>Usuario <input id="uf-username" required autocomplete="off"></label>
         <label>Nombre <input id="uf-name" required></label>
@@ -663,10 +663,11 @@
           <input id="uf-password" type="password" autocomplete="new-password" minlength="8" required>
         </label>
       </div>
+      <p class="muted small" id="uf-accounts-hint">Al crearlo podrás añadir sus cuentas: correo, WhatsApp y Telegram.</p>
       <p class="form-error" id="uf-error" role="alert" hidden></p>
       <div class="dialog-actions">
         <button type="button" class="ghost" id="uf-cancel" hidden>Cancelar edición</button>
-        <button type="submit" class="primary" id="uf-submit">Crear cuenta</button>
+        <button type="submit" class="primary" id="uf-submit">Crear usuario</button>
       </div>
     </form>
     </section>
@@ -812,11 +813,10 @@
   <!-- Cuentas conectadas: correo, Telegram y WhatsApp de cada persona -->
   <dialog id="accounts-dialog" class="dialog wide">
     <div class="dialog-head">
-      <h2>Mis cuentas</h2>
+      <h2 id="accounts-title">Mis cuentas</h2>
       <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
     </div>
-    <p class="muted small">Conecta tu correo, tu bot de Telegram o tu número de WhatsApp Business. Los mensajes entran solos
-      como conversaciones tuyas y puedes responder desde la app. Las contraseñas y tokens se guardan cifrados.</p>
+    <p class="muted small" id="accounts-intro"></p>
     <div class="segmented accounts-scope" role="group" aria-label="Qué cuentas mostrar" id="accounts-scope" hidden>
       <button data-accounts-scope="mine" class="active">Mías</button>
       <button data-accounts-scope="team">Todo el equipo</button>

@@ -30,16 +30,28 @@ let integrationFields = {};
 let editingIntegration = null;
 let metaSignup = null; // registro insertado de Meta (coexistencia): {ready, app_id, config_id, graph_version, webhook?}
 let accountsScope = "mine"; // mine: mis cuentas · team: todas (solo administradores)
+let accountsOwner = null; // {id, name}: las cuentas de una persona concreta (desde Administración → Usuarios)
+const ACCOUNTS_INTRO = "Conecta tu correo, tu bot de Telegram o tu número de WhatsApp Business. Los mensajes entran solos "
+  + "como conversaciones tuyas y puedes responder desde la app. Las contraseñas y tokens se guardan cifrados.";
 
 function accountsApi(path = "") {
   return accountsScope === "team" ? `/api/admin/integrations${path}` : `/api/me/integrations${path}`;
 }
 
-async function openAccountsDialog() {
+// Sin `owner`, las cuentas propias (con «Todo el equipo» para un administrador). Con `owner` ({id, name}, solo
+// administradores): las de esa persona, para conectárselas al darla de alta o revisarlas.
+async function openAccountsDialog(owner = null) {
   $("#user-menu").hidden = true;
   const isAdmin = currentUser.role === "admin";
-  $("#accounts-scope").hidden = !isAdmin;
-  accountsScope = "mine";
+  accountsOwner = isAdmin && owner?.id ? owner : null;
+  accountsScope = accountsOwner ? "team" : "mine";
+  $("#accounts-scope").hidden = !isAdmin || !!accountsOwner;
+  $("#accounts-title").textContent = accountsOwner ? `Cuentas de ${accountsOwner.name}` : "Mis cuentas";
+  $("#accounts-intro").textContent = accountsOwner
+    ? `Conecta el correo, el bot de Telegram o el WhatsApp Business de ${accountsOwner.name}: sus mensajes entrarán como `
+      + "conversaciones suyas. Necesitarás sus datos de acceso (p. ej. la contraseña de aplicación de su correo). Las "
+      + "contraseñas y tokens se guardan cifrados."
+    : ACCOUNTS_INTRO;
   document.querySelectorAll("#accounts-scope [data-accounts-scope]").forEach((b) =>
     b.classList.toggle("active", b.dataset.accountsScope === "mine"));
   $("#accounts-dialog").showModal();
@@ -53,13 +65,16 @@ async function openAccountsDialog() {
 }
 
 async function loadIntegrations() {
-  const { fields, items, webhook_base: webhookBase } = await api(accountsApi());
+  let { fields, items, webhook_base: webhookBase } = await api(accountsApi());
   integrationFields = fields;
   $("#if-owner-label").hidden = accountsScope !== "team";
-  if (accountsScope === "team" && !$("#if-owner").options.length) {
+  if (accountsScope === "team") {
+    // Se relee cada vez: puede haber una persona recién creada.
     const people = await api("/api/team");
     $("#if-owner").innerHTML = people.map((u) => `<option value="${u.id}">${escapeHtml(u.name)}</option>`).join("");
+    presetAccountOwner();
   }
+  if (accountsOwner) items = items.filter((i) => i.owner_user_id === accountsOwner.id);
   renderMetaWebhookInfo(webhookBase);
   $("#integrations-list").innerHTML = items.length ? items.map((i) => {
     const status = i.last_error
@@ -94,7 +109,8 @@ async function loadIntegrations() {
           <button class="link small danger" data-delete-integration>Desconectar</button>
         </div>
       </li>`;
-  }).join("") : `<li class="muted small">${accountsScope === "team" ? "Nadie ha conectado cuentas todavía." : "Todavía no has conectado ninguna cuenta."}</li>`;
+  }).join("") : `<li class="muted small">${accountsOwner ? `${escapeHtml(accountsOwner.name)} todavía no tiene cuentas conectadas.`
+    : accountsScope === "team" ? "Nadie ha conectado cuentas todavía." : "Todavía no has conectado ninguna cuenta."}</li>`;
   $("#integrations-list").dataset.items = JSON.stringify(items);
   if (!editingIntegration) renderIntegrationFields();
 }
@@ -124,7 +140,8 @@ function renderIntegrationFields(values = {}) {
              value="${escapeHtml(values[f.key] && !f.secret ? values[f.key] : "")}">
     </label>`;
   const all = integrationFields[kind] || [];
-  if (kind === "whatsapp" && !editingIntegration && metaSignup?.ready) {
+  // La coexistencia (WhatsApp Business del móvil) conecta la cuenta de quien la pulsa: solo en «Mías».
+  if (kind === "whatsapp" && !editingIntegration && metaSignup?.ready && accountsScope === "mine") {
     $("#if-help").textContent = COEXISTENCE_HELP;
     $("#if-fields").innerHTML = `
       <div class="coex-box">
@@ -143,6 +160,10 @@ function renderIntegrationFields(values = {}) {
     return;
   }
   $("#if-submit").hidden = false;
+  if (kind === "whatsapp" && accountsScope === "team" && metaSignup?.ready) {
+    $("#if-help").textContent += " Para conectar el WhatsApp Business del móvil (coexistencia), que lo haga la propia "
+      + "persona desde su sesión, en «Mis cuentas»: se conecta con su móvil.";
+  }
   const isAdvanced = (f) => kind === "email" && EMAIL_ADVANCED.includes(f.key);
   const advanced = all.filter(isAdvanced);
   $("#if-fields").innerHTML = all.filter((f) => !isAdvanced(f)).map(field).join("") + (advanced.length ? `
@@ -153,9 +174,16 @@ function renderIntegrationFields(values = {}) {
   if (kind === "email" && !editingIntegration) applyEmailProvider();
 }
 
+// En las cuentas de una persona concreta, el responsable es ella y no se cambia.
+function presetAccountOwner() {
+  $("#if-owner").disabled = !!accountsOwner;
+  if (accountsOwner) $("#if-owner").value = String(accountsOwner.id);
+}
+
 function resetIntegrationForm() {
   editingIntegration = null;
   $("#integration-form").reset();
+  presetAccountOwner();
   $("#if-kind").disabled = false;
   $("#if-title").textContent = "Conectar una cuenta";
   $("#if-submit").textContent = "Conectar y probar";
@@ -358,10 +386,16 @@ async function connectCoexistence() {
 }
 
 function bindIntegrationEvents() {
-  $("#menu-accounts").addEventListener("click", openAccountsDialog);
+  $("#menu-accounts").addEventListener("click", () => openAccountsDialog());
+  // Al cerrar las cuentas de una persona desde Administración, la tabla de usuarios muestra las nuevas.
+  $("#accounts-dialog").addEventListener("close", () => {
+    if (accountsOwner && $("#admin-dialog").open) loadUsersTable().catch(() => {});
+    accountsOwner = null;
+  });
   $("#if-provider").addEventListener("change", applyEmailProvider);
   document.querySelectorAll("#accounts-scope [data-accounts-scope]").forEach((b) => b.addEventListener("click", async () => {
     accountsScope = b.dataset.accountsScope;
+    accountsOwner = null;
     document.querySelectorAll("#accounts-scope [data-accounts-scope]").forEach((x) => x.classList.toggle("active", x === b));
     resetIntegrationForm();
     await loadIntegrations();

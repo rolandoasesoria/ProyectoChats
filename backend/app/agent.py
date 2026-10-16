@@ -224,9 +224,13 @@ todas) y clientes por estado. Los administradores ven además una tabla por pers
 respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de los que es responsable.
 - Colores de canal (iguales en toda la app): email azul, Telegram naranja, WhatsApp verde agua.
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
-- Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear cuentas, cambiar nombre, email o rol \
-(usuario/administrador), restablecer contraseñas y desactivar cuentas. Una cuenta desactivada no puede entrar pero \
-sus conversaciones se conservan. Pestaña "Registro de accesos": quién ha visto mensajes del equipo (historial \
+- Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear usuarios, cambiar nombre, email o rol \
+(usuario/administrador), restablecer contraseñas y desactivar usuarios. Un usuario desactivado no puede entrar pero \
+sus conversaciones se conservan. Al crear un usuario se abre "Cuentas de …" para conectarle su correo, bot de \
+Telegram o WhatsApp Business (con sus datos de acceso; sus mensajes entran como conversaciones suyas); la columna \
+"Cuentas conectadas" muestra las de cada persona (⚠ si alguna no conecta) y el botón "Cuentas" de cada fila permite \
+verlas, añadir o quitar. El WhatsApp Business del móvil (coexistencia) lo conecta la propia persona desde su sesión, \
+porque se hace con su móvil. Pestaña "Registro de accesos": quién ha visto mensajes del equipo (historial \
 de un cliente con conversaciones de compañeros, bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
 exportado, borrado o unido clientes o cambiado cuentas; filtrable por persona y acción. Las consultas repetidas \
 en 10 minutos cuentan como una. Pestaña "Ajustes": el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168) y la casilla "Analizar con IA a cada cliente cuando le llegan mensajes" (activada por \

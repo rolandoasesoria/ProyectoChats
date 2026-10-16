@@ -181,8 +181,21 @@ async function loadAudit() {
     </tr>`).join("") : `<tr><td colspan="5" class="muted">Sin registros.</td></tr>`;
 }
 
+// Cuentas conectadas de una persona, como fichas («⚠» si alguna no conecta; atenuada si está en pausa).
+function userAccountsHtml(accounts) {
+  if (!accounts.length) return `<span class="muted small">Ninguna</span>`;
+  return accounts.map((a) => {
+    const status = a.last_error ? `No conecta: ${a.last_error}` : a.enabled ? "Conectada" : "En pausa";
+    return `<span class="acct-chip ${escapeHtml(a.kind)}${a.last_error ? " error" : ""}${a.enabled ? "" : " paused"}"
+      title="${escapeHtml(status)}">${a.last_error ? "⚠ " : ""}${escapeHtml(KIND_LABELS[a.kind] || a.kind)} · ${escapeHtml(a.name)}</span>`;
+  }).join("");
+}
+
 async function loadUsersTable() {
-  const users = await api("/api/admin/users");
+  const [users, accounts] = await Promise.all([
+    api("/api/admin/users"),
+    api("/api/admin/integrations").then((r) => r.items).catch(() => []),
+  ]);
   $("#users-tbody").innerHTML = users.map((u) => `
     <tr class="${u.active ? "" : "inactive"}">
       <td>${escapeHtml(u.username || "—")}</td>
@@ -190,8 +203,10 @@ async function loadUsersTable() {
       <td>${escapeHtml(u.email || "")}</td>
       <td>${u.role === "admin" ? "Administrador" : "Usuario"}</td>
       <td>${u.active ? "Activo" : "Desactivado"}</td>
+      <td><div class="user-accounts">${userAccountsHtml(accounts.filter((a) => a.owner_user_id === u.id))}</div></td>
       <td class="row-actions">
         <button class="link" data-edit="${u.id}">Editar</button>
+        <button class="link" data-accounts="${u.id}" title="Ver, añadir o quitar sus cuentas conectadas">Cuentas</button>
         ${u.id === currentUser.id ? "" : `<button class="link" data-toggle="${u.id}" data-active="${u.active}">${u.active ? "Desactivar" : "Activar"}</button>`}
       </td>
     </tr>`).join("");
@@ -201,8 +216,9 @@ async function loadUsersTable() {
 function resetUserForm() {
   editingUserId = null;
   $("#user-form").reset();
-  $("#user-form-title").textContent = "Nueva cuenta";
-  $("#uf-submit").textContent = "Crear cuenta";
+  $("#user-form-title").textContent = "Nuevo usuario";
+  $("#uf-submit").textContent = "Crear usuario";
+  $("#uf-accounts-hint").hidden = false;
   $("#uf-username").disabled = false;
   $("#uf-password").required = true;
   $("#uf-password-hint").textContent = "(mínimo 8)";
@@ -226,6 +242,7 @@ function startEditUser(id) {
   $("#uf-password").required = false;
   $("#uf-password-hint").textContent = "(déjala vacía para no cambiarla)";
   $("#uf-cancel").hidden = false;
+  $("#uf-accounts-hint").hidden = true;
   showError($("#uf-error"), "");
   $("#uf-name").focus();
 }
@@ -238,13 +255,14 @@ async function submitUserForm(e) {
     role: $("#uf-role").value,
   };
   const password = $("#uf-password").value;
+  let created = null;
   try {
     if (editingUserId) {
       if (password) body.password = password;
       if (editingUserId === currentUser.id) delete body.role;
       await api(`/api/admin/users/${editingUserId}`, { method: "PATCH", body: JSON.stringify(body) });
     } else {
-      await api("/api/admin/users", {
+      created = await api("/api/admin/users", {
         method: "POST",
         body: JSON.stringify({ ...body, username: $("#uf-username").value.trim(), password }),
       });
@@ -252,6 +270,8 @@ async function submitUserForm(e) {
     $("#uf-role").disabled = false;
     resetUserForm();
     await loadUsersTable();
+    // Recién creado: directamente a conectar sus cuentas (correo, WhatsApp, Telegram).
+    if (created) await openAccountsDialog({ id: created.id, name: created.name });
   } catch (err) {
     showError($("#uf-error"), err.message);
   }
@@ -295,7 +315,12 @@ function bindAccountEvents() {
   $("#users-tbody").addEventListener("click", (e) => {
     const edit = e.target.closest("[data-edit]");
     const toggle = e.target.closest("[data-toggle]");
+    const accounts = e.target.closest("[data-accounts]");
     if (edit) startEditUser(Number(edit.dataset.edit));
+    if (accounts) {
+      const user = JSON.parse($("#users-tbody").dataset.users).find((u) => u.id === Number(accounts.dataset.accounts));
+      if (user) openAccountsDialog({ id: user.id, name: user.name });
+    }
     if (toggle) toggleUserActive(Number(toggle.dataset.toggle), toggle.dataset.active === "1");
   });
   document.querySelectorAll("dialog [data-close]").forEach((btn) =>
