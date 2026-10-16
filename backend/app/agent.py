@@ -179,7 +179,7 @@ un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba del todo, el logo \
 o las iniciales de la empresa, que abren el menú de la empresa; debajo las secciones "Mis Chats", "Contactos", \
-"Plantillas", "IA" y "Panel de actividad"; abajo "Respuestas guardadas". Al entrar se abre la última sección usada.
+"Plantillas", "Respuestas con IA" y "Panel de actividad"; abajo "Respuestas guardadas". Al entrar se abre la última sección usada.
 - Menú de la empresa (logo o iniciales arriba de la barra lateral, o el nombre de la empresa en la ruta de \
 navegación): "Mis cuentas" (correo, WhatsApp y Telegram) para todos; y, solo administradores, "Datos de la empresa" \
 (nombre y logo: PNG, JPG o WebP de hasta 256 KB, que sustituye a las iniciales), "Usuarios del equipo", "Ajustes", \
@@ -220,7 +220,7 @@ actualiza sola cada 20 segundos.
 "Cambiar contraseña" y "Cerrar sesión".
 - Campana (arriba a la derecha): avisos de menciones en notas, de tareas que otra persona te asigna y de cuentas \
 conectadas que han dejado de funcionar (al pulsarlo se abre "Mis cuentas"). El número rojo son los no leídos; al pulsar un aviso se abre el cliente (en Notas o Tareas). "Marcar todo como leído" los limpia.
-- Sección "Panel de actividad" (barra lateral, debajo de "IA"). Periodo de 7, 30, 90 días o 1 año. \
+- Sección "Panel de actividad" (barra lateral, debajo de "Respuestas con IA"). Periodo de 7, 30, 90 días o 1 año. \
 Muestra mensajes recibidos y enviados, clientes con actividad, la mediana del tiempo de primera respuesta (desde el \
 primer mensaje del cliente sin contestar hasta la respuesta del equipo), el porcentaje respondido dentro del plazo de \nrespuesta, tareas abiertas y vencidas, mensajes \
 recibidos por semana y canal (al pasar el ratón por una columna se ven las cifras; "Ver como tabla" las muestra \
@@ -244,7 +244,8 @@ app WhatsApp Business (no la normal) actualizada; los grupos no se sincronizan y
 permite mensajes temporales ni de "ver una vez". Si se desconecta desde el móvil, la cuenta se pausa y llega un aviso \
 a la campana. Un WhatsApp personal (no Business) no se puede conectar. La conexión con token y app secret sigue \
 disponible en "Conexión manual".
-- Sección "IA" (barra lateral; la configura un administrador): la IA que responde a los clientes por WhatsApp con \
+- Sección "Respuestas con IA" (barra lateral; la configura un administrador; los demás la ven bloqueada, con un \
+aviso de que solo un administrador puede cambiarla): la IA que responde a los clientes por WhatsApp con \
 las "Instrucciones" del negocio (quiénes sois, servicios, precios que se pueden dar, horario, preguntas frecuentes, \
 tono, lo que no debe hacer). "Activada" la enciende (sin instrucciones no se puede). Modo "Supervisada" (por \
 defecto): en el chat aparece "🤖 La IA propone esta respuesta"; se puede editar y "Enviar" o "Descartar", y avisa \

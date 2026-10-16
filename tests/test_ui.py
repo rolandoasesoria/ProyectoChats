@@ -222,6 +222,9 @@ try:
     b.wait("document.querySelector('#ai-test-result .form-error') !== null")
     check("IA: probarla sin clave de Claude lo explica",
           "ANTHROPIC_API_KEY" in b.js("document.querySelector('#ai-test-result').textContent"))
+    check("IA: un administrador puede editarla (sin aviso de solo lectura)",
+          b.js("document.querySelector('#ai-readonly').hidden && !document.querySelector('#ai-instructions').disabled"
+               " && !document.querySelector('#ai-save').disabled"))
     b.shot("04g-ia")
     b.js("document.querySelector('#ai-enabled').click()")
     b.wait("fetch('/api/ai-reply/settings').then((r) => r.json()).then((s) => !s.enabled)")
@@ -714,7 +717,7 @@ try:
     b.js("showView('templates')")
     check("ruta en Plantillas", crumbs() == ["Asesoría Ocaña", "Plantillas de WhatsApp"], crumbs())
     b.js("showView('ai')")
-    check("ruta en IA", crumbs() == ["Asesoría Ocaña", "IA que responde"], crumbs())
+    check("ruta en IA", crumbs() == ["Asesoría Ocaña", "Respuestas con IA"], crumbs())
     b.js("showView('dashboard')")
     check("ruta en el Panel de actividad", crumbs() == ["Asesoría Ocaña", "Panel de actividad"], crumbs())
     b.click('#breadcrumb [data-crumb="company"]')

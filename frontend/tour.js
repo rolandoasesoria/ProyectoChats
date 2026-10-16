@@ -9,7 +9,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 37;
+const TOUR_VERSION = 38;
 
 const TOUR_STEPS = [
   {
@@ -42,7 +42,7 @@ const TOUR_STEPS = [
   },
   {
     target: "#nav-ai",
-    title: "IA que responde",
+    title: "Respuestas con IA",
     text: "Una IA que contesta a tus clientes por WhatsApp con las instrucciones de tu negocio: en modo supervisado te propone la respuesta en el chat y tú la envías; en automático la envía sola. Si el cliente pide una persona o pregunta algo que no sabe, te avisa. Puedes pausarla en cada chat.",
   },
   {
@@ -83,7 +83,7 @@ const TOUR_STEPS = [
   {
     target: ".sidebar",
     title: "Barra lateral",
-    text: "Arriba, tu empresa (su logo o sus iniciales). Debajo, tus secciones: Mis Chats, Contactos, Plantillas, IA y Panel de actividad. Abajo, Respuestas guardadas. Pasa el ratón por cada icono para ver su nombre. Arriba de cada sección, la ruta (Empresa › Sección › lo que tienes abierto) te dice dónde estás; pulsa la sección para volver a su lista.",
+    text: "Arriba, tu empresa (su logo o sus iniciales). Debajo, tus secciones: Mis Chats, Contactos, Plantillas, Respuestas con IA y Panel de actividad. Abajo, Respuestas guardadas. Pasa el ratón por cada icono para ver su nombre. Arriba de cada sección, la ruta (Empresa › Sección › lo que tienes abierto) te dice dónde estás; pulsa la sección para volver a su lista.",
   },
   {
     target: "#nav-dashboard",
