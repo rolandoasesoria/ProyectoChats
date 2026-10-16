@@ -346,7 +346,7 @@ async function showSourceMessage(messageId) {
   state.scope = "team";
   $("#only-mine").checked = false;
   state.channel = "";
-  $("#channel-filter").value = "";
+  setActiveChannelTab($("#channel-tabs"), "");
   await loadTimeline();
   const li = document.querySelector(`#timeline li[data-id="${messageId}"]`);
   if (li) {
