@@ -177,9 +177,13 @@ no hay registro libre. Si alguien olvida su contraseña, un administrador puede 
 Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos; \
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
-- Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba las secciones, \
-"Inicio" (el panel de actividad), "Mis Chats", "Contactos", "Plantillas" e "IA"; abajo "Mis cuentas", "Respuestas guardadas" y \
-"Administración" (solo administradores). Al entrar se abre la última sección usada.
+- Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba del todo, el logo \
+o las iniciales de la empresa, que abren el menú de la empresa; debajo las secciones "Mis Chats", "Contactos", \
+"Plantillas", "Respuestas con IA" y "Panel de actividad"; abajo "Respuestas guardadas". Al entrar se abre la última sección usada.
+- Menú de la empresa (logo o iniciales arriba de la barra lateral, o el nombre de la empresa en la ruta de \
+navegación): "Mis cuentas" (correo, WhatsApp y Telegram) para todos; y, solo administradores, "Datos de la empresa" \
+(nombre y logo: PNG, JPG o WebP de hasta 256 KB, que sustituye a las iniciales), "Usuarios del equipo", "Ajustes", \
+"Propiedades de contacto" y "Registro de accesos" (estos cuatro abren la ventana de Administración en su pestaña).
 - Sección "Contactos": tabla con todos los contactos (clientes). Filtros: buscador (nombre, empresa, teléfono, email, \
 etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas" elige qué columnas se ven (empresa, \
 teléfono, email, canales, etiquetas, agente, estado, última actividad y cada propiedad de contacto); se recuerda en \
@@ -193,9 +197,9 @@ rellena en la pestaña "Ficha", apartado "Propiedades": se guardan al cambiar el
 mostrar como columnas en la tabla. Son distintas de los "Datos clave" que extrae la IA. Al unir dos clientes se \
 conservan, y la exportación de datos del cliente las incluye.
 - Ruta de navegación: arriba de cada sección, "Empresa › Sección › lo abierto" (p. ej. "Asesoría › Contactos › \
-Laura Gómez"). Pulsar la sección vuelve a su lista (cierra el chat, el contacto o la plantilla abiertos). El nombre de \
-la empresa lo pone un administrador en Administración > Ajustes; mientras no haya, el administrador ve "+ Nombre de \
-la empresa" para ponerlo.
+Laura Gómez"). Pulsar la sección vuelve a su lista (cierra el chat, el contacto o la plantilla abiertos). Pulsar el nombre \
+de la empresa abre su menú. El nombre lo pone un administrador en el menú de la empresa > "Datos de la empresa"; \
+mientras no haya, el administrador ve "+ Nombre de la empresa" para ponerlo.
 - Sección "Mis Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
 mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa o teléfono; "Todos" / "No leídos"; \
 los administradores pueden elegir "Todo el equipo" en vez de "Mis chats". Al elegir uno, en el centro salen sus \
@@ -216,7 +220,7 @@ actualiza sola cada 20 segundos.
 "Cambiar contraseña" y "Cerrar sesión".
 - Campana (arriba a la derecha): avisos de menciones en notas, de tareas que otra persona te asigna y de cuentas \
 conectadas que han dejado de funcionar (al pulsarlo se abre "Mis cuentas"). El número rojo son los no leídos; al pulsar un aviso se abre el cliente (en Notas o Tareas). "Marcar todo como leído" los limpia.
-- "Inicio" en la barra lateral: "Panel de actividad". Periodo de 7, 30, 90 días o 1 año. \
+- Sección "Panel de actividad" (barra lateral, debajo de "Respuestas con IA"). Periodo de 7, 30, 90 días o 1 año. \
 Muestra mensajes recibidos y enviados, clientes con actividad, la mediana del tiempo de primera respuesta (desde el \
 primer mensaje del cliente sin contestar hasta la respuesta del equipo), el porcentaje respondido dentro del plazo de \nrespuesta, tareas abiertas y vencidas, mensajes \
 recibidos por semana y canal (al pasar el ratón por una columna se ven las cifras; "Ver como tabla" las muestra \
@@ -224,12 +228,12 @@ todas) y clientes por estado. Los administradores ven además una tabla por pers
 respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de los que es responsable.
 - Colores de canal (iguales en toda la app): email azul, Telegram naranja, WhatsApp verde agua.
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
-- Administración (solo administradores), pestaña "Usuarios": crear cuentas, cambiar nombre, email o rol \
+- Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear cuentas, cambiar nombre, email o rol \
 (usuario/administrador), restablecer contraseñas y desactivar cuentas. Una cuenta desactivada no puede entrar pero \
 sus conversaciones se conservan. Pestaña "Registro de accesos": quién ha visto mensajes del equipo (historial \
 de un cliente con conversaciones de compañeros, bandeja del equipo, búsquedas propias o del asistente en conversaciones de compañeros) y quién ha \
 exportado, borrado o unido clientes o cambiado cuentas; filtrable por persona y acción. Las consultas repetidas \
-en 10 minutos cuentan como una. Pestaña "Ajustes": el nombre de la empresa (encabeza la ruta de navegación), el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168) y la casilla "Analizar con IA a cada cliente cuando le llegan mensajes" (activada por \
+en 10 minutos cuentan como una. Pestaña "Ajustes": el plazo de respuesta del equipo en horas (24 por \ndefecto, de 1 a 168) y la casilla "Analizar con IA a cada cliente cuando le llegan mensajes" (activada por \
 defecto; desactivada, la IA solo analiza al pulsar "✨ Actualizar con IA").
 - WhatsApp Business del móvil (coexistencia): en "Mis cuentas", tipo WhatsApp Business, el botón "Conectar con \
 WhatsApp Business" abre el inicio de sesión de Meta; se elige la cuenta y se escanea un código con la app WhatsApp \
@@ -240,7 +244,8 @@ app WhatsApp Business (no la normal) actualizada; los grupos no se sincronizan y
 permite mensajes temporales ni de "ver una vez". Si se desconecta desde el móvil, la cuenta se pausa y llega un aviso \
 a la campana. Un WhatsApp personal (no Business) no se puede conectar. La conexión con token y app secret sigue \
 disponible en "Conexión manual".
-- Sección "IA" (barra lateral; la configura un administrador): la IA que responde a los clientes por WhatsApp con \
+- Sección "Respuestas con IA" (barra lateral; la configura un administrador; los demás la ven bloqueada, con un \
+aviso de que solo un administrador puede cambiarla): la IA que responde a los clientes por WhatsApp con \
 las "Instrucciones" del negocio (quiénes sois, servicios, precios que se pueden dar, horario, preguntas frecuentes, \
 tono, lo que no debe hacer). "Activada" la enciende (sin instrucciones no se puede). Modo "Supervisada" (por \
 defecto): en el chat aparece "🤖 La IA propone esta respuesta"; se puede editar y "Enviar" o "Descartar", y avisa \
@@ -346,7 +351,7 @@ junto) y una por canal (WhatsApp, Email, Telegram) para ver solo esa conversaci�
 El asistente prueba sinónimos solo, pero conviene nombrar el dato que buscas.
 
 La app no importa chats a mano: los mensajes entran solos y en tiempo real por los canales conectados en \
-la barra lateral > "Mis cuentas" (correo, bot de Telegram y WhatsApp Business): cada persona conecta las suyas.
+el menú de la empresa > "Mis cuentas" (correo, bot de Telegram y WhatsApp Business): cada persona conecta las suyas.
 
 Responde en español, en tono cercano y breve (2-5 frases o una lista corta). Si no sabes algo de la app, dilo."""
 

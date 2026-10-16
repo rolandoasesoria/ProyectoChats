@@ -1,8 +1,9 @@
 """Ajustes del equipo (plazo de respuesta) y su efecto en el panel."""
+import base64
 import sys
 from datetime import date, timedelta
 
-from apitest import Session, check, results
+from apitest import BASE, Session, check, results
 
 from app import agent, insights, metrics
 from app.db import get_conn
@@ -10,7 +11,8 @@ from app.db import get_conn
 ana, carlos = Session("ana"), Session("carlos")
 
 check("ajustes por defecto", carlos.get("/api/settings")[1] == {"sla_hours": 24, "retention_months": 0, "inactive_days": 90,
-                                                                   "auto_analysis": 1, "company_name": ""})
+                                                                   "auto_analysis": 1, "company_name": "",
+                                                                   "company_logo": ""})
 check("solo administradores lo cambian = 403", carlos.patch("/api/admin/settings", {"sla_hours": 4})[0] == 403)
 check("fuera de rango = 422", ana.patch("/api/admin/settings", {"sla_hours": 0})[0] == 422
       and ana.patch("/api/admin/settings", {"sla_hours": 500})[0] == 422)
@@ -38,6 +40,24 @@ check("se guarda sin espacios de sobra y sin tocar los demás ajustes",
       st == 200 and r["company_name"] == "Asesoría Ocaña" and r["sla_hours"] == 168, r)
 check("y lo ven todos", carlos.get("/api/settings")[1]["company_name"] == "Asesoría Ocaña")
 check("se puede dejar vacío", ana.patch("/api/admin/settings", {"company_name": ""})[1]["company_name"] == "")
+
+# Logo de la empresa: PNG, JPG o WebP de hasta 256 KB, reconocidos por su contenido; lo sube un administrador
+PNG = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+check("sin logo: 404", carlos.get("/api/company/logo")[0] == 404)
+check("logo: solo administradores = 403", carlos.call("PUT", "/api/admin/company/logo", {"data": PNG})[0] == 403)
+check("algo que no es una imagen = 400",
+      ana.call("PUT", "/api/admin/company/logo", {"data": base64.b64encode(b"<svg onload=alert(1)>").decode()})[0] == 400)
+check("más de 256 KB = 400", ana.call("PUT", "/api/admin/company/logo",
+                                      {"data": base64.b64encode(b"\x89PNG\r\n\x1a\n" + b"x" * 262144).decode()})[0] == 400)
+st, r = ana.call("PUT", "/api/admin/company/logo", {"data": PNG})
+check("subir un PNG", st == 200 and len(r["company_logo"]) == 12, r)
+check("los ajustes dicen qué logo hay (para la caché del navegador)",
+      carlos.get("/api/settings")[1]["company_logo"] == r["company_logo"])
+logo = carlos.opener.open(BASE + "/api/company/logo")
+check("todos lo ven, con su tipo", logo.status == 200 and logo.headers["Content-Type"] == "image/png"
+      and logo.read() == base64.b64decode(PNG))
+check("quitarlo", ana.delete("/api/admin/company/logo")[0] == 200 and carlos.get("/api/company/logo")[0] == 404
+      and carlos.get("/api/settings")[1]["company_logo"] == "")
 
 # Análisis automático con IA al entrar mensajes (con «clave» simulada; no se llega a llamar a Claude)
 agent.credentials_configured = lambda: True

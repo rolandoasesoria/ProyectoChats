@@ -484,6 +484,7 @@ function bindEvents() {
   bindIntegrationEvents();
   bindChatsEvents();
   bindBreadcrumbEvents();
+  bindCompanyEvents();
   bindContactsEvents();
   bindTemplatesEvents();
   bindAIEvents();

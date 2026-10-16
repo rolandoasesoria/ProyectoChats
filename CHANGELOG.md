@@ -6,6 +6,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Menú de la empresa**: arriba de la barra lateral, el logo o las iniciales de la empresa (en lugar de la casita)
+  abren su menú: Mis cuentas y, para administradores, Datos de la empresa (nombre y logo PNG/JPG/WebP de hasta
+  256 KB), Usuarios del equipo, Ajustes, Propiedades de contacto y Registro de accesos. El nombre de la empresa en la
+  ruta de navegación abre el mismo menú.
 - Ruta de navegación sobre cada sección: «Empresa › Sección › lo abierto» (chat, contacto o plantilla); pulsar la
   sección vuelve a su lista.
 - Administración → Ajustes: **nombre de la empresa**, que encabeza la ruta de navegación.
@@ -87,6 +91,11 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- La sección «IA que responde» pasa a llamarse **«Respuestas con IA»**; a quien no es administrador le avisa
+  claramente, arriba, de que solo un administrador puede cambiarla.
+- El **Panel de actividad** pasa a ser una sección de la barra lateral (debajo de «Respuestas con IA») en vez de una
+  ventana. «Mis cuentas» y «Administración» dejan la barra lateral y pasan al menú de la empresa; el nombre de la
+  empresa se cambia en «Datos de la empresa» (ya no en Ajustes).
 - La sección «Chats» pasa a llamarse **«Mis Chats»**.
 - Código reorganizado sin cambiar el comportamiento: la recepción de WhatsApp en `whatsapp.py`; la bandeja y el
   alta de mensajes fuera de `search.py` (`inbox.py`, `conversations.py`); un único acceso a la API de Meta, a la

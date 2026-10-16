@@ -127,7 +127,7 @@ async function loadSettings() {
   try {
     const s = await api("/api/settings");
     slaHours = s.sla_hours;
-    setCompanyName(s.company_name);
+    setCompany(s);
   } catch { /* se queda el plazo por defecto */ }
 }
 

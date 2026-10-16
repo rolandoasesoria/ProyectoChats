@@ -1,13 +1,6 @@
 // Ruta de navegación sobre las tarjetas: «Empresa › Sección › lo que está abierto» (un chat, un contacto, una
-// plantilla). La sección se puede pulsar para volver a su lista. El nombre de la empresa lo pone un administrador
-// en Administración → Ajustes; mientras no lo haya, un administrador ve el enlace para ponerlo.
-
-let companyName = "";
-
-function setCompanyName(name) {
-  companyName = name || "";
-  updateBreadcrumb();
-}
+// plantilla). La empresa abre su menú y la sección vuelve a su lista. El nombre de la empresa lo pone un
+// administrador en «Datos de la empresa» (company.js); mientras no lo haya, un administrador ve el enlace para ponerlo.
 
 function currentView() {
   return Object.keys(VIEWS).find((v) => !$(VIEWS[v]).hidden) || null;
@@ -27,7 +20,8 @@ function breadcrumbParts(view) {
     const open = tplState.selected?.name || (!$("#tpl-form").hidden ? "Nueva plantilla" : null);
     return ["Plantillas de WhatsApp", open ? closeTemplate : null, open];
   }
-  if (view === "ai") return ["IA que responde", null, null];
+  if (view === "ai") return ["Respuestas con IA", null, null];
+  if (view === "dashboard") return ["Panel de actividad", null, null];
   return [null, null, null];
 }
 
@@ -41,10 +35,12 @@ function updateBreadcrumb() {
   }
   nav.hidden = false;
   const crumbs = [];
-  if (companyName) crumbs.push(`<span class="crumb company">${escapeHtml(companyName)}</span>`);
-  else if (currentUser?.role === "admin") {
-    crumbs.push(`<button type="button" class="crumb link-crumb muted" data-crumb="company"
-      title="Administración → Ajustes">+ Nombre de la empresa</button>`);
+  if (companyName) {
+    crumbs.push(`<button type="button" class="crumb link-crumb company" data-crumb="company"
+      title="Menú de la empresa">${escapeHtml(companyName)}</button>`);
+  } else if (currentUser?.role === "admin") {
+    crumbs.push(`<button type="button" class="crumb link-crumb muted" data-crumb="company-setup"
+      title="Datos de la empresa">+ Nombre de la empresa</button>`);
   }
   crumbs.push(back
     ? `<button type="button" class="crumb link-crumb" data-crumb="section">${escapeHtml(section)}</button>`
@@ -59,6 +55,10 @@ function bindBreadcrumbEvents() {
     const crumb = e.target.closest("[data-crumb]");
     if (!crumb) return;
     if (crumb.dataset.crumb === "section") $("#breadcrumb")._back?.();
-    if (crumb.dataset.crumb === "company") openAdminDialog().then(() => showAdminTab("settings"));
+    if (crumb.dataset.crumb === "company-setup") openCompanyDialog();
+    if (crumb.dataset.crumb === "company") {
+      e.stopPropagation(); // si no, el clic fuera del menú lo cerraría al momento
+      toggleCompanyMenu(true);
+    }
   });
 }

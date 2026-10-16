@@ -187,21 +187,15 @@ async function loadDashboard() {
   }
 }
 
-async function openDashboard() {
-  $("#dashboard-dialog").showModal();
-  try {
-    await loadDashboard();
-  } catch (err) {
-    alert(err.message);
-  }
+// El panel es una sección de la barra lateral (ver VIEWS en chats.js).
+function openDashboard() {
+  showView("dashboard");
 }
 
 function bindDashboardEvents() {
-  $("#dashboard-btn").addEventListener("click", openDashboard);
   document.querySelectorAll("#dash-range [data-days]").forEach((b) => b.addEventListener("click", () => {
     dashDays = Number(b.dataset.days);
     document.querySelectorAll("#dash-range [data-days]").forEach((x) => x.classList.toggle("active", x === b));
     loadDashboard();
   }));
-  $("#dashboard-dialog").addEventListener("close", hideTooltip);
 }

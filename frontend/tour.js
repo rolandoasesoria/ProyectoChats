@@ -9,7 +9,7 @@
 //              view?: vista que se abre para enseñarlo: "chats", "contacts" o "client" (la ficha) }.
 // Los pasos cuyo elemento no esté visible (p. ej. en pantallas pequeñas) se saltan solos.
 
-const TOUR_VERSION = 36;
+const TOUR_VERSION = 38;
 
 const TOUR_STEPS = [
   {
@@ -42,7 +42,7 @@ const TOUR_STEPS = [
   },
   {
     target: "#nav-ai",
-    title: "IA que responde",
+    title: "Respuestas con IA",
     text: "Una IA que contesta a tus clientes por WhatsApp con las instrucciones de tu negocio: en modo supervisado te propone la respuesta en el chat y tú la envías; en automático la envía sola. Si el cliente pide una persona o pregunta algo que no sabe, te avisa. Puedes pausarla en cada chat.",
   },
   {
@@ -83,11 +83,11 @@ const TOUR_STEPS = [
   {
     target: ".sidebar",
     title: "Barra lateral",
-    text: "Tus secciones: Inicio (el panel de actividad), Mis Chats, Contactos, Plantillas e IA. Abajo: Mis cuentas, Respuestas guardadas y, si eres administrador, Administración. Pasa el ratón por cada icono para ver su nombre. Arriba de cada sección, la ruta (Empresa › Sección › lo que tienes abierto) te dice dónde estás; pulsa la sección para volver a su lista.",
+    text: "Arriba, tu empresa (su logo o sus iniciales). Debajo, tus secciones: Mis Chats, Contactos, Plantillas, Respuestas con IA y Panel de actividad. Abajo, Respuestas guardadas. Pasa el ratón por cada icono para ver su nombre. Arriba de cada sección, la ruta (Empresa › Sección › lo que tienes abierto) te dice dónde estás; pulsa la sección para volver a su lista.",
   },
   {
-    target: "#dashboard-btn",
-    title: "Inicio: el panel",
+    target: "#nav-dashboard",
+    title: "Panel de actividad",
     text: "Mensajes, tiempo de respuesta y cuántas se responden en plazo, tareas y clientes por estado en el periodo que elijas.",
   },
   {
@@ -96,9 +96,9 @@ const TOUR_STEPS = [
     text: "Te avisa cuando te mencionan en una nota, te asignan una tarea o una de tus cuentas conectadas deja de funcionar (por ejemplo, un token caducado).",
   },
   {
-    target: "#menu-accounts",
-    title: "Mis cuentas",
-    text: "Conecta tu correo, tu bot de Telegram o el WhatsApp Business de tu móvil (sigue funcionando en el móvil) para que tus mensajes entren solos, y crea las plantillas de WhatsApp. Debajo, tus respuestas guardadas.",
+    target: "#company-btn",
+    title: "Tu empresa",
+    text: "Su menú tiene «Mis cuentas»: conecta tu correo, tu bot de Telegram o el WhatsApp Business de tu móvil (sigue funcionando en el móvil) para que tus mensajes entren solos, y crea las plantillas de WhatsApp.",
   },
   {
     target: "#user-menu-btn",
@@ -106,9 +106,9 @@ const TOUR_STEPS = [
     text: "Tu contraseña, este tutorial y cerrar sesión. El botón de al lado cambia el tema.",
   },
   {
-    target: "#menu-admin",
+    target: "#company-btn",
     title: "Administración",
-    text: "Aquí gestionas los usuarios y consultas el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta y si la IA analiza sola a los clientes. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
+    text: "En el menú de la empresa tienes también «Datos de la empresa» (nombre y logo), «Usuarios del equipo», «Ajustes», «Propiedades de contacto» y el «Registro de accesos»; en «Mis cuentas» ves también las de todo el equipo. En «Ajustes» fijas el plazo de respuesta y si la IA analiza sola a los clientes. Desde ✎ en cada cliente puedes exportar o borrar sus datos y ocultar IBAN o DNI de sus mensajes.",
     when: () => currentUser?.role === "admin",
   },
   {

@@ -1,4 +1,4 @@
-// IA que responde por WhatsApp: la sección «IA» (configuración y «Probar la IA») y, en cada chat, el interruptor para
+// IA que responde por WhatsApp: la sección «Respuestas con IA» (configuración y «Probar la IA») y, en cada chat, el interruptor para
 // pausarla en esa conversación y la propuesta de respuesta del modo supervisado.
 
 const AI_DAYS = [[1, "L"], [2, "M"], [3, "X"], [4, "J"], [5, "V"], [6, "S"], [7, "D"]];
