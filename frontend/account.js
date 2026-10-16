@@ -288,6 +288,30 @@ async function toggleUserActive(id, active) {
 
 /* ---------- Eventos ---------- */
 
+/* ---------- Ventanas (diálogos) ---------- */
+
+// La ventana abierta cuyo fondo oscuro se ha pulsado (fuera de la caja), o null. En una ventana modal, el clic en el
+// fondo llega a la propia <dialog>, igual que en su margen interior: se distingue por la posición.
+function backdropDialog(e) {
+  const dialog = e.target;
+  if (dialog?.tagName !== "DIALOG" || !dialog.open) return null;
+  const r = dialog.getBoundingClientRect();
+  const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  return inside ? null : dialog;
+}
+
+// Clic fuera de una ventana la cierra, como Esc. Solo si el clic empezó también fuera: así no se cierra al
+// seleccionar texto dentro y soltar el ratón fuera.
+function bindDialogBackdrops() {
+  let pressed = null;
+  document.addEventListener("pointerdown", (e) => { pressed = backdropDialog(e); });
+  document.addEventListener("click", (e) => {
+    const dialog = backdropDialog(e);
+    if (dialog && dialog === pressed) dialog.close();
+    pressed = null;
+  });
+}
+
 function bindAccountEvents() {
   $("#theme-toggle").addEventListener("click", toggleTheme);
   window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateThemeButton);
@@ -325,4 +349,5 @@ function bindAccountEvents() {
   });
   document.querySelectorAll("dialog [data-close]").forEach((btn) =>
     btn.addEventListener("click", () => btn.closest("dialog").close()));
+  bindDialogBackdrops();
 }

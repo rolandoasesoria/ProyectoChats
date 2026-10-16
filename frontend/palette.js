@@ -200,7 +200,4 @@ function bindPaletteEvents() {
     const li = e.target.closest("li[data-i]");
     if (li) runPaletteItem(Number(li.dataset.i));
   });
-  $("#palette-dialog").addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) e.currentTarget.close(); // clic fuera de la caja
-  });
 }
