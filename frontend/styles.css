@@ -1251,3 +1251,20 @@ body { background: var(--canvas); }
 .chat-composer #draft-rewrite { max-width: 120px; }
 .chat-composer #draft-followup { max-width: 160px; }
 #tab-profile > .section-title:not(:first-child), #tab-profile > .docs-title { margin-top: 18px; }
+
+/* Administración → Usuarios: sus cuentas conectadas */
+.dialog.admin-dialog { width: min(1080px, calc(100vw - 32px)); }
+.user-accounts { display: flex; flex-wrap: wrap; gap: 4px; max-width: 300px; }
+#users-tbody .row-actions { white-space: nowrap; }
+.acct-chip {
+  --c: var(--other);
+  display: inline-flex; align-items: center; gap: 5px; font-size: 12px; line-height: 20px; padding: 0 8px;
+  border: 1px solid var(--border); border-radius: 999px; white-space: nowrap; max-width: 100%; overflow: hidden;
+  text-overflow: ellipsis;
+}
+.acct-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex-shrink: 0; }
+.acct-chip.email { --c: var(--email); }
+.acct-chip.whatsapp { --c: var(--whatsapp); }
+.acct-chip.telegram { --c: var(--telegram); }
+.acct-chip.error { color: var(--danger-text); border-color: var(--danger-text); }
+.acct-chip.paused { opacity: .55; }
