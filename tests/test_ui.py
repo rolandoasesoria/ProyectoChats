@@ -55,6 +55,15 @@ try:
     b.wait("!document.querySelector('#chat-open').hidden && document.querySelectorAll('#chat-timeline .msg-row').length > 0")
     check("chats: pestañas por canal", b.js("document.querySelectorAll('#chat-tabs [data-channel]').length") >= 1)
     check("chats: detalles del contacto", b.js("!document.querySelector('#chat-details').hidden"))
+    cw = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().width)")  # noqa: E731
+    list_w, det_w = cw(".chats-pane"), cw("#chat-details")
+    b.js("document.querySelector('#view-chats > .resizer[data-zone=\"list\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
+    b.js("document.querySelector('#view-chats > .resizer[data-zone=\"details\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowLeft'}))")
+    check("chats: las columnas se ensanchan con sus separadores",
+          (cw(".chats-pane"), cw("#chat-details")) == (list_w + 16, det_w + 16), (list_w, det_w, cw(".chats-pane"), cw("#chat-details")))
+    for zone in ("list", "details"):
+        b.js(f"document.querySelector('#view-chats > .resizer[data-zone=\"{zone}\"]').dispatchEvent(new MouseEvent('dblclick'))")
+    check("chats: doble clic vuelve al ancho inicial", (cw(".chats-pane"), cw("#chat-details")) == (list_w, det_w))
     b.click('#chat-details-tabs [data-pane="assistant"]')
     b.wait("!document.querySelector('#chat-assistant').hidden && chatState.assistantFor === chatState.clientId")
     check("chats: pestaña del asistente IA del contacto",
@@ -119,6 +128,18 @@ try:
     check("contactos: filtro por canal (Telegram)", True)
     b.js("{ const s = document.querySelector('#contacts-channel'); s.value = ''; s.dispatchEvent(new Event('change')); }")
     b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
+    # Un contacto con cinco emails (como los que deja el spam de varias direcciones de una misma empresa)
+    b.js("api('/api/contacts').then((cs) => { cs[0].emails = ['ventas@kinzeno.es', 'info@kinzeno.es', 'pagos@kinzeno.es',"
+         " 'soporte@kinzeno.es', 'direccion.general.y.administracion@kinzeno.es']; renderContacts(cs); })")
+    check("contactos: las filas no crecen con muchos valores (una línea por fila)",
+          b.js("[...document.querySelectorAll('#contacts-body tr[data-client]')].every((tr) => tr.offsetHeight < 60)"))
+    b.js("document.querySelector('#contacts-body details.cell-more summary').click()")
+    b.pump(0.3)
+    b.shot("04b2-contactos-desplegable")
+    check("contactos: «+N» despliega el resto sin abrir la ficha",
+          b.js("!!document.querySelector('#contacts-body details.cell-more[open]') && !document.querySelector('#view-contacts').hidden"))
+    b.js("document.querySelector('#contacts-search').click()")
+    check("y se cierra al pulsar fuera", b.js("!document.querySelector('#contacts-body details.cell-more[open]')"))
     b.shot("04b-contactos")
     b.js("document.querySelector('#contacts-body tr[data-client]').click()")
     b.wait("!document.querySelector('.layout').hidden && !document.querySelector('.detail-body').hidden")
