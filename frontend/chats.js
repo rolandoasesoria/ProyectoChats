@@ -1,4 +1,4 @@
-// Sección Chats: la lista de conversaciones por cliente (Todos / No leídos), la conversación separada por canal
+// Sección Mis Chats: la lista de conversaciones por cliente (Todos / No leídos), la conversación separada por canal
 // (WhatsApp, Email, Telegram) con la caja de escribir abajo, y los datos del contacto a la derecha. Se envía por la
 // cuenta conectada del canal, igual que desde el borrador. También cambia entre las secciones de la barra lateral.
 

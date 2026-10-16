@@ -178,7 +178,7 @@ Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba las secciones, \
-"Inicio" (el panel de actividad), "Chats", "Contactos", "Plantillas" e "IA"; abajo "Mis cuentas", "Respuestas guardadas" y \
+"Inicio" (el panel de actividad), "Mis Chats", "Contactos", "Plantillas" e "IA"; abajo "Mis cuentas", "Respuestas guardadas" y \
 "Administración" (solo administradores). Al entrar se abre la última sección usada.
 - Sección "Contactos": tabla con todos los contactos (clientes). Filtros: buscador (nombre, empresa, teléfono, email, \
 etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas" elige qué columnas se ven (empresa, \
@@ -192,7 +192,7 @@ pueden renombrar, ordenar con las flechas y borrar, lo que borra su valor en tod
 rellena en la pestaña "Ficha", apartado "Propiedades": se guardan al cambiar el campo (borde verde) y se pueden \
 mostrar como columnas en la tabla. Son distintas de los "Datos clave" que extrae la IA. Al unir dos clientes se \
 conservan, y la exportación de datos del cliente las incluye.
-- Sección "Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
+- Sección "Mis Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
 mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa o teléfono; "Todos" / "No leídos"; \
 los administradores pueden elegir "Todo el equipo" en vez de "Mis chats". Al elegir uno, en el centro salen sus \
 mensajes separados por canal en pestañas (WhatsApp, Email, Telegram) y abajo la caja para escribir: Intro envía por \
@@ -255,7 +255,7 @@ plantillas con buscador, categoría, idioma y estado en Meta (✓ aprobada, … 
 se ve como la vería el cliente y se puede borrar (en Meta, en todos sus idiomas). "Crear" abre el editor: nombre, \
 categoría (Servicio o Marketing), idioma y texto, con {{1}}, {{2}}… para lo que cambia en cada envío (Meta pide un \
 ejemplo de cada uno) y vista previa al escribir; "Enviar a revisión de Meta" la manda a aprobar (de minutos a un \
-día). Para enviarla: en Chats, pestaña WhatsApp, botón "Plantilla": se elige una aprobada, se rellenan sus variables \
+día). Para enviarla: en Mis Chats, pestaña WhatsApp, botón "Plantilla": se elige una aprobada, se rellenan sus variables \
 (la primera se propone con el nombre del cliente) viendo la vista previa y "Enviar plantilla". Es lo único que se \
 puede enviar pasadas 24 h desde el último mensaje del cliente. Hace falta el identificador de la cuenta de WhatsApp \
 Business (en "Editar"; con la coexistencia se rellena solo).
