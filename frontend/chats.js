@@ -11,8 +11,6 @@ const chatState = {
   file: null, // archivo elegido para enviar con el próximo mensaje
   newEmail: false, // escribiendo un correo nuevo (con asunto) en vez de responder en el hilo
   detailsPane: "info", // panel derecho: «info» (detalles del contacto) o «assistant» (asistente IA)
-  assistantFor: null, // cliente cuya conversación con el asistente se ve en el panel
-  assistantBusy: false,
 };
 const CHAT_MAX_FILE = 15 * 1024 * 1024;
 let chatsSearchTimer = null;
@@ -124,7 +122,7 @@ async function openChat(clientId) {
     `<button role="tab" data-channel="${escapeHtml(ch)}" class="${ch === chatState.channel ? "active" : ""}">${badge(ch)}</button>`).join("");
   renderChatDetails(data);
   toggleChatDetails(chatState.details);
-  if (chatState.assistantFor !== clientId) chatState.assistantFor = null;
+  clientNames.set(clientId, data.name);
   showDetailsPane(chatState.detailsPane);
   await Promise.all([loadChatConversation(), api(`/api/clients/${clientId}/visit`, { method: "POST" })]);
   const item = document.querySelector(`#chats-list li[data-client="${clientId}"]`);
@@ -345,63 +343,17 @@ function renderChatDetails(data) {
     <div class="chip-row">${data.tags.length ? tagChips(data.tags) : `<span class="muted small">Sin etiquetas</span>`}</div>`;
 }
 
-/* ---------- Asistente IA del contacto (en el panel derecho) ---------- */
-
-// Es la misma conversación con el asistente que en la ficha del cliente: se lee del servidor al abrirla.
-async function loadChatAssistant() {
-  const clientId = chatState.clientId;
-  const log = $("#chat-assistant-log");
-  if (!clientId || chatState.assistantFor === clientId) return;
-  chatState.assistantFor = clientId;
-  log.innerHTML = "";
-  try {
-    const { turns } = await api(`/api/conversations/agent?client_id=${clientId}`);
-    if (chatState.clientId !== clientId) return;
-    if (!turns.length) {
-      log.innerHTML = `<p class="muted small chat-assistant-empty">Pregúntame cualquier dato de ${escapeHtml(chatState.data?.name || "este contacto")}:
-        qué pidió, qué se acordó, su CIF…</p>`;
-    }
-    turns.forEach((t) => appendBubble(log, t.role === "user" ? "user" : "bot", turnHtml(t)));
-    log.scrollTop = log.scrollHeight;
-  } catch (err) {
-    chatState.assistantFor = null;
-    appendBubble(log, "error", escapeHtml(err.message));
-  }
-}
-
-async function askChatAssistant(text) {
-  const clientId = chatState.clientId;
-  if (!text.trim() || !clientId || chatState.assistantBusy) return;
-  const log = $("#chat-assistant-log");
-  log.querySelector(".chat-assistant-empty")?.remove();
-  chatState.assistantBusy = true;
-  $("#chat-assistant-send").disabled = true;
-  try {
-    const ok = await askBot(log, text, async () => {
-      const res = await api("/api/chat", { method: "POST", body: JSON.stringify({ message: text, client_id: clientId }) });
-      return renderMarkdown(res.reply) + renderTrace(res.tool_calls);
-    }, () => { log.scrollTop = log.scrollHeight; });
-    if (ok) {
-      // La ficha guarda su copia del hilo: se descarta para que la vuelva a leer con esta pregunta incluida.
-      state.threads.get(clientId)?.el.remove();
-      state.threads.delete(clientId);
-      setThreadDot(clientId, true);
-    }
-  } finally {
-    chatState.assistantBusy = false;
-    $("#chat-assistant-send").disabled = false;
-    log.scrollTop = log.scrollHeight;
-  }
-}
+/* ---------- Panel derecho: detalles del contacto o el asistente ---------- */
 
 function showDetailsPane(pane) {
   chatState.detailsPane = pane;
   document.querySelectorAll("#chat-details-tabs [data-pane]").forEach((b) => b.classList.toggle("active", b.dataset.pane === pane));
   $("#chat-details-body").hidden = pane !== "info";
-  $("#chat-assistant").hidden = pane !== "assistant";
-  if (pane === "assistant") {
-    loadChatAssistant();
-    $("#chat-assistant-input").focus();
+  $("#chats-assistant").hidden = pane !== "assistant";
+  if (pane === "assistant" && chatState.clientId) {
+    $("#chats-assistant-context").textContent = `Conversación sobre ${chatState.data?.name || "este contacto"}`;
+    showThread(chatState.clientId, ASSISTANT_PANELS.chats);
+    $("#chats-assistant-input").focus();
   }
 }
 
@@ -416,7 +368,6 @@ function toggleChatDetails(show) {
 // «Abrir ficha»: la ficha completa del contacto (datos, tareas, notas, mensajes y asistente).
 async function openChatClient() {
   if (!chatState.clientId) return;
-  chatState.assistantFor = null; // lo que se pregunte en la ficha se verá al volver
   showView("client");
   await selectClient(chatState.clientId);
 }
@@ -464,7 +415,7 @@ function bindChatsEvents() {
     const tab = e.target.closest("[data-pane]");
     if (tab) showDetailsPane(tab.dataset.pane);
   });
-  bindComposer($("#chat-assistant-form"), $("#chat-assistant-input"), askChatAssistant);
+  bindAssistant(ASSISTANT_PANELS.chats);
   setInterval(() => {
     if (document.hidden || $("#view-chats").hidden) return;
     loadChats();

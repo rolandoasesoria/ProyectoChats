@@ -9,7 +9,7 @@ const LAYOUTS = [
     container: ".layout", key: "pc-layout", center: ".detail", minCenter: 300,
     zones: {
       clients: { pane: ".clients", side: "left", def: 290, min: 180, max: 520 },
-      chat: { pane: ".chat", side: "right", def: 400, min: 260, max: 760 },
+      chat: { pane: "#assistant", side: "right", def: 400, min: 260, max: 760 },
     },
   },
   {

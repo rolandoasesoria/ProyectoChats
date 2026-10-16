@@ -1146,13 +1146,10 @@ body { background: var(--canvas); }
 .chat-details { display: flex; flex-direction: column; gap: 12px; }
 .details-tabs { align-self: stretch; display: flex; }
 .details-tabs button { flex: 1; }
-.chat-assistant { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.chat-assistant-log { flex: 1; min-height: 120px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-.chat-assistant-log .msg { max-width: 95%; font-size: 13px; }
-.chat-assistant-form { display: flex; gap: 6px; align-items: flex-end; }
-.chat-assistant-form textarea {
-  flex: 1; resize: none; max-height: 140px; overflow-y: hidden; padding: 7px 10px; border: 1px solid var(--border); border-radius: 10px;
-  background: var(--panel); font-size: 13px;
+/* El asistente ocupa el panel bajo las pestañas, de borde a borde, igual que a la derecha de la ficha */
+.chat-details > .chats-assistant {
+  flex: 1; min-height: 0; margin: 0 -16px -14px; border: 0; border-top: 1px solid var(--border); border-radius: 0;
+  box-shadow: none;
 }
 
 /* Mis Chats y Plantillas: columnas con ancho ajustable (separadores entre tarjetas, ver layout.js) */
@@ -1163,3 +1160,5 @@ body { background: var(--canvas); }
 .tpl-pane { width: var(--w-list, 300px); }
 .chat-main, .tpl-main { min-width: 280px; }
 .resizer[data-zone="details"]:has(+ .chat-details[hidden]) { display: none; }
+.chats-assistant .chat-head { padding: 10px 16px; gap: 8px; }
+.chats-assistant .chat-head .ghost { white-space: nowrap; flex-shrink: 0; }
