@@ -129,7 +129,7 @@ function setChatsFilter(filter) {
   const inbox = filter === "inbox";
   $("#chats-list").hidden = inbox;
   $("#chats-search").hidden = inbox;
-  $("#chats-scope").hidden = inbox || currentUser.role !== "admin"; // la bandeja tiene su propio «Mías / Todo el equipo»
+  $("#chats-scope").hidden = inbox || !canViewTeamChats(); // la bandeja tiene su propio «Mías / Todo el equipo»
   $("#side-inbox").hidden = !inbox;
   loadChats();
 }
@@ -607,11 +607,16 @@ function closeChat() {
   updateBreadcrumb();
 }
 
+// «Mis chats / Todo el equipo»: los administradores y quien tenga el permiso que da un administrador.
+function canViewTeamChats() {
+  return currentUser.role === "admin" || !!currentUser.can_view_team_chats;
+}
+
 /* ---------- Eventos ---------- */
 
 function bindChatsEvents() {
   document.querySelectorAll(".sidebar [data-view]").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
-  $("#chats-scope").hidden = currentUser.role !== "admin";
+  $("#chats-scope").hidden = !canViewTeamChats();
   $("#chats-search").addEventListener("input", (e) => {
     clearTimeout(chatsSearchTimer);
     chatsSearchTimer = setTimeout(() => { chatState.query = e.target.value; loadChats(); }, 200);

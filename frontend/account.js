@@ -201,7 +201,8 @@ async function loadUsersTable() {
       <td>${escapeHtml(u.username || "—")}</td>
       <td>${escapeHtml(u.name)}</td>
       <td>${escapeHtml(u.email || "")}</td>
-      <td>${u.role === "admin" ? "Administrador" : "Usuario"}</td>
+      <td>${u.role === "admin" ? "Administrador" : "Usuario"}${u.role !== "admin" && u.can_view_team_chats
+        ? `<span class="perm-chip" title="Puede ver en Mis Chats los chats de todo el equipo">Chats del equipo</span>` : ""}</td>
       <td>${u.active ? "Activo" : "Desactivado"}</td>
       <td><div class="user-accounts">${userAccountsHtml(accounts.filter((a) => a.owner_user_id === u.id))}</div></td>
       <td class="row-actions">
@@ -216,6 +217,7 @@ async function loadUsersTable() {
 function resetUserForm() {
   editingUserId = null;
   $("#user-form").reset();
+  delete $("#uf-team-chats").dataset.userValue;
   $("#user-form-title").textContent = "Nuevo usuario";
   $("#uf-submit").textContent = "Crear usuario";
   $("#uf-submit").className = "ghost";
@@ -225,7 +227,19 @@ function resetUserForm() {
   $("#uf-password").required = true;
   $("#uf-password-hint").textContent = "(mínimo 8)";
   $("#uf-cancel").hidden = true;
+  syncTeamChatsCheck();
   showError($("#uf-error"), "");
+}
+
+// Permiso de ver los chats de todo el equipo: los administradores lo tienen siempre (casilla marcada y fija).
+function syncTeamChatsCheck() {
+  const admin = $("#uf-role").value === "admin";
+  const box = $("#uf-team-chats");
+  // Al volver a «Usuario», lo que tenía (o desmarcado, si es nuevo).
+  box.checked = admin || box.dataset.userValue === "1";
+  box.disabled = admin;
+  $("#uf-team-chats-hint").textContent = admin ? "(los administradores pueden siempre)"
+    : "(en Mis Chats, «Todo el equipo»; queda en el registro de accesos)";
 }
 
 function startEditUser(id) {
@@ -243,6 +257,9 @@ function startEditUser(id) {
   $("#uf-email").value = user.email || "";
   $("#uf-role").value = user.role;
   $("#uf-role").disabled = id === currentUser.id;
+  $("#uf-team-chats").dataset.userValue = user.can_view_team_chats ? "1" : "0";
+  $("#uf-team-chats").checked = !!user.can_view_team_chats;
+  syncTeamChatsCheck();
   $("#uf-password").value = "";
   $("#uf-password").required = false;
   $("#uf-password-hint").textContent = "(déjala vacía para no cambiarla)";
@@ -261,6 +278,7 @@ async function submitUserForm(e) {
     name: $("#uf-name").value.trim(),
     email: $("#uf-email").value.trim() || null,
     role: $("#uf-role").value,
+    can_view_team_chats: $("#uf-role").value === "admin" ? false : $("#uf-team-chats").checked,
   };
   const password = $("#uf-password").value;
   let created = null;
@@ -347,6 +365,8 @@ function bindAccountEvents() {
   $("#password-form").addEventListener("submit", submitPassword);
   $("#user-form").addEventListener("submit", submitUserForm);
   $("#uf-cancel").addEventListener("click", () => { $("#uf-role").disabled = false; resetUserForm(); });
+  $("#uf-role").addEventListener("change", syncTeamChatsCheck);
+  $("#uf-team-chats").addEventListener("change", (e) => { e.target.dataset.userValue = e.target.checked ? "1" : "0"; });
   $("#users-tbody").addEventListener("click", (e) => {
     const edit = e.target.closest("[data-edit]");
     const toggle = e.target.closest("[data-toggle]");
