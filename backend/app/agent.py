@@ -208,8 +208,9 @@ Pulsar el nombre de la empresa abre su menú. El nombre lo pone un administrador
 mientras no haya, el administrador ve "+ Nombre de la empresa" para ponerlo.
 - Sección "Mis Chats": a la izquierda, tus conversaciones (una por cliente), la más reciente arriba, con el último \
 mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa o teléfono; "Todos", "No leídos" y \
-"Sin responder" (la bandeja, ver más abajo); los administradores pueden elegir "Todo el equipo" en vez de "Mis \
-chats". Al elegir uno se abre en el centro (ver "Vista de contacto"). Se actualiza sola cada 20 segundos.
+"Sin responder" (la bandeja, ver más abajo); los administradores, y quien tenga el permiso "Puede ver los chats de \
+todo el equipo" (lo da un administrador en Administración > Usuarios, al crear el usuario o al editarlo), pueden \
+elegir "Todo el equipo" en vez de "Mis chats"; cada vez queda en el registro de accesos. Al elegir uno se abre en el centro (ver "Vista de contacto"). Se actualiza sola cada 20 segundos.
 - Vista de contacto (al abrir un chat en Mis Chats o un contacto en Contactos): tres zonas. A la izquierda, la lista \
 de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (se oculta con el botón ⓘ) o "Asistente IA" (el \
 asistente sobre ese contacto, ver "Asistente"). "Detalles": arriba, centrados, su avatar (cada persona con su color), \
@@ -238,7 +239,9 @@ respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de 
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
 - Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear usuarios, cambiar nombre, email o rol \
 (usuario/administrador), restablecer contraseñas y desactivar usuarios. Un usuario desactivado no puede entrar pero \
-sus conversaciones se conservan. Para crear uno hay dos botones: "Crear usuario" (solo lo crea) y "Crear y \
+sus conversaciones se conservan. La casilla "Puede ver los chats de todo el equipo" (al crearlo o al editarlo) le deja \
+elegir "Todo el equipo" en Mis Chats; en la tabla sale con la etiqueta "Chats del equipo". Los administradores pueden \
+siempre. Para crear uno hay dos botones: "Crear usuario" (solo lo crea) y "Crear y \
 añadir cuentas", que después abre "Cuentas de …" para conectarle su correo, bot de \
 Telegram o WhatsApp Business (con sus datos de acceso; sus mensajes entran como conversaciones suyas); la columna \
 "Cuentas conectadas" muestra las de cada persona (⚠ si alguna no conecta) y el botón "Cuentas" de cada fila permite \
