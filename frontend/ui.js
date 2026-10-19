@@ -122,9 +122,22 @@ function renderSelectMenu() {
   selectMenu.querySelector(".active")?.scrollIntoView({ block: "nearest" });
 }
 
+// Con una ventana abierta, el navegador bloquea todo lo que queda fuera de ella: la lista (y los avisos) se ponen
+// dentro de la ventana para que se puedan pulsar.
+function hostFor(el) {
+  return el?.closest("dialog[open]") || [...document.querySelectorAll("dialog[open]")].at(-1) || document.body;
+}
+
+function moveInto(host, el) {
+  if (el.parentElement === host) return;
+  if (el.matches(":popover-open")) el.hidePopover();
+  host.append(el);
+}
+
 function openSelect(select) {
   if (select.disabled) return;
   selectMenu ||= popoverBox("select-menu", "listbox");
+  moveInto(select.closest("dialog[open]") || document.body, selectMenu);
   openSel = { select, active: select.selectedIndex };
   select.setAttribute("aria-expanded", "true");
   bringToFront(selectMenu);
@@ -253,6 +266,7 @@ const TOAST_ICONS = {
 // Aviso flotante abajo a la derecha: se cierra solo (o al pulsarlo).
 function toast(message, kind = "info") {
   toastBox ||= popoverBox("toasts", "status");
+  moveInto(hostFor(null), toastBox);
   const item = document.createElement("div");
   item.className = `toast ${kind}`;
   item.innerHTML = `<span class="toast-icon">${TOAST_ICONS[kind] || TOAST_ICONS.info}</span><span class="toast-text"></span>
