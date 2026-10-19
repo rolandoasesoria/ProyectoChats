@@ -6,6 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Test : recorre con el ratón y el teclado reales los 155 desplegables, campos y casillas de
+  todas las pantallas y ventanas (que abran, dejen elegir o escribir y no estén tapados). Va en .
 - Permiso **«Puede ver los chats de todo el equipo»**: un administrador se lo da a un usuario al crearlo o después
   (Administración → Usuarios), y ese usuario puede elegir «Todo el equipo» en Mis Chats. Migración
   `0004_permiso_chats_equipo.sql`.
@@ -219,6 +221,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Una lista desplegable podía cerrarse sola si se abría justo después de desplazar la ventana.
 - Los desplegables dentro de una ventana (p. ej. Estado y Responsable en «Editar cliente») no dejaban elegir.
 - Chats: al volver de un correo nuevo a otra pestaña, el botón de enviar ya no sigue diciendo «Enviar correo».
 - Posibles duplicados: si hay varios (p. ej. el mismo remitente desde varias direcciones), un solo aviso con todos
