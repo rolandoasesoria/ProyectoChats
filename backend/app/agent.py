@@ -216,7 +216,8 @@ de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (se oculta
 asistente sobre ese contacto, ver "Asistente"). "Detalles": arriba, centrados, su avatar (cada persona con su color), \
 nombre, empresa, estado y la prioridad que ve la IA, y botones rápidos para abrir su conversación de cada canal \
 (WhatsApp, Correo, Telegram) y "Editar"; debajo, tarjetas con "Contacto" (correo, teléfono…; al pasar el ratón, un \
-botón copia el dato), "Responsable", "Etiquetas" (con "+ Añadir"), "Datos clave" (los de la Ficha y las propiedades \
+botón copia el dato), "Responsable" (al pulsarlo, o "+ Asignar responsable", se elige de una lista sin abrir Editar; también "Sin \
+responsable"), "Etiquetas" ("+ Añadir" con sugerencias o escribiendo una nueva; la × de cada una la quita), "Datos clave" (los de la Ficha y las propiedades \
 rellenas, con "Ver la ficha completa") y "Actividad" (primer contacto, último mensaje, conversaciones y mensajes, \
 tareas abiertas). El ancho \
 de la izquierda y la derecha se ajusta arrastrando la línea que las separa del centro (o con Tab y las flechas); \
@@ -333,6 +334,10 @@ perfil; se conserva al cambiar de cliente, recargar la página o entrar otro dí
 - El asistente busca por defecto solo en TUS conversaciones. Para que busque también en las de tus compañeros, \
 pídeselo explícitamente ("busca también en las del equipo"). Bajo cada respuesta aparece qué búsquedas hizo; \
 las marcadas como "equipo" salieron de conversaciones de otros compañeros.
+- Quién lleva a un cliente: su responsable, uno solo (o "Sin responsable"), aunque hayan hablado con él varias \
+personas desde sus cuentas. Se ve en la cabecera del contacto, en Detalles y en "Sin responder". Cada conversación \
+entra por la cuenta de alguien del equipo (su correo, su WhatsApp) y se responde desde esa cuenta; en los mensajes se \
+indica con "cuenta de X".
 - Estados del cliente: Potencial (aún no ha comprado: consultas o presupuestos), Activo (compra o tiene trabajo en curso sin problemas), Incidencia (problema sin resolver: queja, defecto, retraso, pago) e Inactivo (relación terminada o sin actividad). Los decide la IA sola cada vez que analiza al cliente, lo que ocurre al pulsar "✨ Actualizar con IA" y unos minutos después de que entre un mensaje por una integración; el motivo aparece bajo el nombre, y si pasa a Incidencia avisa al responsable. Sin IA, una regla diaria pasa a Inactivo a quien lleve tiempo sin mensajes (Administración > Ajustes, 90 días por defecto) y a Activo si vuelve a escribir. Para cambiarlo a mano, pulsa la etiqueta del estado junto al nombre (o en ✎): queda "puesto a mano" y la IA lo respeta hasta que haya mensajes nuevos; "✨ Que lo decida la IA" lo devuelve al modo automático. El ✨ junto al estado indica que lo decidió la IA. Sirven para filtrar la lista, para el punto de color de cada cliente y para el gráfico "Clientes por estado" del panel.
 - Trabajo en equipo sin pisarse: al abrir un cliente, encima de sus pestañas se avisa si un compañero también lo tiene abierto, y en ámbar si está respondiendo ("Carlos Pérez está respondiendo a este cliente"). Al enviar o copiar una respuesta, si mientras tanto el cliente ha escrito o un compañero ha respondido en esa conversación, la app avisa y pregunta si enviarla igualmente.
 - Barra superior, "Buscar o ir a…" (Ctrl+K o ⌘K): paleta de comandos para abrir cualquier cliente escribiendo su nombre, o lanzar acciones (ir a Sin responder, consulta general al asistente, nuevo cliente, panel, respuestas guardadas, cambiar tema, escribir la respuesta…); flechas para elegir y Enter. Atajos de teclado (cuando no se está escribiendo): / buscar en la lista, j/k chat o contacto siguiente/anterior, r escribir la respuesta, g y luego c/s/t para ir a Contactos, Sin responder o Tareas, ? para ver la lista.
@@ -344,7 +349,7 @@ venció. Pulsando el nombre del cliente se abre su vista de contacto en la pesta
 - Cabecera del contacto (centro, arriba): el nombre con su estado, la empresa, el responsable y las etiquetas (sus datos de contacto, en "Detalles"). El lápiz ✎ junto al nombre abre "Editar cliente": nombre, empresa, estado, responsable (recibe un aviso), etiquetas (al pulsar el campo se despliegan las básicas —VIP, Mayorista, Minorista, Nuevo, Habitual, Paga tarde, Presupuesto enviado, Urgente— y las que ya usa el equipo; se filtran escribiendo, y si escribes una que no existe aparece "Crear «…»" o basta con pulsar Enter; cada etiqueta se quita con su ×), identificadores (añadir o quitar email, WhatsApp, Telegram, teléfono u otro; sirven para que los mensajes que llegan por cada canal vayan al cliente correcto) y "Unir con otro cliente": si dos fichas son la misma persona, todo (conversaciones, datos, tareas, notas, etiquetas) pasa al cliente elegido y el otro desaparece; no se puede deshacer. Si la app ve un posible duplicado (mismo nombre, email o teléfono), lo muestra en amarillo con el botón "Unir aquí". Si son varios (p. ej. el mismo remitente desde varias direcciones de correo), sale un solo aviso con todos y el botón "Unir todos aquí". Debajo hay cuatro pestañas:
   · "Conversación": arriba, pestañas por canal: "Todos los canales" (todo junto) y una por canal (WhatsApp, Email, \
 Telegram); la casilla "Solo mis conversaciones" (desde Mis Chats sale marcada; desde Contactos se ve todo el historial, \
-con "la lleva X" en las conversaciones de compañeros) y la lupa 🔍, que abre el buscador (ver más abajo). Debajo, los \
+con "cuenta de X" en las que entraron por la cuenta de un compañero) y la lupa 🔍, que abre el buscador (ver más abajo). Debajo, los \
 mensajes en orden cronológico, como en un chat: lo que escribe el cliente, en burbujas claras a la izquierda (con su \
 nombre en el color del canal) y lo que responde el equipo, en burbujas de color a la derecha; un separador por día y, \
 al pie de cada burbuja, el canal y la hora (pasando el ratón, la fecha completa). Abajo, la caja para escribir: Intro \
@@ -363,8 +368,8 @@ traducir; "Deshacer" recupera el texto anterior. "⏰ Avisar si no contesta en�
 copiar. En la pestaña Email, "✉ Nuevo correo" muestra un campo "Asunto" y envía un correo nuevo (hilo nuevo, con \
 adjunto si se quiere); "Responder en el hilo" vuelve a la respuesta normal; si el cliente tiene email pero no hay \
 hilos de correo, la pestaña Email sale igualmente. En WhatsApp, "Plantilla" envía una plantilla aprobada. Si no \
-tienes cuenta conectada de ese canal, lo indica y no deja enviar (sí "Copiar"); si la conversación la lleva otra \
-persona, también. Las respuestas guardadas se crean y editan en la barra lateral > "Respuestas guardadas"; cada uno \
+tienes cuenta conectada de ese canal, lo indica y no deja enviar (sí "Copiar"); si la conversación entró por la cuenta de otra \
+persona, también (se responde desde esa cuenta). Las respuestas guardadas se crean y editan en la barra lateral > "Respuestas guardadas"; cada uno \
 edita las suyas y un administrador, todas.
   · "Ficha": resumen del estado del cliente y "Datos clave" (dirección, CIF, teléfonos, forma de pago, precios \
 acordados...). Al analizar, la IA también deduce la prioridad del cliente (alta, media o baja, con el motivo) y su tono ("molesto" si se queja): se ven como etiquetas bajo "Resumen" y junto al nombre en "Sin responder" ("Prioridad alta", "Molesto"), para atender antes lo urgente. "✨ Actualizar con IA" hace que la IA lea todas las conversaciones del cliente (de todo el equipo) \
