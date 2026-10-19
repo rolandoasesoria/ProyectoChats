@@ -434,8 +434,14 @@ const CHANNEL_ICONS = {
 const EDIT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
 const COPY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>`;
 
-function shortDate(iso) {
-  return iso ? new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
+// Fechas de la tarjeta Actividad, todas con el mismo formato: «Hoy, 10:41», «Ayer, 16:31» o «5 ago 2026».
+function activityDate(iso) {
+  const at = new Date(iso);
+  const days = Math.round((new Date(new Date().toDateString()) - new Date(at.toDateString())) / 86400000);
+  const time = at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  if (days === 0) return `Hoy, ${time}`;
+  if (days === 1) return `Ayer, ${time}`;
+  return at.toLocaleDateString("es-ES", { day: "numeric", month: "short", year: "numeric" }).replace(".", "");
 }
 
 // Panel derecho, pestaña Detalles: la identidad centrada con sus acciones rápidas y, debajo, tarjetas con el contacto,
@@ -489,8 +495,8 @@ function renderChatDetails(data) {
     </section>
     <section class="cd-card">
       <h4>Actividad</h4>
-      ${row("Primer contacto", first ? escapeHtml(shortDate(first)) : "—")}
-      ${row("Último mensaje", last ? escapeHtml(chatTime(last)) : "—")}
+      ${row("Primer contacto", first ? escapeHtml(activityDate(first)) : "—")}
+      ${row("Último mensaje", last ? escapeHtml(activityDate(last)) : "—")}
       ${row("Conversaciones", `${convs.length} · ${messages} ${messages === 1 ? "mensaje" : "mensajes"}`)}
       ${row("Tareas abiertas", "—", "cd-tasks")}
     </section>`;
