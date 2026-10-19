@@ -6,6 +6,12 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Piezas propias en lugar de las del navegador** (`frontend/ui.js`): tooltips en burbuja, listas de los
+  desplegables con teclado (flechas, Intro, Esc y escribir para saltar), avisos flotantes en lugar de `alert`, y
+  confirmaciones y preguntas en ventanas de la app (botón en rojo para borrar). Casillas, interruptor, plegables y
+  barras de desplazamiento con el estilo de la app.
+- **Ruta de navegación más visual**: marca de la empresa, icono de la sección, avatar del contacto, separadores finos
+  y el nivel actual resaltado.
 - **Barra lateral más informativa**: al pasar el ratón, el icono se despliega con su nombre y un detalle en vivo;
   contadores de chats sin leer (en rojo si hay respuestas fuera de plazo), tareas y propuestas de la IA por revisar;
   secciones agrupadas por uso (trabajo, IA, textos, análisis). Ruta nueva `GET /api/me/counts`.

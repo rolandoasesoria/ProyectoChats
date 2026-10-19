@@ -232,6 +232,7 @@ recibidos por semana y canal (al pasar el ratón por una columna se ven las cifr
 todas) y clientes por estado. Los administradores ven además una tabla por persona: tiempo de primera respuesta, \
 respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de los que es responsable.
 - Ventanas (Administración, Mis cuentas, editar cliente…): se cierran con ×, con Esc o haciendo clic fuera de ellas.
+- Los avisos de la app salen abajo a la derecha y se cierran solos (o al pulsarlos). Las confirmaciones (p. ej. antes de borrar) son ventanas de la app con el botón de la acción; en rojo, si no se puede deshacer.
 - Colores de canal (iguales en toda la app): email azul, Telegram naranja, WhatsApp verde agua.
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
 - Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear usuarios, cambiar nombre, email o rol \
