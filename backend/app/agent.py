@@ -193,7 +193,8 @@ etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas
 teléfono, email, canales, etiquetas, agente, estado, última actividad y cada propiedad de contacto); se recuerda en \
 el navegador. "+ Nuevo contacto" crea uno a mano (p. ej. tras una llamada; queda con quien lo crea como \
 responsable). Al pulsar un contacto se abre igual que un chat (ver "Vista de contacto"), con la lista de contactos a \
-la izquierda (los mismos de la tabla, con sus filtros, y su buscador) y "← Volver a la tabla" para regresar.
+la izquierda (los mismos de la tabla, con sus filtros, y su buscador). Arriba de esa lista, la cabecera "Contactos" \
+(con cuántos hay y si la tabla tiene filtros) vuelve a la tabla al pulsarla.
 - Propiedades de contacto: campos fijos de la ficha (p. ej. DNI, nacionalidad, fecha de alta, origen) que define un \
 administrador en Administración > "Propiedades de contacto" (tipo texto, número, fecha o lista de opciones; se \
 pueden renombrar, ordenar con las flechas y borrar, lo que borra su valor en todos los contactos). Cualquiera las \
