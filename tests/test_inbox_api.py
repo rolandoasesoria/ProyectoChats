@@ -5,6 +5,8 @@ from apitest import Session, check, receive, results
 ana, marta = Session("ana"), Session("marta")
 
 st, mine = ana.get("/api/inbox?scope=mine")
+check("cada una dice el responsable del cliente (o ninguno), no solo de quién es la cuenta",
+      all("assignee_id" in i and "assignee" in i for i in mine), mine[:1])
 check("bandeja de Ana: Jorge (email) y Laura (WhatsApp), la más antigua primero",
       [(i["client"], i["channel"]) for i in mine] == [("Jorge Martín", "email"), ("Laura Gómez", "whatsapp")], mine)
 check("todas son suyas", all(i["is_mine"] for i in mine))

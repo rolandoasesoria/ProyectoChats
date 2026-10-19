@@ -27,7 +27,7 @@ def unanswered(conn: Conn, user_id: int, scope: str, snoozed: bool) -> list[dict
               FROM messages m
         )
         SELECT c.id AS conversation_id, c.channel, c.subject, cl.id AS client_id, cl.name AS client,
-               u.name AS owner, c.owner_user_id = ? AS is_mine,
+               u.name AS owner, c.owner_user_id = ? AS is_mine, cl.assignee_user_id AS assignee_id, au.name AS assignee,
                last.id AS message_id, last.sender, last.body, last.sent_at,
                CASE WHEN {is_snoozed} THEN c.snoozed_until END AS snoozed_until,
                ca.priority, ca.mood, ca.priority_reason
@@ -35,6 +35,7 @@ def unanswered(conn: Conn, user_id: int, scope: str, snoozed: bool) -> list[dict
           JOIN last ON last.conversation_id = c.id AND last.rn = 1
           JOIN clients cl ON cl.id = c.client_id
           JOIN users u ON u.id = c.owner_user_id
+          LEFT JOIN users au ON au.id = cl.assignee_user_id
           LEFT JOIN client_analysis ca ON ca.client_id = cl.id
          WHERE last.direction = 'in'
            AND (c.dismissed_message_id IS NULL OR c.dismissed_message_id < last.id)

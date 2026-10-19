@@ -145,7 +145,8 @@ function renderClientHeader(data) {
   $("#status-note").textContent = note;
   $("#status-note").hidden = !note;
   $("#status-menu").hidden = true;
-  $("#detail-company").textContent = [data.company, data.assignee && `Responsable: ${data.assignee}`].filter(Boolean).join(" · ");
+  $("#detail-company").textContent = [data.company, data.assignee ? `Responsable: ${data.assignee}` : "Sin responsable"]
+    .filter(Boolean).join(" · ");
   $("#detail-tags").innerHTML = tagChips(data.tags);
 }
 

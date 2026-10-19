@@ -69,6 +69,12 @@ function followUpItem(f) {
     </li>`;
 }
 
+// Quién lleva al cliente: su responsable (uno solo), aunque hayan hablado con él varias personas.
+function responsibleLabel(assigneeId, assignee) {
+  if (!assigneeId) return "Sin responsable";
+  return assigneeId === currentUser.id ? "Responsable: tú" : `Responsable: ${escapeHtml(assignee)}`;
+}
+
 async function loadInbox() {
   const scope = inboxScope;
   const [items, followUps, snoozed] = await Promise.all([
@@ -102,7 +108,7 @@ async function loadInbox() {
       </div>
       <div class="inbox-snippet">${badge(i.channel)} ${escapeHtml(i.body.length > 140 ? `${i.body.slice(0, 140)}…` : i.body)}</div>
       <div class="inbox-bottom">
-        <span class="muted small">${i.is_mine ? "La llevas tú" : `La lleva ${escapeHtml(i.owner)}`}</span>
+        <span class="muted small">${responsibleLabel(i.assignee_id, i.assignee)}</span>
         <span>
           <button class="link small" data-reply title="Redactar la respuesta con IA">Responder</button>
           <button class="link small" data-dismiss title="Quitar de la bandeja: no necesita respuesta">✓ Atendido</button>

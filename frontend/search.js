@@ -24,7 +24,7 @@ function resultItem(r, { reason = "", text = "" } = {}) {
       <div class="result-text">${text}</div></li>`;
   }
   return `<li class="result" data-message="${r.message_id}">
-    <div class="result-meta">${badge(r.channel)} ${escapeHtml(r.sender)} · ${formatDate(r.sent_at)}${r.owner && r.owner !== currentUser.name ? ` · <span class="owner-tag">la lleva ${escapeHtml(r.owner)}</span>` : ""}</div>
+    <div class="result-meta">${badge(r.channel)} ${escapeHtml(r.sender)} · ${formatDate(r.sent_at)}${r.owner && r.owner !== currentUser.name ? ` · <span class="account-tag">cuenta de ${escapeHtml(r.owner)}</span>` : ""}</div>
     ${reason ? `<div class="result-reason">${escapeHtml(reason)}</div>` : ""}
     <div class="result-text">${text}</div></li>`;
 }
