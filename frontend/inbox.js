@@ -1,6 +1,5 @@
 // Bandeja "Sin responder" y novedades desde la última visita a un cliente.
 
-let inboxScope = "mine";
 let slaHours = 24; // plazo de respuesta del equipo (lo fija un administrador); se carga al arrancar
 const SLA_WARNING = 0.75; // a partir del 75 % del plazo se avisa de que está a punto de vencer
 
@@ -29,13 +28,6 @@ function waitLabel(sentAt) {
   return `<span class="wait" title="${title}">${elapsed(sentAt)}</span>`;
 }
 
-// Número de conversaciones en cada lado del selector «Mías · Todo el equipo».
-async function loadInboxCounts() {
-  const c = await api("/api/inbox/counts");
-  $("#inbox-count-mine").textContent = c.mine;
-  $("#inbox-count-team").textContent = c.team;
-}
-
 // Fecha de «Posponer…» (hora local del navegador).
 function snoozeDate(option) {
   const d = new Date();
@@ -47,27 +39,9 @@ function snoozeDate(option) {
   return null;
 }
 
-const SNOOZE_SELECT = `<select class="small-select" data-snooze title="Quitarla de la bandeja hasta…">
+const SNOOZE_SELECT = `<select class="small-select chat-act" data-snooze title="Quitarla de la bandeja hasta…">
   <option value="">Posponer…</option><option value="3h">3 horas</option><option value="tomorrow">Mañana a las 9</option>
   <option value="monday">El lunes a las 9</option><option value="week">En una semana</option></select>`;
-
-function followUpItem(f) {
-  return `
-    <li class="inbox-item follow-up" data-client="${f.client_id}" data-message="${f.message_id}" data-conversation="${f.conversation_id}" data-follow-up="${f.id}">
-      <div class="inbox-top">
-        <strong>${escapeHtml(f.client)}</strong>
-        <span class="wait late" title="Le escribiste el ${formatDate(f.sent_at)}">sin contestar · ${elapsed(f.sent_at)}</span>
-      </div>
-      <div class="inbox-snippet">${badge(f.channel)} Tú: ${escapeHtml(f.body.length > 120 ? `${f.body.slice(0, 120)}…` : f.body)}</div>
-      <div class="inbox-bottom">
-        <span class="muted small">Seguimiento</span>
-        <span>
-          <button class="link small" data-reply title="Escribirle de nuevo">Escribir</button>
-          <button class="link small" data-follow-up-done title="Quitar el aviso">✓ Hecho</button>
-        </span>
-      </div>
-    </li>`;
-}
 
 // Quién lleva al cliente: su responsable (uno solo), aunque hayan hablado con él varias personas.
 function responsibleLabel(assigneeId, assignee) {
@@ -75,48 +49,59 @@ function responsibleLabel(assigneeId, assignee) {
   return assigneeId === currentUser.id ? "Responsable: tú" : `Responsable: ${escapeHtml(assignee)}`;
 }
 
+// Un elemento de la bandeja con el mismo aspecto que los de Todos y No leídos: en lugar de la hora, cuánto lleva
+// esperando (ámbar a punto de vencer, rojo fuera de plazo); debajo, el canal y el responsable; y, al pasar el ratón,
+// sus acciones. `kind`: waiting (espera respuesta), followup (no ha contestado) o snoozed (pospuesta).
+function inboxItemHtml(i, kind = "waiting") {
+  const body = i.body.length > 140 ? `${i.body.slice(0, 140)}…` : i.body;
+  const when = kind === "followup"
+    ? `<span class="wait late" title="Le escribiste el ${escapeHtml(formatDate(i.sent_at))}">sin contestar · ${elapsed(i.sent_at)}</span>`
+    : kind === "snoozed"
+      ? `<span class="wait" title="Vuelve a la bandeja entonces, o antes si el cliente escribe">hasta ${escapeHtml(formatDate(`${i.snoozed_until}Z`))}</span>`
+      : waitLabel(i.sent_at);
+  const actions = kind === "followup"
+    ? `<button type="button" class="chat-act" data-reply title="Escribirle de nuevo">Escribir</button>
+       <button type="button" class="chat-act" data-follow-up-done title="Quitar el aviso">✓ Hecho</button>`
+    : kind === "snoozed"
+      ? `<button type="button" class="chat-act" data-unsnooze title="Devolverla ya a la bandeja">Volver ahora</button>`
+      : `<button type="button" class="chat-act" data-reply title="Escribir la respuesta">Responder</button>
+         <button type="button" class="chat-act" data-dismiss title="Quitar de la bandeja: no necesita respuesta">✓ Atendido</button>
+         ${SNOOZE_SELECT}`;
+  return `
+    <li class="inbox-item ${kind}${i.client_id === chatState.clientId ? " active" : ""}" data-client="${i.client_id}"
+        data-message="${i.message_id}" data-conversation="${i.conversation_id}"${kind === "followup" ? ` data-follow-up="${i.id}"` : ""}>
+      <span class="chat-avatar ${avatarClass(i.client)}">${escapeHtml(initialsOf(i.client))}</span>
+      <div class="chat-item-body">
+        <div class="chat-item-top"><strong>${escapeHtml(i.client)}</strong>${when}</div>
+        <div class="chat-item-bottom"><span class="chat-preview">${kind === "followup" ? "↪ " : ""}${escapeHtml(body)}</span></div>
+        <div class="chat-item-meta">${badge(i.channel)}${kind === "waiting" ? priorityChips(i) : ""}
+          <span class="inbox-resp">${kind === "followup" ? "Seguimiento" : responsibleLabel(i.assignee_id, i.assignee)}</span></div>
+      </div>
+      <div class="chat-actions">${actions}</div>
+    </li>`;
+}
+
+// «Sin responder» en Mis Chats: en la misma lista, con el mismo buscador y el mismo «Mis chats / Todo el equipo».
 async function loadInbox() {
-  const scope = inboxScope;
+  const scope = chatState.scope;
   const [items, followUps, snoozed] = await Promise.all([
     api(`/api/inbox?scope=${scope}`),
     scope === "mine" ? api("/api/follow-ups") : Promise.resolve([]),
     api(`/api/inbox?scope=${scope}&snoozed=true`),
-    loadInboxCounts(),
   ]);
-  if (scope !== inboxScope) return;
+  if (scope !== chatState.scope || chatState.filter !== "inbox") return;
   if (scope === "mine") setInboxCount(items, followUps);
-  const followHtml = followUps.length
-    ? `<li class="inbox-group">Seguimientos: no han contestado</li>${followUps.map(followUpItem).join("")}
-       ${items.length ? `<li class="inbox-group">Esperan respuesta</li>` : ""}`
-    : "";
-  const snoozedHtml = snoozed.length ? `
-    <li class="inbox-snoozed"><details>
-      <summary>Pospuestas (${snoozed.length})</summary>
-      <ul class="inbox-list">${snoozed.map((i) => `
-        <li class="inbox-item snoozed" data-client="${i.client_id}" data-message="${i.message_id}" data-conversation="${i.conversation_id}">
-          <div class="inbox-top"><strong>${escapeHtml(i.client)}</strong>
-            <span class="wait" title="Vuelve a la bandeja entonces, o antes si el cliente escribe">hasta ${formatDate(i.snoozed_until + "Z")}</span></div>
-          <div class="inbox-snippet">${badge(i.channel)} ${escapeHtml(i.body.length > 100 ? `${i.body.slice(0, 100)}…` : i.body)}</div>
-          <div class="inbox-bottom"><span></span><button class="link small" data-unsnooze>Volver ahora</button></div>
-        </li>`).join("")}</ul>
-    </details></li>` : "";
-  $("#inbox-list").innerHTML = followHtml + (items.length ? items.map((i) => `
-    <li class="inbox-item" data-client="${i.client_id}" data-message="${i.message_id}" data-conversation="${i.conversation_id}">
-      <div class="inbox-top">
-        <span class="inbox-name"><strong>${escapeHtml(i.client)}</strong>${priorityChips(i)}</span>
-        ${waitLabel(i.sent_at)}
-      </div>
-      <div class="inbox-snippet">${badge(i.channel)} ${escapeHtml(i.body.length > 140 ? `${i.body.slice(0, 140)}…` : i.body)}</div>
-      <div class="inbox-bottom">
-        <span class="muted small">${responsibleLabel(i.assignee_id, i.assignee)}</span>
-        <span>
-          <button class="link small" data-reply title="Redactar la respuesta con IA">Responder</button>
-          <button class="link small" data-dismiss title="Quitar de la bandeja: no necesita respuesta">✓ Atendido</button>
-          ${SNOOZE_SELECT}
-        </span>
-      </div>
-    </li>`).join("")
-    : followUps.length ? "" : `<li class="muted small empty-tasks">${scope === "mine" ? "Nadie espera tu respuesta." : "Nadie espera respuesta del equipo."}</li>`) + snoozedHtml;
+  const q = normText(chatState.query.trim());
+  const match = (i) => !q || normText(i.client).includes(q);
+  const [waiting, follow, later] = [items.filter(match), followUps.filter(match), snoozed.filter(match)];
+  const group = (title) => `<li class="chats-group">${title}</li>`;
+  const html = (follow.length ? group("Seguimientos: no han contestado") + follow.map((f) => inboxItemHtml(f, "followup")).join("")
+    + (waiting.length ? group("Esperan respuesta") : "") : "")
+    + waiting.map((i) => inboxItemHtml(i)).join("")
+    + (later.length ? `<li class="inbox-snoozed"><details><summary>Pospuestas (${later.length})</summary>
+        <ul class="chats-list">${later.map((i) => inboxItemHtml(i, "snoozed")).join("")}</ul></details></li>` : "");
+  $("#chats-list").innerHTML = html || `<li class="chats-empty muted small">${q ? "Nadie que espere respuesta coincide con la búsqueda."
+    : scope === "mine" ? "Nadie espera tu respuesta." : "Nadie espera respuesta del equipo."}</li>`;
 }
 
 function setInboxCount(items, followUps = []) {
@@ -142,7 +127,7 @@ async function refreshInboxCount() {
   try {
     const [items, followUps] = await Promise.all([api("/api/inbox?scope=mine"), api("/api/follow-ups")]);
     setInboxCount(items, followUps);
-    if (!$("#side-inbox").hidden) loadInbox();
+    if (chatState.filter === "inbox" && currentView() === "chats") loadInbox();
   } catch { /* no crítico */ }
 }
 
@@ -238,13 +223,8 @@ async function onInboxSnooze(e) {
 }
 
 function bindInboxEvents() {
-  $("#inbox-list").addEventListener("click", onInboxClick);
-  $("#inbox-list").addEventListener("change", onInboxSnooze);
-  document.querySelectorAll("#inbox-scope [data-inbox-scope]").forEach((b) => b.addEventListener("click", () => {
-    inboxScope = b.dataset.inboxScope;
-    document.querySelectorAll("#inbox-scope [data-inbox-scope]").forEach((x) => x.classList.toggle("active", x === b));
-    loadInbox();
-  }));
+  $("#chats-list").addEventListener("click", onInboxClick);
+  $("#chats-list").addEventListener("change", onInboxSnooze);
   $("#whats-new-btn").addEventListener("click", summarizeWhatsNew);
   // La bandeja se revisa cada minuto (mensajes que entran por las integraciones).
   setInterval(refreshInboxCount, 60000);

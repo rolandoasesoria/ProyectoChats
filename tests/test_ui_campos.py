@@ -75,6 +75,7 @@ def sweep(b, where):
         seen.add(key)
         count += 1
         sel = f"window.__sweep.list('select:not([multiple])')[{i}]"
+        mouse(b, "mouseMoved", *b.js(f"window.__sweep.center({sel})"))  # algunos solo aparecen al pasar el ratón
         if not b.js(f"window.__sweep.reachable({sel})"):
             problems.append(f"{where}: desplegable {name} tapado o bloqueado")
             continue
@@ -194,7 +195,7 @@ try:
     total += sweep(b, "Detalles · asistente")
     b.js("showDetailsPane('info')")
     b.js("setChatsFilter('inbox')")
-    b.wait("document.querySelectorAll('#inbox-list .inbox-item').length > 0")
+    b.wait("document.querySelectorAll('#chats-list .inbox-item').length > 0")
     total += sweep(b, "Mis Chats · Sin responder")
     b.js("setChatsFilter('all')")
 

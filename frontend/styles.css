@@ -1570,3 +1570,23 @@ details[open]:not(.cell-more) > summary::before { transform: rotate(45deg); }
 .cd-untag { border: 0; background: none; padding: 0 0 0 3px; color: var(--muted); cursor: pointer; font-size: 13px; line-height: 1; opacity: .5; }
 .cd-tag:hover .cd-untag, .cd-untag:focus-visible { opacity: 1; }
 .cd-untag:hover { color: var(--danger-text); }
+
+/* «Sin responder» en Mis Chats: mismo aspecto que Todos y No leídos; las acciones aparecen al pasar el ratón */
+.chats-list li[data-client] { position: relative; }
+.chats-list li.inbox-item { padding: 10px; border-bottom: 0; flex-direction: row; gap: 10px; }
+.chats-list li.inbox-item.follow-up { border-left: 0; padding-left: 10px; }
+.chats-list li.inbox-item .wait { font-size: 12px; flex-shrink: 0; }
+.inbox-resp { font-size: 11px; color: var(--muted); margin-left: 2px; white-space: nowrap; }
+.chats-group { list-style: none; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 10px 10px 4px; }
+.chat-actions {
+  position: absolute; right: 8px; bottom: 8px; display: flex; align-items: center; gap: 4px; padding: 3px; border-radius: 9px;
+  background: var(--panel); box-shadow: var(--card-shadow); border: 1px solid var(--border);
+  opacity: 0; pointer-events: none; transition: opacity .12s ease;
+}
+.chats-list li:hover > .chat-actions, .chats-list li:focus-within > .chat-actions { opacity: 1; pointer-events: auto; }
+.chat-act { border: 0; background: none; color: var(--text); font: inherit; font-size: 12px; padding: 3px 8px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.chat-act:hover { background: var(--hover); color: var(--accent); }
+select.chat-act { padding: 3px 24px 3px 8px !important; border: 0; background-color: transparent; max-width: 110px; }
+.inbox-snoozed { list-style: none; padding: 8px 10px; font-size: 13px; color: var(--muted); }
+.inbox-snoozed .chats-list { margin-top: 6px; color: var(--text); }
+.chats-list li.inbox-item.snoozed { opacity: .85; }
