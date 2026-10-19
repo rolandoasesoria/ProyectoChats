@@ -406,6 +406,7 @@ function bindEvents() {
   bindChatsEvents();
   bindBreadcrumbEvents();
   bindCompanyEvents();
+  bindSidebarEvents();
   bindContactsEvents();
   bindTemplatesEvents();
   bindAIEvents();
