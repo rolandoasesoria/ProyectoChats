@@ -225,8 +225,11 @@ de la izquierda y la derecha se ajusta arrastrando la línea que las separa del 
 doble clic la devuelve al ancho inicial y cada navegador lo recuerda. En el centro, arriba, la cabecera (ver \
 "Cabecera del contacto"), los avisos y cuatro pestañas: "Conversación", "Ficha", "Tareas" y "Notas". Cambiar de \
 pestaña no te saca de donde estás: la lista de la izquierda y el panel derecho siguen igual.
-- Menú de usuario (arriba a la derecha, con tu nombre): \
-"Cambiar contraseña" y "Cerrar sesión".
+- Menú de usuario (arriba a la derecha, con tu nombre y tu foto): "Mi perfil", "Cambiar contraseña" y "Cerrar \
+sesión". En "Mi perfil" cada uno cambia lo suyo: la foto ("Cambiar foto": se recorta en cuadrado y se guarda al \
+elegirla; "Quitar foto" vuelve a la inicial; la ve el resto del equipo, p. ej. como responsable en Detalles y en la \
+lista para asignarlo), el nombre, el email (opcional; no puede ser el de otra persona del equipo), el tema y la \
+contraseña. El usuario con el que se entra y el rol no se cambian ahí (el rol y los permisos los da un administrador).
 - Campana (arriba a la derecha): avisos de menciones en notas, de tareas que otra persona te asigna y de cuentas \
 conectadas que han dejado de funcionar (al pulsarlo se abre "Mis cuentas"). El número rojo son los no leídos; al pulsar un aviso se abre el cliente (en Notas o Tareas). "Marcar todo como leído" los limpia.
 - Sección "Panel de actividad" (barra lateral, debajo de "Respuestas con IA"). Periodo de 7, 30, 90 días o 1 año. \
