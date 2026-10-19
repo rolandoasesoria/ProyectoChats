@@ -6,8 +6,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
-- Test : recorre con el ratón y el teclado reales los 155 desplegables, campos y casillas de
-  todas las pantallas y ventanas (que abran, dejen elegir o escribir y no estén tapados). Va en .
+- Test `test_ui_campos.py`: recorre con el ratón y el teclado reales los 155 desplegables, campos y casillas de
+  todas las pantallas y ventanas (que abran, dejen elegir o escribir y no estén tapados). Va en `run_tests.ps1 -Todas`.
 - Permiso **«Puede ver los chats de todo el equipo»**: un administrador se lo da a un usuario al crearlo o después
   (Administración → Usuarios), y ese usuario puede elegir «Todo el equipo» en Mis Chats. Migración
   `0004_permiso_chats_equipo.sql`.
