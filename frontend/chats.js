@@ -97,7 +97,7 @@ function unreadBadge(n) {
 function chatItemHtml(c) {
   return `
     <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread ? " has-unread" : ""}">
-      <span class="chat-avatar">${escapeHtml(initialsOf(c.name))}</span>
+      <span class="chat-avatar ${avatarClass(c.name)}">${escapeHtml(initialsOf(c.name))}</span>
       <div class="chat-item-body">
         <div class="chat-item-top"><strong>${escapeHtml(c.name)}</strong><span class="chat-item-time">${escapeHtml(chatTime(c.last_at))}</span></div>
         <div class="chat-item-bottom">
@@ -140,7 +140,7 @@ function setChatsFilter(filter) {
 function contactMiniHtml(c) {
   return `
     <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread ? " has-unread" : ""}">
-      <span class="chat-avatar">${escapeHtml(initialsOf(c.name))}</span>
+      <span class="chat-avatar ${avatarClass(c.name)}">${escapeHtml(initialsOf(c.name))}</span>
       <div class="chat-item-body">
         <div class="chat-item-top"><strong>${statusDot(c.status)}${escapeHtml(c.name)}</strong>
           ${c.last_message_at ? `<span class="chat-item-time">${escapeHtml(chatTime(c.last_message_at))}</span>` : ""}</div>
@@ -213,6 +213,7 @@ async function openChat(clientId) {
   $("#chat-empty").hidden = true;
   $("#chat-open").hidden = false;
   $("#chat-avatar").textContent = initialsOf(data.name);
+  $("#chat-avatar").className = `chat-avatar ${avatarClass(data.name)}`;
   renderClientHeader(data);
   renderChatDetails(data);
   toggleChatDetails(chatState.details);
@@ -416,24 +417,141 @@ function setComposing(on) {
 
 /* ---------- Detalles del contacto ---------- */
 
+// Color del avatar de cada persona: siempre el mismo para el mismo nombre (8 tonos suaves, ver .av-N en styles.css).
+function avatarClass(name) {
+  let h = 0;
+  for (const ch of name || "") h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return `av-${h % 8}`;
+}
+
+const CHANNEL_ICONS = {
+  email: `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>`,
+  whatsapp: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 11.5a8.5 8.5 0 0 1-12.6 7.4L3.5 20l1.2-4.2a8.5 8.5 0 1 1 15.8-4.3z"/><path d="M9 8.5c0 3.5 3 6.5 6.5 6.5l1-1.6-2-1-1 1a5 5 0 0 1-2.4-2.4l1-1-1-2z"/></svg>`,
+  telegram: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 4L3 11l6 2.5L19 7l-8 8v5l3.5-3.5L18 19z"/></svg>`,
+  phone: `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>`,
+  other: `<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>`,
+};
+const EDIT_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
+const COPY_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>`;
+
+function shortDate(iso) {
+  return iso ? new Date(iso).toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" }) : "";
+}
+
+// Panel derecho, pestaña Detalles: la identidad centrada con sus acciones rápidas y, debajo, tarjetas con el contacto,
+// el responsable, las etiquetas, los datos clave (de la Ficha) y la actividad.
 function renderChatDetails(data) {
-  const row = (label, value) => value ? `<div class="detail-row"><span class="muted small">${label}</span><span>${value}</span></div>` : "";
-  const identities = data.identities.map((i) =>
-    `<div class="detail-row"><span class="muted small">${escapeHtml(IDENTITY_LABELS[i.channel] || i.channel)}</span><span>${escapeHtml(i.handle)}</span></div>`).join("");
+  const convs = data.conversations || [];
+  const first = convs.map((c) => c.first_at).filter(Boolean).sort()[0];
+  const last = convs.map((c) => c.last_at).filter(Boolean).sort().at(-1);
+  const messages = convs.reduce((n, c) => n + (c.messages || 0), 0);
+  const actions = chatState.channels.map((ch) => `
+      <button type="button" class="cd-action ${escapeHtml(ch)}" data-cd-channel="${escapeHtml(ch)}" title="Ver la conversación por ${escapeHtml(IDENTITY_LABELS[ch] || ch)}">
+        <span class="cd-action-icon">${CHANNEL_ICONS[ch] || CHANNEL_ICONS.other}</span>${escapeHtml(ch === "email" ? "Correo" : IDENTITY_LABELS[ch] || ch)}</button>`).join("");
+  const identities = data.identities.map((i) => `
+      <li class="cd-identity ${escapeHtml(i.channel)}">
+        <span class="cd-ch-icon" title="${escapeHtml(IDENTITY_LABELS[i.channel] || i.channel)}">${CHANNEL_ICONS[i.channel] || CHANNEL_ICONS.other}</span>
+        <span class="cd-handle">${escapeHtml(i.handle)}</span>
+        <button type="button" class="cd-copy" data-copy="${escapeHtml(i.handle)}" title="Copiar" aria-label="Copiar ${escapeHtml(i.handle)}">${COPY_ICON}</button>
+      </li>`).join("");
+  const row = (label, value, id = "") => `<div class="cd-row"${id ? ` id="${id}"` : ""}><span>${label}</span><strong>${value}</strong></div>`;
   $("#chat-details-body").innerHTML = `
-    <h3>Detalles del contacto</h3>
-    <div class="chat-details-card">
-      <span class="chat-avatar large">${escapeHtml(initialsOf(data.name))}</span>
-      <strong>${escapeHtml(data.name)}</strong>
-      ${data.company ? `<span class="muted small">${escapeHtml(data.company)}</span>` : ""}
+    <div class="cd-hero">
+      <span class="chat-avatar xl ${avatarClass(data.name)}">${escapeHtml(initialsOf(data.name))}</span>
+      <h3 class="cd-name">${escapeHtml(data.name)}</h3>
+      ${data.company ? `<span class="cd-company">${escapeHtml(data.company)}</span>` : ""}
+      <div class="cd-pills">
+        <span class="status-pill ${escapeHtml(data.status)}">${statusDot(data.status)}${escapeHtml(STATUS_LABELS[data.status] || data.status)}</span>
+        <span id="cd-priority"></span>
+      </div>
+      <div class="cd-actions">${actions}
+        <button type="button" class="cd-action" data-cd-edit title="Editar sus datos, responsable y etiquetas">
+          <span class="cd-action-icon">${EDIT_ICON}</span>Editar</button>
+      </div>
     </div>
-    <h4>Información básica</h4>
-    ${row("Estado", `${statusDot(data.status)} ${escapeHtml(STATUS_LABELS[data.status] || data.status)}`)}
-    ${identities || `<p class="muted small">Sin datos de contacto.</p>`}
-    <h4>Responsable</h4>
-    ${row("Agente asignado", escapeHtml(data.assignee || "Sin asignar"))}
-    <h4>Etiquetas</h4>
-    <div class="chip-row">${data.tags.length ? tagChips(data.tags) : `<span class="muted small">Sin etiquetas</span>`}</div>`;
+    <section class="cd-card">
+      <h4>Contacto</h4>
+      ${identities ? `<ul class="cd-identities">${identities}</ul>` : `<p class="cd-empty">Sin datos de contacto.</p>`}
+    </section>
+    <section class="cd-card">
+      <h4>Responsable</h4>
+      ${data.assignee ? `<div class="cd-person"><span class="chat-avatar small ${avatarClass(data.assignee)}">${escapeHtml(initialsOf(data.assignee))}</span>${escapeHtml(data.assignee)}</div>`
+        : `<button type="button" class="cd-add" data-cd-edit>+ Asignar responsable</button>`}
+    </section>
+    <section class="cd-card">
+      <h4>Etiquetas</h4>
+      <div class="chip-row">${tagChips(data.tags)}<button type="button" class="cd-add" data-cd-edit>+ ${data.tags.length ? "Añadir" : "Añadir etiqueta"}</button></div>
+    </section>
+    <section class="cd-card" id="cd-key">
+      <h4>Datos clave</h4>
+      <div id="cd-key-rows"><p class="cd-empty">Cargando…</p></div>
+      <button type="button" class="cd-link" data-cd-tab="profile">Ver la ficha completa →</button>
+    </section>
+    <section class="cd-card">
+      <h4>Actividad</h4>
+      ${row("Primer contacto", first ? escapeHtml(shortDate(first)) : "—")}
+      ${row("Último mensaje", last ? escapeHtml(chatTime(last)) : "—")}
+      ${row("Conversaciones", `${convs.length} · ${messages} ${messages === 1 ? "mensaje" : "mensajes"}`)}
+      ${row("Tareas abiertas", "—", "cd-tasks")}
+    </section>`;
+  chatState.keyFacts = null;
+  chatState.keyProps = null;
+}
+
+// Datos clave: los de la Ficha (los extrae la IA o se añaden a mano) y las propiedades rellenas (DNI, origen…).
+function renderDetailsKeyData() {
+  const box = $("#cd-key-rows");
+  if (!box || chatState.keyFacts === null) return;
+  const items = [...(chatState.keyProps || []), ...chatState.keyFacts].slice(0, 5);
+  box.innerHTML = items.length
+    ? items.map((f) => `<div class="cd-row"><span>${escapeHtml(f.label)}</span><strong title="${escapeHtml(f.value)}">${escapeHtml(f.value)}</strong></div>`).join("")
+    : `<p class="cd-empty">Todavía no hay datos. Pulsa «✨ Actualizar con IA» en la Ficha o añádelos a mano.</p>`;
+}
+
+// Al cargar la Ficha (profile.js): prioridad que ve la IA y sus datos clave.
+function setDetailsProfile(clientId, p) {
+  if (chatState.clientId !== clientId || !$("#cd-priority")) return;
+  $("#cd-priority").innerHTML = priorityChips(p);
+  chatState.keyFacts = p.facts.map((f) => ({ label: f.label, value: f.value }));
+  renderDetailsKeyData();
+}
+
+// Al cargar las propiedades (contacts.js): las que tienen valor.
+function setDetailsProperties(clientId, props, values) {
+  if (chatState.clientId !== clientId) return;
+  chatState.keyProps = props.filter((p) => values[p.id]).map((p) => ({ label: p.label, value: String(values[p.id]) }));
+  renderDetailsKeyData();
+}
+
+// Al cargar sus tareas (profile.js).
+function setDetailsTasks(clientId, open) {
+  const row = $("#cd-tasks");
+  if (chatState.clientId !== clientId || !row) return;
+  const overdue = open.filter((t) => t.due_date && t.due_date <= todayIso()).length;
+  row.querySelector("strong").innerHTML = open.length
+    ? `${open.length}${overdue ? ` <span class="cd-overdue">· ${overdue} para hoy o vencida${overdue === 1 ? "" : "s"}</span>` : ""}` : "Ninguna";
+}
+
+async function onDetailsClick(e) {
+  const channel = e.target.closest("[data-cd-channel]");
+  if (channel) {
+    showDetailTab("conversation");
+    chatState.channel = channel.dataset.cdChannel;
+    setActiveChannelTab($("#chat-tabs"), chatState.channel);
+    return loadChatConversation();
+  }
+  if (e.target.closest("[data-cd-edit]")) return openClientDialog("edit");
+  const tab = e.target.closest("[data-cd-tab]");
+  if (tab) return showDetailTab(tab.dataset.cdTab);
+  const copy = e.target.closest("[data-copy]");
+  if (copy) {
+    try {
+      await navigator.clipboard.writeText(copy.dataset.copy);
+      copy.classList.add("copied");
+      copy.title = "¡Copiado!";
+      setTimeout(() => { copy.classList.remove("copied"); copy.title = "Copiar"; }, 1500);
+    } catch { /* sin portapapeles: se puede seleccionar el texto */ }
+  }
 }
 
 /* ---------- Panel derecho: detalles del contacto o el asistente ---------- */
@@ -535,6 +653,7 @@ function bindChatsEvents() {
   });
   $("#chat-file-chip").addEventListener("click", (e) => { if (e.target.closest("#chat-file-remove")) setChatFile(null); });
   $("#chat-details-toggle").addEventListener("click", () => toggleChatDetails());
+  $("#chat-details-body").addEventListener("click", onDetailsClick);
   $("#chat-details-tabs").addEventListener("click", (e) => {
     const tab = e.target.closest("[data-pane]");
     if (tab) showDetailsPane(tab.dataset.pane);

@@ -54,7 +54,10 @@ function sourceLink(messageId) {
 
 async function loadProfile(clientId) {
   const data = await api(`/api/clients/${clientId}/profile`);
-  if (state.clientId === clientId) renderProfile(data);
+  if (state.clientId === clientId) {
+    renderProfile(data);
+    setDetailsProfile(clientId, data);
+  }
   return data;
 }
 
@@ -212,6 +215,7 @@ async function loadClientTasks(clientId) {
   const count = $("#client-tasks-count");
   count.textContent = open.length;
   count.hidden = !open.length;
+  setDetailsTasks(clientId, open);
 }
 
 async function loadMyTasks() {
@@ -236,6 +240,7 @@ function setMyTasksCount(tasks) {
   count.hidden = !tasks.length;
   count.classList.toggle("alert", overdue > 0);
   count.title = overdue ? `${overdue} vencida${overdue === 1 ? "" : "s"} o para hoy` : "";
+  setNavTasks(tasks.length, overdue);
 }
 
 async function refreshMyTasksCount() {
