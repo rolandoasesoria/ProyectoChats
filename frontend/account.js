@@ -1,12 +1,10 @@
-// Cuenta del usuario: menú, tema, cambio de contraseña y administración de usuarios.
+// Cuenta del usuario: menú, «Mi perfil» (foto, nombre, email, tema), contraseña y administración de usuarios.
 
 let currentUser = null;
 
 function initAccount(user) {
   currentUser = user;
-  $("#user-name").textContent = user.name;
-  $("#user-avatar").textContent = user.name.trim().charAt(0).toUpperCase();
-  $("#menu-name").textContent = user.name;
+  renderOwnIdentity();
   $("#menu-role").textContent = user.role === "admin" ? "Administrador" : "Usuario";
   document.querySelectorAll("[data-admin-only]").forEach((el) => { el.hidden = user.role !== "admin"; });
   applyTheme(user.theme);
@@ -26,6 +24,7 @@ async function toggleTheme() {
   const next = effectiveTheme() === "dark" ? "light" : "dark";
   applyTheme(next);
   updateThemeButton();
+  currentUser.theme = next;
   try {
     await api("/api/me", { method: "PATCH", body: JSON.stringify({ theme: next }) });
   } catch { /* si falla, el tema queda aplicado en este navegador */ }
@@ -74,6 +73,115 @@ async function submitPassword(e) {
     alert("Contraseña cambiada. Se han cerrado tus sesiones en otros dispositivos.");
   } catch (err) {
     showError(error, err.message);
+  }
+}
+
+/* ---------- Mi perfil ---------- */
+
+const AVATAR_SIDE = 256; // la foto se recorta en cuadrado y se reduce a 256 × 256 antes de subirla
+
+// URL de la foto de alguien del equipo («» si no tiene): lleva su huella, así que cambia al cambiar la foto.
+function avatarUrl(u) {
+  return u?.avatar_version ? `/api/users/${u.id}/avatar?v=${encodeURIComponent(u.avatar_version)}` : "";
+}
+
+// Avatar de alguien del equipo: su foto o, si no ha subido ninguna, sus iniciales en su color.
+function userAvatarHtml(u, size = "") {
+  const cls = `chat-avatar${size ? ` ${size}` : ""} ${avatarClass(u.name)}`;
+  return avatarUrl(u) ? `<span class="${cls} has-photo"><img src="${avatarUrl(u)}" alt=""></span>`
+    : `<span class="${cls}">${escapeHtml(initialsOf(u.name))}</span>`;
+}
+
+// El propio usuario: arriba a la derecha, en su menú, en «Mi perfil» y en la lista del equipo.
+function renderOwnIdentity() {
+  const u = currentUser;
+  $("#user-name").textContent = u.name;
+  $("#menu-name").textContent = u.name;
+  const top = $("#user-avatar");
+  top.classList.toggle("has-photo", Boolean(avatarUrl(u)));
+  top.innerHTML = avatarUrl(u) ? `<img src="${avatarUrl(u)}" alt="">` : escapeHtml(u.name.trim().charAt(0).toUpperCase());
+  $("#pf-avatar").innerHTML = userAvatarHtml(u, "xl");
+  $("#pf-photo-remove").hidden = !avatarUrl(u);
+  const me = team.find((t) => t.id === u.id);
+  if (me) Object.assign(me, { name: u.name, avatar_version: u.avatar_version });
+}
+
+function setCurrentUser(user) {
+  currentUser = { ...currentUser, ...user };
+  renderOwnIdentity();
+}
+
+function openProfileDialog() {
+  const u = currentUser;
+  $("#pf-name").value = u.name;
+  $("#pf-email").value = u.email || "";
+  $("#pf-theme").value = u.theme || "system";
+  $("#pf-username").textContent = u.username || "—";
+  $("#pf-role").textContent = u.role === "admin" ? "Administrador" : "Usuario";
+  showError($("#pf-error"), "");
+  renderOwnIdentity();
+  $("#profile-dialog").showModal();
+}
+
+async function submitProfile(e) {
+  e.preventDefault();
+  // Con el aviso de la app, no el globo del navegador (el servidor lo vuelve a comprobar).
+  if (!$("#pf-name").value.trim()) return showError($("#pf-error"), "El nombre no puede quedar vacío.");
+  if ($("#pf-email").validity.typeMismatch) return showError($("#pf-error"), "Ese email no parece válido.");
+  try {
+    const user = await api("/api/me", {
+      method: "PATCH",
+      body: JSON.stringify({ name: $("#pf-name").value, email: $("#pf-email").value, theme: $("#pf-theme").value }),
+    });
+    setCurrentUser(user);
+    applyTheme(user.theme);
+    updateThemeButton();
+    $("#profile-dialog").close();
+    toast("Perfil guardado.", "success");
+  } catch (err) {
+    showError($("#pf-error"), err.message);
+  }
+}
+
+// Recorta la imagen elegida en un cuadrado centrado y la reduce; la devuelve como JPG en base64.
+async function squarePhoto(file) {
+  let img;
+  try {
+    img = await createImageBitmap(file);
+  } catch {
+    throw new Error("No se pudo leer la imagen. Prueba con una foto PNG, JPG o WebP.");
+  }
+  const side = Math.min(img.width, img.height);
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = AVATAR_SIDE;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff"; // el JPG no tiene transparencia: lo transparente queda blanco
+  ctx.fillRect(0, 0, AVATAR_SIDE, AVATAR_SIDE);
+  ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, AVATAR_SIDE, AVATAR_SIDE);
+  const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.88));
+  return fileToBase64(blob);
+}
+
+async function uploadAvatar(file) {
+  if (!file) return;
+  showError($("#pf-error"), "");
+  try {
+    const user = await api("/api/me/avatar", { method: "PUT", body: JSON.stringify({ data: await squarePhoto(file) }) });
+    setCurrentUser(user);
+    toast("Foto de perfil actualizada.", "success");
+  } catch (err) {
+    showError($("#pf-error"), err.message);
+  } finally {
+    $("#pf-photo-file").value = "";
+  }
+}
+
+async function removeAvatar() {
+  if (!(await appConfirm("¿Quitar tu foto de perfil? En su lugar saldrá tu inicial.", { ok: "Quitar foto", danger: true }))) return;
+  try {
+    setCurrentUser(await api("/api/me/avatar", { method: "DELETE" }));
+  } catch (err) {
+    showError($("#pf-error"), err.message);
   }
 }
 
@@ -199,7 +307,7 @@ async function loadUsersTable() {
   $("#users-tbody").innerHTML = users.map((u) => `
     <tr class="${u.active ? "" : "inactive"}">
       <td>${escapeHtml(u.username || "—")}</td>
-      <td>${escapeHtml(u.name)}</td>
+      <td><span class="user-cell">${userAvatarHtml(u, "tiny")}${escapeHtml(u.name)}</span></td>
       <td>${escapeHtml(u.email || "")}</td>
       <td>${u.role === "admin" ? "Administrador" : "Usuario"}${u.role !== "admin" && u.can_view_team_chats
         ? `<span class="perm-chip" title="Puede ver en Mis Chats los chats de todo el equipo">Chats del equipo</span>` : ""}</td>
@@ -353,6 +461,11 @@ function bindAccountEvents() {
   $("#menu-tour").hidden = !TOUR_ENABLED;
   $("#menu-tour").addEventListener("click", () => startTour());
   $("#menu-password").addEventListener("click", openPasswordDialog);
+  $("#menu-profile").addEventListener("click", openProfileDialog);
+  $("#profile-form").addEventListener("submit", submitProfile);
+  $("#pf-photo-file").addEventListener("change", (e) => uploadAvatar(e.target.files[0]));
+  $("#pf-photo-remove").addEventListener("click", removeAvatar);
+  $("#pf-password").addEventListener("click", openPasswordDialog);
   $("#menu-admin").addEventListener("click", openAdminDialog);
   $("#menu-logout").addEventListener("click", logout);
 

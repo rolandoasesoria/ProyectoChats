@@ -87,6 +87,46 @@ try:
     check("detalles: el avatar tiene el color propio de la persona",
           b.js("/av-\\d/.test(document.querySelector('.cd-hero .chat-avatar').className)"))
     b.shot("04-detalles")
+    # Mi perfil: cada usuario cambia su foto, nombre, email y tema
+    b.click("#user-menu-btn")
+    b.click("#menu-profile")
+    b.wait("document.querySelector('#profile-dialog').open")
+    check("Mi perfil: con sus datos y, sin foto, su inicial",
+          b.js("document.querySelector('#pf-name').value") == "Ana Ruiz"
+          and b.js("document.querySelector('#pf-username').textContent") == "ana"
+          and b.js("document.querySelector('#pf-photo-remove').hidden"))
+    # Una «foto» de 400 × 200 hecha en la página: se recorta en cuadrado y se sube al elegirla
+    b.js("""(async () => {
+      const c = document.createElement('canvas'); c.width = 400; c.height = 200;
+      const x = c.getContext('2d'); x.fillStyle = '#c0392b'; x.fillRect(0, 0, 400, 200);
+      x.fillStyle = '#2980b9'; x.fillRect(100, 0, 200, 200);
+      const blob = await new Promise((r) => c.toBlob(r, 'image/png'));
+      const dt = new DataTransfer(); dt.items.add(new File([blob], 'yo.png', {type: 'image/png'}));
+      const input = document.querySelector('#pf-photo-file'); input.files = dt.files;
+      input.dispatchEvent(new Event('change', {bubbles: true}));
+    })()""")
+    b.wait("currentUser.avatar_version && document.querySelector('#user-avatar img')?.complete")
+    check("Mi perfil: la foto sale arriba a la derecha y en el perfil, con «Quitar foto»",
+          b.js("document.querySelector('#pf-avatar img') && document.querySelector('#user-avatar img').naturalWidth") == 256
+          and not b.js("document.querySelector('#pf-photo-remove').hidden"))
+    check("Mi perfil: se recorta el centro de la imagen",
+          b.js("""(() => { const i = document.querySelector('#user-avatar img'); const c = document.createElement('canvas');
+            c.width = c.height = 256; const x = c.getContext('2d'); x.drawImage(i, 0, 0);
+            const [r, g, bl] = x.getImageData(128, 128, 1, 1).data; const [r2] = x.getImageData(4, 128, 1, 1).data;
+            return bl > 150 && r < 100 && r2 < 100; })()"""))
+    b.fill("#pf-name", "Ana Ruiz Ocaña")
+    b.fill("#pf-email", "no-es-un-email")
+    b.js("document.querySelector('#profile-form').requestSubmit()")
+    b.wait("!document.querySelector('#pf-error').hidden")
+    check("Mi perfil: un email mal escrito no se guarda y lo dice",
+          "email" in b.js("document.querySelector('#pf-error').textContent").lower())
+    b.fill("#pf-email", "ana@miempresa.com")
+    b.shot("02p-mi-perfil")
+    b.js("document.querySelector('#profile-form').requestSubmit()")
+    b.wait("!document.querySelector('#profile-dialog').open")
+    check("Mi perfil: el nombre nuevo sale arriba", b.js("document.querySelector('#user-name').textContent") == "Ana Ruiz Ocaña")
+    b.js("api('/api/me', {method: 'PATCH', body: JSON.stringify({name: 'Ana Ruiz'})}).then(setCurrentUser)")
+    b.wait("document.querySelector('#user-name').textContent === 'Ana Ruiz'")
     # Responsable: se elige en una lista, sin abrir la ventana de Editar
     check("detalles: sin responsable, la cabecera lo dice", "Sin responsable" in b.js("document.querySelector('#detail-company').textContent"))
     b.click("[data-cd-assign]")
@@ -98,6 +138,7 @@ try:
     b.wait("document.querySelector('#detail-company').textContent.includes('Responsable: Ana Ruiz')")
     check("detalles: al elegir, queda como responsable (en la cabecera y en Detalles)",
           b.js("document.querySelector('.cd-person-name')?.textContent") == "Ana Ruiz")
+    check("detalles: el responsable sale con su foto de perfil", b.js("!!document.querySelector('.cd-person .chat-avatar img')"))
     b.click("[data-cd-assign]")
     b.click('#cd-assign-menu [data-assign-to=""]')
     b.wait("document.querySelector('#detail-company').textContent.includes('Sin responsable')")

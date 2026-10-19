@@ -1,10 +1,14 @@
 """Inicio y cierre de sesión, perfil propio y contraseña."""
 from typing import Literal
 
+import base64
+import binascii
+
 from fastapi import APIRouter, Cookie, Request, Response
 from pydantic import BaseModel, Field
 
-from .. import auth
+from .. import auth, avatars
+from ..errors import InvalidInput
 from .deps import CurrentUser
 
 router = APIRouter()
@@ -39,13 +43,42 @@ def me(user: CurrentUser):
 
 
 class ProfileUpdate(BaseModel):
+    name: str | None = Field(None, max_length=100)
+    email: str | None = Field(None, max_length=200)  # «» lo quita
     theme: Literal["system", "light", "dark"] | None = None
     tour_version: int | None = None
 
 
 @router.patch("/api/me")
 def update_me(req: ProfileUpdate, user: CurrentUser):
-    return auth.update_user(user["id"], theme=req.theme, tour_version=req.tour_version)
+    return auth.update_profile(user["id"], name=req.name, email=req.email, theme=req.theme,
+                               tour_version=req.tour_version)
+
+
+class AvatarUpload(BaseModel):
+    data: str = Field(max_length=400_000)  # imagen en base64 (hasta 256 KB)
+
+
+@router.put("/api/me/avatar")
+def put_avatar(req: AvatarUpload, user: CurrentUser):
+    try:
+        data = base64.b64decode(req.data, validate=True)
+    except (binascii.Error, ValueError):
+        raise InvalidInput("No se pudo leer la imagen.")
+    return avatars.set_avatar(user["id"], data)
+
+
+@router.delete("/api/me/avatar")
+def delete_avatar(user: CurrentUser):
+    return avatars.delete_avatar(user["id"])
+
+
+@router.get("/api/users/{user_id}/avatar")
+def get_avatar(user_id: int, _: CurrentUser):
+    mime, data = avatars.avatar(user_id)
+    # La URL lleva la huella de la foto (?v=…): al cambiarla cambia la URL, así que se puede guardar en caché.
+    return Response(data, media_type=mime, headers={"Cache-Control": "private, max-age=31536000, immutable",
+                                                    "X-Content-Type-Options": "nosniff"})
 
 
 class PasswordChange(BaseModel):

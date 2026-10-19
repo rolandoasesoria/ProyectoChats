@@ -482,7 +482,7 @@ function renderChatDetails(data) {
     <section class="cd-card cd-pop-card">
       <h4>Responsable</h4>
       ${data.assignee ? `<button type="button" class="cd-person" data-cd-assign aria-haspopup="menu" title="Cambiar el responsable">
-          <span class="chat-avatar small ${avatarClass(data.assignee)}">${escapeHtml(initialsOf(data.assignee))}</span>
+          ${userAvatarHtml(team.find((u) => u.id === data.assignee_user_id) || { name: data.assignee }, "small")}
           <span class="cd-person-name">${escapeHtml(data.assignee)}</span><span class="cd-change">Cambiar</span></button>`
         : `<button type="button" class="cd-add" data-cd-assign aria-haspopup="menu">+ Asignar responsable</button>`}
       <div class="menu cd-menu" id="cd-assign-menu" role="menu" hidden></div>
@@ -574,7 +574,7 @@ function toggleAssignMenu() {
   const option = (id, label, avatar) => `<button type="button" role="menuitem" class="cd-menu-item${id === current ? " selected" : ""}"
       data-assign-to="${id ?? ""}">${avatar}<span>${escapeHtml(label)}</span></button>`;
   menu.innerHTML = team.map((u) => option(u.id, u.id === currentUser.id ? `${u.name} (tú)` : u.name,
-    `<span class="chat-avatar tiny ${avatarClass(u.name)}">${escapeHtml(initialsOf(u.name))}</span>`)).join("")
+    userAvatarHtml(u, "tiny"))).join("")
     + option(null, "Sin responsable", `<span class="chat-avatar tiny cd-none">–</span>`);
   menu.hidden = false;
 }

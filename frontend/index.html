@@ -41,6 +41,7 @@
         </button>
         <div class="menu" id="user-menu" role="menu" hidden>
           <div class="menu-head"><strong id="menu-name"></strong><span class="muted" id="menu-role"></span></div>
+          <button role="menuitem" id="menu-profile">Mi perfil</button>
           <button role="menuitem" id="menu-tour">Ver tutorial</button>
           <button role="menuitem" id="menu-password">Cambiar contraseña</button>
           <button role="menuitem" id="menu-logout" class="danger">Cerrar sesión</button>
@@ -635,6 +636,49 @@
   </div>
 
   <!-- Cambiar contraseña -->
+  <!-- Mi perfil: lo que cada usuario cambia de su propia cuenta -->
+  <dialog id="profile-dialog" class="dialog">
+    <div class="dialog-head">
+      <h2>Mi perfil</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <form id="profile-form" class="form" novalidate>
+      <div class="profile-photo-row">
+        <div id="pf-avatar"></div>
+        <div class="company-logo-actions">
+          <label class="ghost small-btn file-btn">Cambiar foto
+            <input type="file" id="pf-photo-file" accept="image/*" hidden>
+          </label>
+          <button type="button" class="link small danger" id="pf-photo-remove" hidden>Quitar foto</button>
+          <p class="muted small">Se recorta en cuadrado y se guarda al elegirla. La ve el resto del equipo.</p>
+        </div>
+      </div>
+      <p class="profile-who muted small">Entras como <strong id="pf-username"></strong> · <span id="pf-role"></span></p>
+      <label>Nombre
+        <input id="pf-name" maxlength="100" required autocomplete="name">
+      </label>
+      <label>Email
+        <input id="pf-email" type="email" maxlength="200" autocomplete="email" placeholder="opcional">
+      </label>
+      <label>Tema
+        <select id="pf-theme">
+          <option value="system">Como el sistema</option>
+          <option value="light">Claro</option>
+          <option value="dark">Oscuro</option>
+        </select>
+      </label>
+      <div class="profile-password">
+        <span>Contraseña</span>
+        <button type="button" class="link" id="pf-password">Cambiar contraseña…</button>
+      </div>
+      <p class="form-error" id="pf-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" class="ghost" data-close>Cancelar</button>
+        <button type="submit" class="primary">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
   <dialog id="password-dialog" class="dialog">
     <form id="password-form" class="form" method="dialog">
       <h2>Cambiar contraseña</h2>

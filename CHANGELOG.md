@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Mi perfil** (menú de usuario): cada uno cambia su foto de perfil, su nombre, su email, el tema y la
+  contraseña. La foto se recorta en cuadrado al subirla y se ve arriba a la derecha, como responsable en
+  Detalles, en la lista para asignar y en Administración > Usuarios.
 - Test `test_ui_campos.py`: recorre con el ratón y el teclado reales los 155 desplegables, campos y casillas de
   todas las pantallas y ventanas (que abran, dejen elegir o escribir y no estén tapados). Va en `run_tests.ps1 -Todas`.
 - Permiso **«Puede ver los chats de todo el equipo»**: un administrador se lo da a un usuario al crearlo o después

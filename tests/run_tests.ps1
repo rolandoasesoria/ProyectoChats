@@ -50,7 +50,7 @@ $env:TEST_DATABASE_ADMIN_URL = $testAdminUrl
 # Sin servidor: lógica pura, con respuestas de Claude simuladas.
 $unitarias = @("check_js.py", "test_emails.py", "test_insights.py", "test_agent_tools.py", "test_db_security.py")
 # Con servidor de pruebas.
-$api = @("test_auth_api.py", "test_profile_api.py", "test_inbox_api.py", "test_notes_api.py",
+$api = @("test_auth_api.py", "test_mi_perfil_api.py", "test_profile_api.py", "test_inbox_api.py", "test_notes_api.py",
          "test_clients_api.py", "test_privacy_api.py", "test_dashboard_api.py", "test_documents_api.py",
          "test_search_api.py", "test_drafts.py", "test_integrations.py", "test_replies_api.py", "test_followups_api.py", "test_settings_api.py", "test_redaction_api.py", "test_presence_api.py", "test_status_api.py", "test_my_accounts_api.py", "test_coexistence.py", "test_templates.py", "test_chats_api.py", "test_contacts_api.py", "test_ai_reply.py", "test_send_files.py")
 $ui = @("test_ui.py", "test_ui_campos.py")
