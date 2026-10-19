@@ -141,6 +141,12 @@ def user_for_session(token: str | None) -> dict:
     return user
 
 
+def can_view_team_chats(user: dict) -> bool:
+    """Ver en Mis Chats los chats de todo el equipo: los administradores siempre; los demás, con el permiso que les da
+    un administrador."""
+    return user["role"] == "admin" or bool(user.get("can_view_team_chats"))
+
+
 def require_admin(user: dict) -> dict:
     if user["role"] != "admin":
         raise Forbidden("Solo los administradores pueden hacer esto.")
@@ -164,7 +170,7 @@ def find_user_id_by_username(username: str) -> int | None:
 
 
 def create_user(username: str, name: str, password: str, email: str | None = None,
-                role: str = "user") -> dict:
+                role: str = "user", can_view_team_chats: bool = False) -> dict:
     validate_password(password)
     username = username.strip()
     if not username:
@@ -175,14 +181,14 @@ def create_user(username: str, name: str, password: str, email: str | None = Non
         if email and users_repo.email_exists(conn, email):
             raise Conflict("Ese email ya está en uso.")
         user_id = users_repo.insert(conn, username, name.strip() or username, email or None,
-                                    hash_password(password), role)
+                                    hash_password(password), role, can_view_team_chats)
         return users_repo.get(conn, user_id)
 
 
 def update_user(user_id: int, **fields) -> dict:
     """Actualiza campos permitidos. `password` se guarda como hash y cierra las sesiones abiertas."""
-    allowed = {"name", "email", "role", "active", "theme", "tour_version"}
-    # Los indicadores (active) se guardan como 0/1: PostgreSQL no convierte booleanos a número solo.
+    allowed = {"name", "email", "role", "active", "theme", "tour_version", "can_view_team_chats"}
+    # Los indicadores (active, can_view_team_chats) se guardan como 0/1: PostgreSQL no convierte booleanos a número solo.
     updates = {k: int(v) if isinstance(v, bool) else v
                for k, v in fields.items() if k in allowed and v is not None}
     password = fields.get("password")

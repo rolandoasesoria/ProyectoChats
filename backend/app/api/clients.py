@@ -4,8 +4,8 @@ from typing import Annotated, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, clients, contacts, insights, search
-from ..errors import NotFound
+from .. import audit, auth, clients, contacts, insights, search
+from ..errors import Forbidden, NotFound
 from .deps import CurrentUser, client_or_404
 
 router = APIRouter()
@@ -23,6 +23,8 @@ def list_clients(user: CurrentUser, q: str = "", status: Literal["lead", "active
 def list_chats(user: CurrentUser, q: str = "", scope: Literal["mine", "team"] = "mine", unread: bool = False):
     """Sección Chats: un elemento por cliente con su último mensaje y los no leídos."""
     if scope == "team":
+        if not auth.can_view_team_chats(user):
+            raise Forbidden("Para ver los chats de todo el equipo hace falta que un administrador te dé permiso.")
         audit.log(user["id"], "team_chats", throttle=True)
     return search.chat_list(user["id"], scope, q, unread)
 

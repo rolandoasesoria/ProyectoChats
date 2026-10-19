@@ -3,6 +3,8 @@ import sys
 
 from apitest import Session, check, receive, results
 
+from app.db import get_conn
+
 ana = Session("ana")
 
 st, mine = ana.get("/api/chats")
@@ -30,4 +32,24 @@ check("y desaparece de «No leídos»", 1 not in {c["id"] for c in ana.get("/api
 check("buscar por nombre", [c["id"] for c in ana.get("/api/chats?q=laura")[1]] == [1])
 check("buscar por teléfono", [c["id"] for c in ana.get("/api/chats?q=600111222")[1]] == [1])
 check("alcance no válido = 422", ana.get("/api/chats?scope=todos")[0] == 422)
+
+# «Todo el equipo»: los administradores siempre; los demás, con el permiso que les da un administrador
+carlos = Session("carlos")
+st, res = carlos.get("/api/chats?scope=team")
+check("sin permiso, un usuario no ve los chats del equipo = 403", st == 403 and "permiso" in res["detail"], res)
+check("pero sí los suyos", carlos.get("/api/chats")[0] == 200)
+check("solo un administrador da el permiso = 403", carlos.patch("/api/admin/users/2", {"can_view_team_chats": True})[0] == 403)
+st, user = ana.patch("/api/admin/users/2", {"can_view_team_chats": True})
+check("un administrador se lo da", st == 200 and user["can_view_team_chats"] == 1, user)
+check("y ya puede verlos", carlos.get("/api/chats?scope=team")[0] == 200)
+check("su sesión lo sabe (para mostrarle el selector)", carlos.get("/api/me")[1]["can_view_team_chats"] == 1)
+check("el cambio queda en el registro de accesos",
+      "can_view_team_chats=True" in ana.get("/api/admin/audit?action=user_update")[1]["entries"][0]["detail"])
+ana.patch("/api/admin/users/2", {"can_view_team_chats": False})
+check("y se le puede quitar", carlos.get("/api/chats?scope=team")[0] == 403)
+st, user = ana.post("/api/admin/users", {"username": "permiso.prueba", "name": "Prueba Permiso", "password": "demo12345",
+                                         "can_view_team_chats": True})
+check("también se da al crear el usuario", st == 200 and user["can_view_team_chats"] == 1, user)
+with get_conn() as conn:
+    conn.execute("DELETE FROM users WHERE username = 'permiso.prueba'")
 sys.exit(0 if results["ok"] else 1)
