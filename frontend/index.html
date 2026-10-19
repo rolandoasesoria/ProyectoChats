@@ -147,7 +147,13 @@
         </div>
       </div>
       <div class="pane-contacts">
-        <button type="button" class="link back-link" id="contacts-back">← Volver a la tabla</button>
+        <button type="button" class="back-btn" id="contacts-back" title="Volver a la tabla de contactos">
+          <span class="back-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.5 6l-6 6 6 6"/></svg></span>
+          <span class="back-text"><strong>Contactos</strong><small id="contacts-mini-count"></small></span>
+          <span class="back-hint">Ver la tabla
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M9.5 9.5v10"/></svg>
+          </span>
+        </button>
         <input id="contacts-mini-search" type="search" placeholder="Buscar contacto…" autocomplete="off">
         <ul id="contacts-mini" class="chats-list"></ul>
       </div>
