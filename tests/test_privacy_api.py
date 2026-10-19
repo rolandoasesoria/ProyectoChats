@@ -3,6 +3,7 @@ import sys
 from apitest import Session, check, results
 
 ana, carlos = Session("ana"), Session("carlos")
+ana.patch("/api/admin/users/2", {"can_view_team_chats": True})  # la bandeja del equipo exige el permiso
 
 # Accesos a datos del equipo
 carlos.get("/api/clients/1/timeline?scope=mine")

@@ -541,36 +541,43 @@ try:
     # Bandeja sin responder: el filtro «Sin responder» de Mis Chats
     b.click("#nav-chats")
     b.click('#chats-filter [data-filter="inbox"]')
-    b.wait("document.querySelectorAll('#inbox-list .inbox-item').length > 0")
+    b.wait("document.querySelectorAll('#chats-list .inbox-item').length > 0")
+    check("«Sin responder» usa la misma lista, buscador y selector que Todos y No leídos",
+          b.js("!document.querySelector('#chats-list').hidden && !document.querySelector('#chats-search').hidden"
+               " && !document.querySelector('#chats-scope').hidden && !document.querySelector('#side-inbox')"))
     check("la bandeja marca la prioridad y el tono que detectó la IA",
-          b.js("[...document.querySelectorAll('#inbox-list .inbox-item')].find(li => li.textContent.includes('Jorge Martín'))"
+          b.js("[...document.querySelectorAll('#chats-list .inbox-item')].find(li => li.textContent.includes('Jorge Martín'))"
                ".querySelectorAll('.prio-chip').length") == 2)
-    check("bandeja sin responder con elementos", b.js("document.querySelectorAll('#inbox-list .inbox-item').length") == 2)
-    b.wait("document.querySelector('#inbox-count-team').textContent !== ''")
-    check("el selector muestra cuántas hay en cada lado", b.js(
-        "document.querySelector('#inbox-count-mine').textContent + '/' + document.querySelector('#inbox-count-team').textContent") == "2/5")
-    b.click('#inbox-scope [data-inbox-scope="team"]')
-    b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 5")
+    check("bandeja sin responder con elementos", b.js("document.querySelectorAll('#chats-list .inbox-item').length") == 2)
+    check("las acciones de la bandeja aparecen al pasar el ratón",
+          b.js("getComputedStyle(document.querySelector('#chats-list .inbox-item .chat-actions')).opacity") == "0")
+    b.fill("#chats-search", "jorge")
+    b.wait("document.querySelectorAll('#chats-list .inbox-item').length === 1")
+    check("el buscador también filtra «Sin responder»", "Jorge Martín" in b.js("document.querySelector('#chats-list').textContent"))
+    b.fill("#chats-search", "")
+    b.wait("document.querySelectorAll('#chats-list .inbox-item').length === 2")
+    b.js("{ const s = document.querySelector('#chats-scope'); s.value = 'team'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
+    b.wait("document.querySelectorAll('#chats-list .inbox-item').length === 5")
     check("con «Todo el equipo» el selector sigue visible",
-          b.js("document.querySelector('#inbox-scope').getBoundingClientRect().height") > 20)
+          b.js("document.querySelector('#chats-scope').getBoundingClientRect().height") > 20)
     check("cada conversación dice quién lleva al cliente: su responsable (o «Sin responsable»)",
-          b.js("[...document.querySelectorAll('#inbox-list .inbox-item .inbox-bottom > span:first-child')]"
+          b.js("[...document.querySelectorAll('#chats-list .inbox-item .inbox-resp')]"
                ".every((s) => /^(Sin responsable|Responsable: .+)$/.test(s.textContent.trim()))")
-          and "La lleva" not in b.js("document.querySelector('#inbox-list').textContent"))
+          and "La lleva" not in b.js("document.querySelector('#chats-list').textContent"))
     b.shot("09b-bandeja-equipo")
-    b.click('#inbox-scope [data-inbox-scope="mine"]')
-    b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 2")
-    b.js("{ const s = document.querySelector('#inbox-list [data-snooze]'); s.value = 'tomorrow'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
+    b.js("{ const s = document.querySelector('#chats-scope'); s.value = 'mine'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
+    b.wait("document.querySelectorAll('#chats-list .inbox-item').length === 2")
+    b.js("{ const s = document.querySelector('#chats-list [data-snooze]'); s.value = 'tomorrow'; s.dispatchEvent(new Event('change', {bubbles: true})); }")
     b.wait("document.querySelector('.inbox-snoozed summary')?.textContent === 'Pospuestas (1)'")
     check("posponer la quita de la bandeja y la deja en «Pospuestas»",
-          b.js("document.querySelectorAll('#inbox-list > .inbox-item').length") == 1 and b.js("document.querySelector('#inbox-count').textContent") == "1")
+          b.js("document.querySelectorAll('#chats-list > .inbox-item').length") == 1 and b.js("document.querySelector('#inbox-count').textContent") == "1")
     b.js("document.querySelector('.inbox-snoozed details').open = true")
     b.shot("09c-pospuestas")
     b.click(".inbox-snoozed [data-unsnooze]")
-    b.wait("document.querySelectorAll('#inbox-list > .inbox-item').length === 2 && !document.querySelector('.inbox-snoozed')")
+    b.wait("document.querySelectorAll('#chats-list > .inbox-item').length === 2 && !document.querySelector('.inbox-snoozed')")
     check("«Volver ahora» la devuelve", True)
     b.shot("09-bandeja")
-    b.click("#inbox-list .inbox-item strong")
+    b.click("#chats-list .inbox-item strong")
     b.wait("document.querySelector('#chat-timeline li.flash')")
     check("clic en la bandeja lleva al mensaje resaltado, sin salir de Mis Chats", b.js("currentView()") == "chats")
 
@@ -587,7 +594,7 @@ try:
     b.fill("#palette-input", "sin respon")
     b.wait("document.querySelector('#palette-list .palette-item.active .palette-label')?.textContent === 'Ir a Sin responder'")
     b.click("#palette-list .palette-item.active")
-    b.wait("!document.querySelector('#side-inbox').hidden")
+    b.wait("chatState.filter === 'inbox' && document.querySelector('#side-inbox-tab').classList.contains('active')")
     check("la paleta también ejecuta acciones", True)
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'g', bubbles: true}))")
     b.js("document.body.dispatchEvent(new KeyboardEvent('keydown', {key: 'c', bubbles: true}))")

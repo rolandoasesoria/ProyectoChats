@@ -115,6 +115,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   suave y respuestas en burbujas blancas, para distinguir cada zona. Email pasa a naranja y Telegram a azul.
 
 ### Seguridad
+- La bandeja «Sin responder» de todo el equipo también exige el permiso para ver los chats del equipo.
 - `GET /api/chats?scope=team` comprueba el permiso en el servidor (antes solo lo escondía la pantalla).
 - Conexión a la base de datos cifrada con TLS 1.3 y certificado verificado (`DB_SSLMODE=verify-full`). PostgreSQL
   solo acepta conexiones cifradas y con contraseña SCRAM; con un servidor remoto, la app se niega a conectarse
@@ -126,6 +127,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **«Sin responder» se ve y funciona como «Todos» y «No leídos»**: la misma lista, el mismo buscador y el mismo
+  selector «Mis chats / Todo el equipo»; las acciones (Responder, Atendido, Posponer) aparecen al pasar el ratón.
 - **Quién lleva a un cliente es su responsable** (uno solo, o «Sin responsable»), no quien tenga cada conversación:
   desaparece «la lleva X» de los mensajes (queda «cuenta de X», la cuenta por la que entró) y la bandeja dice el
   responsable. En Detalles, el responsable y las etiquetas se cambian directamente, sin abrir «Editar».

@@ -126,12 +126,7 @@ async function loadChats() {
 function setChatsFilter(filter) {
   chatState.filter = filter;
   document.querySelectorAll("#chats-filter [data-filter]").forEach((b) => b.classList.toggle("active", b.dataset.filter === filter));
-  const inbox = filter === "inbox";
-  $("#chats-list").hidden = inbox;
-  $("#chats-search").hidden = inbox;
-  $("#chats-scope").hidden = inbox || !canViewTeamChats(); // la bandeja tiene su propio «Mías / Todo el equipo»
-  $("#side-inbox").hidden = !inbox;
-  loadChats();
+  loadChats(); // con «Sin responder», la bandeja (inbox.js), en la misma lista
 }
 
 /* ---------- Lista de contactos (al abrir uno desde Contactos) ---------- */
@@ -741,7 +736,8 @@ function bindChatsEvents() {
   });
   ["#chats-list", "#contacts-mini"].forEach((sel) => $(sel).addEventListener("click", (e) => {
     const li = e.target.closest("li[data-client]");
-    if (li) openChat(Number(li.dataset.client)).catch((err) => alert(err.message));
+    // Los de «Sin responder» los abre la bandeja (inbox.js), en el mensaje que espera respuesta.
+    if (li && !li.classList.contains("inbox-item")) openChat(Number(li.dataset.client)).catch((err) => alert(err.message));
   }));
   $("#contacts-back").addEventListener("click", () => showView("contacts"));
   $("#contacts-mini-search").addEventListener("input", (e) => {
