@@ -130,6 +130,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Aspecto más moderno**, con la misma paleta: degradados sutiles en el fondo, la barra superior, las tarjetas,
+  los botones principales, las selecciones, las burbujas de los mensajes y los avatares (en tema claro y oscuro).
 - **«Sin responder» se ve y funciona como «Todos» y «No leídos»**: la misma lista, el mismo buscador y el mismo
   selector «Mis chats / Todo el equipo»; las acciones (Responder, Atendido, Posponer) aparecen al pasar el ratón.
 - **Quién lleva a un cliente es su responsable** (uno solo, o «Sin responsable»), no quien tenga cada conversación:
