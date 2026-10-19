@@ -284,7 +284,7 @@ async function onIntegrationsClick(e) {
       $("#if-provider-label").hidden = true;
       $("#if-name").focus();
     } else if (e.target.closest("[data-delete-integration]")) {
-      if (!confirm(`¿Desconectar «${item.name}»? Dejarán de entrar sus mensajes; las conversaciones que ya entraron se conservan.`)) return;
+      if (!(await appConfirm(`¿Desconectar «${item.name}»? Dejarán de entrar sus mensajes; las conversaciones que ya entraron se conservan.`, { ok: "Desconectar", danger: true }))) return;
       await api(accountsApi(`/${id}`), { method: "DELETE" });
       if (editingIntegration === id) resetIntegrationForm();
       await loadIntegrations();

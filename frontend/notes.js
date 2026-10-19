@@ -50,7 +50,7 @@ async function onNotesClick(e) {
   const id = Number(li.dataset.note);
   try {
     if (e.target.closest("[data-delete-note]")) {
-      if (!confirm("¿Borrar esta nota?")) return;
+      if (!(await appConfirm("¿Borrar esta nota?", { ok: "Borrar", danger: true }))) return;
       await api(`/api/notes/${id}`, { method: "DELETE" });
       await loadNotes(state.clientId);
     } else if (e.target.closest("[data-edit-note]")) {

@@ -386,7 +386,7 @@ async function sendChatMessage(text) {
       await send(false);
     } catch (err) {
       if (err.status !== 409) throw err;
-      if (!confirm(`${err.message}\n\n¿Enviar de todos modos?`)) {
+      if (!(await appConfirm(`${err.message}\n\n¿Enviar de todos modos?`, { ok: "Enviar igualmente" }))) {
         $("#chat-text").value = text; // se recupera lo escrito
         return;
       }

@@ -190,7 +190,7 @@ async function onDuplicatesClick(e) {
 
 // Une los clientes `sourceIds` en `targetId` (de uno en uno), tras una sola confirmación.
 async function mergeInto(sourceIds, targetId, question) {
-  if (!confirm(question)) return;
+  if (!(await appConfirm(question, { ok: "Unir" }))) return;
   try {
     for (const sourceId of sourceIds) {
       await api(`/api/clients/${sourceId}/merge`, { method: "POST", body: JSON.stringify({ into_client_id: targetId }) });
@@ -283,7 +283,7 @@ async function loadSensitive() {
 async function onSensitiveClick(e) {
   const li = e.target.closest("li[data-message]");
   if (!li || !e.target.closest("[data-redact]")) return;
-  if (!confirm("Se sustituirán por «[… oculto]». El dato original no se podrá recuperar. ¿Continuar?")) return;
+  if (!(await appConfirm("Se sustituirán por «[… oculto]». El dato original no se podrá recuperar. ¿Continuar?", { ok: "Ocultar", danger: true }))) return;
   try {
     await api(`/api/messages/${li.dataset.message}/redact`, { method: "POST", body: JSON.stringify({}) });
     await Promise.all([loadSensitive(), loadChatConversation(true)]);
@@ -310,8 +310,9 @@ async function exportClient() {
 
 async function deleteClient() {
   const c = state.clientData;
-  const typed = prompt(`Se borrarán «${c.name}» y TODOS sus datos: conversaciones, mensajes, datos clave, tareas, notas y avisos. `
-    + "No se puede deshacer.\n\nPara confirmar, escribe el nombre del cliente:");
+  const typed = await appPrompt(`Se borrarán «${c.name}» y TODOS sus datos: conversaciones, mensajes, datos clave, tareas, notas y avisos. `
+    + "No se puede deshacer.\n\nPara confirmar, escribe el nombre del cliente:", "",
+  { ok: "Borrar para siempre", placeholder: c.name, danger: true });
   if (typed === null) return;
   try {
     const res = await api(`/api/clients/${c.id}?confirm=${encodeURIComponent(typed)}`, { method: "DELETE" });

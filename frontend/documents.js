@@ -77,7 +77,7 @@ async function onDocumentsClick(e) {
       if (pre.hidden) pre.textContent = (await api(`/api/attachments/${id}/text`)).text || "";
       pre.hidden = !pre.hidden;
     } else if (e.target.closest("[data-delete-doc]")) {
-      if (!confirm("¿Borrar este documento?")) return;
+      if (!(await appConfirm("¿Borrar este documento?", { ok: "Borrar", danger: true }))) return;
       await api(`/api/attachments/${id}`, { method: "DELETE" });
       await loadDocuments(state.clientId);
     }

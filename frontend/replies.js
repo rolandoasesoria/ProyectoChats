@@ -178,7 +178,7 @@ async function onRepliesListClick(e) {
     $("#rf-cancel").hidden = false;
     $("#rf-title").focus();
   } else if (e.target.closest("[data-delete-reply]")) {
-    if (!confirm(`¿Borrar la respuesta «${r.title}» para todo el equipo?`)) return;
+    if (!(await appConfirm(`¿Borrar la respuesta «${r.title}» para todo el equipo?`, { ok: "Borrar", danger: true }))) return;
     try {
       await api(`/api/replies/${r.id}`, { method: "DELETE" });
       if (editingReply === r.id) resetReplyForm();

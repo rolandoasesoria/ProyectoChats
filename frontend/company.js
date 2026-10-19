@@ -13,9 +13,17 @@ function setCompany(s) {
   companyLogo = s.company_logo || "";
   renderCompanyMarks();
   $("#company-menu-name").textContent = companyName || "Tu empresa";
-  $("#company-btn").title = companyName ? `${companyName}: menú de la empresa` : "Menú de la empresa";
-  $("#company-btn").setAttribute("aria-label", $("#company-btn").title);
+  const label = companyName ? `${companyName}: menú de la empresa` : "Menú de la empresa";
+  $("#company-btn").title = label;
+  $("#company-btn").setAttribute("aria-label", label);
   updateBreadcrumb();
+}
+
+// La marca pequeña de la ruta de navegación: el logo o las iniciales (como adorno, sin texto que leer).
+function companyCrumbMark() {
+  return companyLogo
+    ? `<span class="crumb-mark has-logo" aria-hidden="true"><img src="/api/company/logo?v=${encodeURIComponent(companyLogo)}" alt=""></span>`
+    : `<span class="crumb-mark" data-initials="${escapeHtml(initialsOf(companyName))}" aria-hidden="true"></span>`;
 }
 
 // Logo (si hay), iniciales del nombre o, sin ninguno de los dos, un edificio.
@@ -88,7 +96,7 @@ async function uploadCompanyLogo(file) {
 }
 
 async function removeCompanyLogo() {
-  if (!confirm("¿Quitar el logo de la empresa? En su lugar saldrán las iniciales.")) return;
+  if (!(await appConfirm("¿Quitar el logo de la empresa? En su lugar saldrán las iniciales.", { ok: "Quitar logo", danger: true }))) return;
   try {
     await api("/api/admin/company/logo", { method: "DELETE" });
     setCompany({ company_name: companyName, company_logo: "" });

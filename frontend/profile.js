@@ -305,7 +305,7 @@ async function onTaskClick(e) {
       await api(`/api/tasks/${id}`, { method: "PATCH", body: JSON.stringify({ status: e.target.checked ? "done" : "open" }) });
       await refreshTasksEverywhere(clientId);
     } else if (e.target.closest("[data-delete-task]")) {
-      if (!confirm("¿Borrar esta tarea?")) return;
+      if (!(await appConfirm("¿Borrar esta tarea?", { ok: "Borrar", danger: true }))) return;
       await api(`/api/tasks/${id}`, { method: "DELETE" });
       await refreshTasksEverywhere(clientId);
     } else if (e.target.closest("[data-edit-task]")) {

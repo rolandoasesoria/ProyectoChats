@@ -200,17 +200,17 @@ async function onPropertiesAdminClick(e) {
       [ids[from], ids[to]] = [ids[to], ids[from]];
       await api("/api/admin/properties/order", { method: "PUT", body: JSON.stringify({ ids }) });
     } else if (e.target.closest("[data-prop-edit]")) {
-      const label = prompt("Nombre de la propiedad:", prop.label);
+      const label = await appPrompt("Nombre de la propiedad:", prop.label);
       if (label === null) return;
       let options = prop.options;
       if (prop.kind === "select") {
-        const text = prompt("Opciones, separadas por comas:", prop.options.join(", "));
+        const text = await appPrompt("Opciones, separadas por comas:", prop.options.join(", "));
         if (text === null) return;
         options = text.split(",");
       }
       await api(`/api/admin/properties/${id}`, { method: "PATCH", body: JSON.stringify({ label, options }) });
     } else if (e.target.closest("[data-prop-delete]")) {
-      if (!confirm(`¿Borrar la propiedad «${prop.label}»? Se borrará su valor en todos los contactos.`)) return;
+      if (!(await appConfirm(`¿Borrar la propiedad «${prop.label}»? Se borrará su valor en todos los contactos.`, { ok: "Borrar", danger: true }))) return;
       await api(`/api/admin/properties/${id}`, { method: "DELETE" });
     } else {
       return;

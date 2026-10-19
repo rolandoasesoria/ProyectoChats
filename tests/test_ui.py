@@ -51,6 +51,29 @@ try:
     b.wait("!document.querySelector('#chat-open').hidden && document.querySelectorAll('#chat-timeline .msg-row').length > 0")
     check("chats: pestañas por canal", b.js("document.querySelectorAll('#chat-tabs [data-channel]').length") >= 1)
     check("chats: detalles del contacto", b.js("!document.querySelector('#chat-details').hidden"))
+    # Tooltips propios: el title se muestra en una burbuja de la app
+    tx, ty = b.js("(() => { const r = document.querySelector('#chat-details-toggle').getBoundingClientRect(); return [r.left + 10, r.top + 10]; })()")
+    b.send("Input.dispatchMouseEvent", type="mouseMoved", x=tx, y=ty)
+    b.wait("document.querySelector('.app-tip')?.matches(':popover-open')")
+    check("tooltips: burbuja de la app con el texto del title (sin el del navegador)",
+          b.js("document.querySelector('.app-tip').textContent") == "Detalles del contacto"
+          and not b.js("document.querySelector('#chat-details-toggle').hasAttribute('title')"))
+    b.shot("04t-tooltip")
+    b.send("Input.dispatchMouseEvent", type="mouseMoved", x=700, y=880)
+    # Desplegables propios: la lista que se abre es de la app y el valor se guarda en el <select> de siempre
+    fx, fy = b.js("(() => { const r = document.querySelector('#draft-followup').getBoundingClientRect(); return [r.left + 20, r.top + r.height / 2]; })()")
+    b.send("Input.dispatchMouseEvent", type="mousePressed", x=fx, y=fy, button="left", buttons=1, clickCount=1)
+    b.send("Input.dispatchMouseEvent", type="mouseReleased", x=fx, y=fy, button="left", buttons=0, clickCount=1)
+    b.wait("document.querySelector('.select-menu')?.matches(':popover-open')")
+    check("desplegables: se abre la lista de la app con sus opciones",
+          b.js("document.querySelectorAll('.select-menu .select-option').length") == 5)
+    b.shot("04s-desplegable")
+    b.js("document.querySelector('#draft-followup').addEventListener('change', () => { window._followupChanged = true; }, {once: true})")
+    b.click('.select-menu [data-i="2"]')
+    check("desplegables: elegir una opción cambia el valor y avisa con «change»",
+          b.js("document.querySelector('#draft-followup').value") == "3" and b.js("window._followupChanged === true")
+          and not b.js("document.querySelector('.select-menu').matches(':popover-open')"))
+    b.js("document.querySelector('#draft-followup').value = ''")
     # Panel de detalles: la identidad centrada con acciones rápidas y tarjetas (contacto, datos clave, actividad)
     b.wait("document.querySelector('#cd-key-rows') && !document.querySelector('#cd-key-rows').textContent.includes('Cargando')")
     check("detalles: identidad centrada con su estado y acciones por canal",
@@ -570,6 +593,12 @@ try:
     b.wait("document.querySelectorAll('#sensitive-list li[data-message]').length === 1")
     check("encuentra el IBAN en sus mensajes", "IBAN" in b.js("document.querySelector('#sensitive-list li').textContent"))
     b.click("#sensitive-list [data-redact]")
+    b.wait("document.querySelector('dialog.app-dialog')?.open")
+    check("confirmaciones: ventana de la app (no la del navegador), con el botón en rojo para borrar u ocultar",
+          b.js("document.querySelector('.app-dialog [data-answer=\"yes\"]').classList.contains('danger-btn')")
+          and b.js("document.querySelector('.app-dialog [data-answer=\"yes\"]').textContent") == "Ocultar")
+    b.shot("10c-confirmacion")
+    b.click('.app-dialog [data-answer="yes"]')
     b.wait("document.querySelectorAll('#sensitive-list li[data-message]').length === 0")
     b.wait("document.querySelector('#chat-timeline').textContent.includes('[IBAN oculto]')")
     check("ocultarlo lo quita de la conversación", True)
@@ -774,6 +803,8 @@ try:
           b.js("document.querySelectorAll('#duplicates .duplicate').length") == 1
           and "Hay 2 clientes más" in b.js("document.querySelector('#duplicates').textContent"))
     b.click("#duplicates [data-merge-all]")
+    b.wait("document.querySelector('dialog.app-dialog')?.open")
+    b.click('.app-dialog [data-answer="yes"]')
     b.wait("api('/api/clients?q=Laura').then((cs) => cs.length === 1)")
     check("duplicados: «Unir todos aquí» los une en este cliente", b.js("document.querySelector('#duplicates').hidden"))
 
@@ -819,8 +850,11 @@ try:
     b.js("{ const s = document.querySelector('#draft-rewrite'); s.value = 'fix'; s.dispatchEvent(new Event('change')); }")
     b.wait("!document.querySelector('#draft-rewrite').disabled && document.querySelector('#draft-rewrite').value === ''")
     check("retocar sin clave de IA avisa y deja el texto como estaba",
-          "ANTHROPIC_API_KEY" in b.dialogs[-1] and b.js("document.querySelector('#chat-text').value") == "hola, te paso el presu"
-          and b.js("document.querySelector('#draft-undo').hidden"), b.dialogs[-1:])
+          "ANTHROPIC_API_KEY" in b.js("[...document.querySelectorAll('.toast')].at(-1)?.textContent || ''")
+          and b.js("document.querySelector('#chat-text').value") == "hola, te paso el presu"
+          and b.js("document.querySelector('#draft-undo').hidden"))
+    check("avisos: notificación de la app (no la ventana del navegador)", not b.dialogs, b.dialogs)
+    b.shot("18b-aviso")
     # Ese aviso (y el 503 que lo provoca) era el esperado: no cuenta como error.
     b.errors[:] = [e for e in b.errors if "ANTHROPIC_API_KEY" not in e and "/api/drafts/rewrite" not in e
                    and "/api/admin/ai-reply" not in e]
@@ -847,6 +881,9 @@ try:
     b.js("document.querySelector('#chats-list li[data-client]').click()")
     b.wait("!!chatState.data && document.querySelectorAll('#breadcrumb .crumb').length === 3")
     check("ruta en Mis Chats con un chat abierto", crumbs() == ["Asesoría Ocaña", "Mis Chats", b.js("chatState.data.name")], crumbs())
+    check("ruta: con la marca de la empresa, el icono de la sección y el avatar del contacto",
+          b.js("!!document.querySelector('#breadcrumb .crumb.company .crumb-mark') && !!document.querySelector('#breadcrumb [data-crumb=\"section\"] .crumb-icon')"
+               " && !!document.querySelector('#breadcrumb .crumb.current .crumb-avatar')"))
     b.shot("19b-ruta-chats")
     b.click('#breadcrumb [data-crumb="section"]')
     b.wait("!document.querySelector('#chat-empty').hidden")

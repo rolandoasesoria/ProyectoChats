@@ -76,7 +76,7 @@ async function rewriteDraft() {
   }
   let language = presetLanguage || "";
   if (action === "translate" && !language) {
-    language = (prompt("¿A qué idioma lo traduzco?") || "").trim();
+    language = ((await appPrompt("¿A qué idioma lo traduzco?", "", { ok: "Traducir", placeholder: "p. ej. alemán" })) || "").trim();
     if (!language) return;
   }
   const clientId = state.clientId;
@@ -126,7 +126,7 @@ async function confirmNoNews(conversationId) {
   try {
     const s = await api(`/api/conversations/${conversationId}/sender`);
     if (s.last_message_id > chatState.baseline) {
-      if (!confirm("Mientras escribías ha llegado un mensaje nuevo a esta conversación (del cliente o de un compañero).\n\n¿Copiar la respuesta igualmente?")) return false;
+      if (!(await appConfirm("Mientras escribías ha llegado un mensaje nuevo a esta conversación (del cliente o de un compañero).\n\n¿Copiar la respuesta igualmente?", { ok: "Copiar igualmente" }))) return false;
       chatState.baseline = s.last_message_id;
     }
   } catch { /* sin comprobación */ }

@@ -127,7 +127,7 @@ async function updateRetentionPreview() {
 }
 
 async function applyRetention() {
-  if (!confirm("¿Borrar ya los mensajes más antiguos que el plazo guardado? No se puede deshacer.")) return;
+  if (!(await appConfirm("¿Borrar ya los mensajes más antiguos que el plazo guardado? No se puede deshacer.", { ok: "Borrar", danger: true }))) return;
   try {
     const r = await api("/api/admin/retention/apply", { method: "POST" });
     alert(r.messages ? `Borrados ${r.messages} mensajes y ${r.conversations} conversaciones vacías.` : "No había mensajes tan antiguos.");

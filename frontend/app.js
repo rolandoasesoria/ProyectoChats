@@ -246,7 +246,7 @@ async function resetCurrentThread(panel = FICHA) {
   const key = clientId ?? GENERAL;
   const thread = state.threads.get(key);
   if (thread?.busy) return;
-  if (thread?.el.querySelector(".msg.user") && !confirm("¿Empezar una conversación nueva? La actual dejará de mostrarse.")) return;
+  if (thread?.el.querySelector(".msg.user") && !(await appConfirm("¿Empezar una conversación nueva? La actual dejará de mostrarse.", { ok: "Empezar otra" }))) return;
   try {
     await api("/api/conversations/agent/reset", { method: "POST", body: JSON.stringify({ client_id: clientId }) });
   } catch (err) {
@@ -387,6 +387,7 @@ function bindEvents() {
   } catch {
     return;
   }
+  bindUiEvents();
   initAccount(user);
   document.body.classList.remove("booting");
   bindLayoutEvents();
