@@ -6,6 +6,12 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Barra lateral más informativa**: al pasar el ratón, el icono se despliega con su nombre y un detalle en vivo;
+  contadores de chats sin leer (en rojo si hay respuestas fuera de plazo), tareas y propuestas de la IA por revisar;
+  secciones agrupadas por uso (trabajo, IA, textos, análisis). Ruta nueva `GET /api/me/counts`.
+- **Detalles del contacto rediseñados**: identidad centrada (avatar con color propio, estado, prioridad de la IA),
+  acciones rápidas por canal y «Editar», y tarjetas de Contacto (copiar con un clic), Responsable, Etiquetas,
+  Datos clave y Actividad. Los avatares tienen un color por persona en toda la app.
 - Plantillas por **cuenta de WhatsApp Business de Meta**: en la sección Plantillas se elige la cuenta (no el número) y
   se ve qué números comparten sus plantillas. En «Mis cuentas», cada número de WhatsApp muestra su cuenta de Meta y
   con quién comparte plantillas, y avisa si está en una cuenta distinta de la del resto del equipo.

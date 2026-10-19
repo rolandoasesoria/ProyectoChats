@@ -177,9 +177,13 @@ no hay registro libre. Si alguien olvida su contraseña, un administrador puede 
 Por seguridad, tras 5 intentos fallidos seguidos la cuenta se bloquea 15 minutos; \
 un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
-- Barra lateral (iconos a la izquierda; al pasar el ratón se ve el nombre de cada uno): arriba del todo, el logo \
-o las iniciales de la empresa, que abren el menú de la empresa; debajo las secciones "Mis Chats", "Contactos", \
-"Tareas", "Asistente", "Plantillas", "Respuestas con IA" y "Panel de actividad"; abajo "Respuestas guardadas". Al entrar se abre la última sección usada.
+- Barra lateral (iconos a la izquierda): al pasar el ratón por un icono, ese icono se despliega con su nombre y un \
+detalle en vivo (p. ej. "2 sin leer · 3 esperan respuesta (1 fuera de plazo)"). Arriba del todo, el logo o las \
+iniciales de la empresa, que abren el menú de la empresa. Debajo, agrupadas por uso: "Mis Chats", "Contactos" y \
+"Tareas"; "Asistente" y "Respuestas con IA"; "Plantillas de WhatsApp" y "Respuestas guardadas"; y "Panel de \
+actividad". Contadores: en Mis Chats, los chats con mensajes sin leer (en rojo si alguien espera respuesta fuera de \
+plazo); en Tareas, tus pendientes (en rojo si alguna vence hoy o ya venció); en Respuestas con IA, las propuestas de \
+la IA por revisar. Se actualizan solos. Al entrar se abre la última sección usada.
 - Menú de la empresa (logo o iniciales arriba de la barra lateral, o el nombre de la empresa en la ruta de \
 navegación): "Mis cuentas" (correo, WhatsApp y Telegram) para todos; y, solo administradores, "Datos de la empresa" \
 (nombre y logo: PNG, JPG o WebP de hasta 256 KB, que sustituye a las iniciales), "Usuarios del equipo", "Ajustes", \
@@ -206,8 +210,13 @@ mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa
 "Sin responder" (la bandeja, ver más abajo); los administradores pueden elegir "Todo el equipo" en vez de "Mis \
 chats". Al elegir uno se abre en el centro (ver "Vista de contacto"). Se actualiza sola cada 20 segundos.
 - Vista de contacto (al abrir un chat en Mis Chats o un contacto en Contactos): tres zonas. A la izquierda, la lista \
-de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (estado, datos de contacto, responsable y \
-etiquetas; se oculta con el botón ⓘ) o "Asistente IA" (el asistente sobre ese contacto, ver "Asistente"). El ancho \
+de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (se oculta con el botón ⓘ) o "Asistente IA" (el \
+asistente sobre ese contacto, ver "Asistente"). "Detalles": arriba, centrados, su avatar (cada persona con su color), \
+nombre, empresa, estado y la prioridad que ve la IA, y botones rápidos para abrir su conversación de cada canal \
+(WhatsApp, Correo, Telegram) y "Editar"; debajo, tarjetas con "Contacto" (correo, teléfono…; al pasar el ratón, un \
+botón copia el dato), "Responsable", "Etiquetas" (con "+ Añadir"), "Datos clave" (los de la Ficha y las propiedades \
+rellenas, con "Ver la ficha completa") y "Actividad" (primer contacto, último mensaje, conversaciones y mensajes, \
+tareas abiertas). El ancho \
 de la izquierda y la derecha se ajusta arrastrando la línea que las separa del centro (o con Tab y las flechas); \
 doble clic la devuelve al ancho inicial y cada navegador lo recuerda. En el centro, arriba, la cabecera (ver \
 "Cabecera del contacto"), los avisos y cuatro pestañas: "Conversación", "Ficha", "Tareas" y "Notas". Cambiar de \
