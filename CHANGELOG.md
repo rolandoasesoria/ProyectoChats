@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- Permiso **«Puede ver los chats de todo el equipo»**: un administrador se lo da a un usuario al crearlo o después
+  (Administración → Usuarios), y ese usuario puede elegir «Todo el equipo» en Mis Chats. Migración
+  `0004_permiso_chats_equipo.sql`.
 - **Piezas propias en lugar de las del navegador** (`frontend/ui.js`): tooltips en burbuja, listas de los
   desplegables con teclado (flechas, Intro, Esc y escribir para saltar), avisos flotantes en lugar de `alert`, y
   confirmaciones y preguntas en ventanas de la app (botón en rojo para borrar). Casillas, interruptor, plegables y
@@ -110,6 +113,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   suave y respuestas en burbujas blancas, para distinguir cada zona. Email pasa a naranja y Telegram a azul.
 
 ### Seguridad
+- `GET /api/chats?scope=team` comprueba el permiso en el servidor (antes solo lo escondía la pantalla).
 - Conexión a la base de datos cifrada con TLS 1.3 y certificado verificado (`DB_SSLMODE=verify-full`). PostgreSQL
   solo acepta conexiones cifradas y con contraseña SCRAM; con un servidor remoto, la app se niega a conectarse
   sin cifrar.

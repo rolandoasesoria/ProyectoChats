@@ -2,12 +2,12 @@
 from ..db import Conn, rows
 
 # Datos públicos del usuario (nunca el hash de la contraseña).
-USER_FIELDS = "id, name, email, username, role, active, theme, tour_version"
+USER_FIELDS = "id, name, email, username, role, active, theme, tour_version, can_view_team_chats"
 # Los mismos, con el alias «u» (para consultas que unen users con otras tablas).
 U_FIELDS = ", ".join("u." + f.strip() for f in USER_FIELDS.split(","))
 
 # Columnas que se pueden cambiar con update(): se pegan en la consulta, así que solo se aceptan estas.
-_UPDATABLE = {"name", "email", "role", "active", "theme", "tour_version", "password_hash"}
+_UPDATABLE = {"name", "email", "role", "active", "theme", "tour_version", "password_hash", "can_view_team_chats"}
 
 
 def get(conn: Conn, user_id: int) -> dict | None:
@@ -53,10 +53,12 @@ def email_exists(conn: Conn, email: str) -> bool:
     return conn.execute("SELECT 1 FROM users WHERE email = ?", (email,)).fetchone() is not None
 
 
-def insert(conn: Conn, username: str, name: str, email: str | None, password_hash: str, role: str) -> int:
+def insert(conn: Conn, username: str, name: str, email: str | None, password_hash: str, role: str,
+           can_view_team_chats: bool = False) -> int:
     return conn.execute(
-        "INSERT INTO users (username, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?) RETURNING id",
-        (username, name, email, password_hash, role),
+        """INSERT INTO users (username, name, email, password_hash, role, can_view_team_chats)
+           VALUES (?, ?, ?, ?, ?, ?) RETURNING id""",
+        (username, name, email, password_hash, role, int(can_view_team_chats)),
     ).lastrowid
 
 

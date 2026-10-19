@@ -22,12 +22,14 @@ class NewUser(BaseModel):
     password: str
     email: str | None = None
     role: Literal["user", "admin"] = "user"
+    can_view_team_chats: bool = False  # ver en Mis Chats los chats de todo el equipo
 
 
 @router.post("/api/admin/users")
 def admin_create_user(req: NewUser, admin: AdminUser):
-    user = auth.create_user(req.username, req.name, req.password, req.email, req.role)
-    audit.log(admin["id"], "user_create", detail=f"{user['username']} ({user['role']})")
+    user = auth.create_user(req.username, req.name, req.password, req.email, req.role, req.can_view_team_chats)
+    permission = ", ve los chats del equipo" if req.can_view_team_chats and req.role != "admin" else ""
+    audit.log(admin["id"], "user_create", detail=f"{user['username']} ({user['role']}{permission})")
     return user
 
 
@@ -37,6 +39,7 @@ class UserUpdate(BaseModel):
     role: Literal["user", "admin"] | None = None
     active: bool | None = None
     password: str | None = None
+    can_view_team_chats: bool | None = None
 
 
 @router.patch("/api/admin/users/{user_id}")

@@ -713,12 +713,22 @@ try:
     check("y también al editar (con la aclaración larga)", top("#uf-password") == top("#uf-name"),
           (top("#uf-name"), top("#uf-password")))
     b.click("#uf-cancel")
-    # «Crear usuario» solo lo crea
+    # Permiso de ver los chats de todo el equipo: los administradores siempre (casilla fija)
+    b.js("{ const r = document.querySelector('#uf-role'); r.value = 'admin'; r.dispatchEvent(new Event('change')); }")
+    check("permiso de chats del equipo: con rol administrador, marcado y fijo",
+          b.js("document.querySelector('#uf-team-chats').checked && document.querySelector('#uf-team-chats').disabled"))
+    b.js("{ const r = document.querySelector('#uf-role'); r.value = 'user'; r.dispatchEvent(new Event('change')); }")
+    check("y con rol usuario, desmarcado y se puede marcar",
+          b.js("!document.querySelector('#uf-team-chats').checked && !document.querySelector('#uf-team-chats').disabled"))
+    # «Crear usuario» solo lo crea (aquí, con el permiso de ver los chats del equipo)
     b.fill("#uf-username", "javier")
     b.fill("#uf-name", "Javier Moreno")
     b.fill("#uf-password", "demo12345")
+    b.click("#uf-team-chats")
     b.js("document.querySelector('#user-form').requestSubmit(document.querySelector('#uf-submit'))")
     b.wait("document.querySelector('#users-tbody').textContent.includes('Javier Moreno')")
+    check("la tabla dice quién puede ver los chats del equipo",
+          "Chats del equipo" in b.js("[...document.querySelectorAll('#users-tbody tr')].find((tr) => tr.textContent.includes('Javier')).textContent"))
     check("«Crear usuario» solo lo crea (sin abrir sus cuentas)",
           not b.js("document.querySelector('#accounts-dialog').open")
           and "Javier Moreno" in b.js("document.querySelector('#uf-done').textContent"))
