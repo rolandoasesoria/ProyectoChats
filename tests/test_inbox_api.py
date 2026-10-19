@@ -14,6 +14,8 @@ st, team = ana.get("/api/inbox?scope=team")
 check("bandeja del equipo: 5 conversaciones", len(team) == 5, [(i["client"], i["owner"]) for i in team])
 check("Jorge por WhatsApp no está (el último mensaje es del equipo)",
       not any(i["client"] == "Jorge Martín" and i["channel"] == "whatsapp" for i in team))
+check("sin el permiso «chats de todo el equipo», la bandeja del equipo = 403",
+      marta.get("/api/inbox?scope=team")[0] == 403 and marta.get("/api/inbox?scope=mine")[0] == 200)
 
 laura = next(i for i in mine if i["client"] == "Laura Gómez")
 check("atendido", ana.post(f"/api/conversations/{laura['conversation_id']}/dismiss",

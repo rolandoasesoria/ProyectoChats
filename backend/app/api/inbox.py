@@ -5,9 +5,9 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import ai_reply, audit, followups, search
+from .. import ai_reply, audit, auth, followups, search
 from .. import inbox as unanswered_inbox
-from ..errors import InvalidInput, NotFound
+from ..errors import Forbidden, InvalidInput, NotFound
 from .deps import CurrentUser
 
 router = APIRouter()
@@ -32,6 +32,8 @@ def inbox_counts(user: CurrentUser):
 def inbox(user: CurrentUser, scope: Literal["mine", "team"] = "mine", snoozed: bool = False):
     """Bandeja "Sin responder": conversaciones cuyo último mensaje es del cliente (o las pospuestas)."""
     if scope == "team":
+        if not auth.can_view_team_chats(user):
+            raise Forbidden("Para ver la bandeja de todo el equipo hace falta que un administrador te dé permiso.")
         audit.log(user["id"], "team_inbox", throttle=True)
     return unanswered_inbox.unanswered(user["id"], scope, snoozed)
 
