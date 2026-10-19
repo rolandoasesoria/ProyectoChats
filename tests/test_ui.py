@@ -194,6 +194,10 @@ try:
     b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
     check("contactos: la tabla con los 3 contactos", True)
     check("contactos: Contactos activo en la barra", b.js("document.querySelector('#nav-contacts').classList.contains('active')"))
+    check("contactos: cada avatar con el color de su persona (el mismo que en los chats)",
+          b.js("[...document.querySelectorAll('#contacts-body .chat-avatar')]"
+               ".every((a) => [...a.classList].some((c) => c.startsWith('av-')))"),
+          b.js("[...document.querySelectorAll('#contacts-body .chat-avatar')].map((a) => a.className)"))
     b.click("#contacts-columns-btn")
     b.js("const e = document.querySelector('#contacts-columns [data-column=\"company\"]'); e.checked = true;"
          "e.dispatchEvent(new Event('change', {bubbles: true}))")

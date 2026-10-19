@@ -104,7 +104,7 @@ function renderContacts(contacts) {
   $("#contacts-body").innerHTML = contacts.length ? contacts.map((c) => `
     <tr data-client="${c.id}" tabindex="0">
       <td class="contact-name">
-        <span class="chat-avatar small">${escapeHtml(initialsOf(c.name))}</span>
+        <span class="chat-avatar small ${avatarClass(c.name)}">${escapeHtml(initialsOf(c.name))}</span>
         <span>${escapeHtml(c.name)}</span>
         ${c.unread ? `<span class="unread" title="Mensajes sin leer">${c.unread > 99 ? "99+" : c.unread}</span>` : ""}
       </td>
