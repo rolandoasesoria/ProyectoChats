@@ -103,7 +103,7 @@ function bindTooltips() {
 /* ---------- Desplegables ---------- */
 
 let selectMenu = null;
-let openSel = null; // { select, active }
+let openSel = null; // { select, active, at }
 let typeahead = { text: "", at: 0 };
 
 function isMenuSelect(el) {
@@ -138,7 +138,7 @@ function openSelect(select) {
   if (select.disabled) return;
   selectMenu ||= popoverBox("select-menu", "listbox");
   moveInto(select.closest("dialog[open]") || document.body, selectMenu);
-  openSel = { select, active: select.selectedIndex };
+  openSel = { select, active: select.selectedIndex, at: Date.now() };
   select.setAttribute("aria-expanded", "true");
   bringToFront(selectMenu);
   renderSelectMenu();
@@ -251,7 +251,11 @@ function bindSelectMenus() {
       typeToFind(e.key);
     }
   }, true);
-  document.addEventListener("scroll", (e) => { if (openSel && !selectMenu.contains(e.target)) closeSelect(false); }, true);
+  // Si la página se desplaza con la lista abierta, se cierra (quedaría descolocada); los avisos de un desplazamiento
+  // que terminó justo al abrirla no cuentan.
+  document.addEventListener("scroll", (e) => {
+    if (openSel && !selectMenu.contains(e.target) && Date.now() - openSel.at > 150) closeSelect(false);
+  }, true);
   window.addEventListener("resize", () => closeSelect(false));
 }
 
