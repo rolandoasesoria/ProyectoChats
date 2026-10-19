@@ -121,6 +121,7 @@ function setInboxCount(items, followUps = []) {
   count.hidden = !total;
   count.classList.toggle("alert", late > 0);
   count.title = late ? `${late} fuera de plazo (${slaHours} h) o sin contestar` : "";
+  setNavInbox(total, late);
 }
 
 async function loadSettings() {
@@ -180,6 +181,7 @@ async function recordVisit(clientId) {
   box.hidden = true;
   $("#whats-new-summary").hidden = true;
   const v = await api(`/api/clients/${clientId}/visit`, { method: "POST" });
+  refreshNavCounts(); // ya no cuenta como chat sin leer
   if (state.clientId !== clientId) return;
   // Ya visto: se quita el contador de no leídos de las listas.
   document.querySelectorAll(`#chats-list li[data-client="${clientId}"], #contacts-mini li[data-client="${clientId}"]`)

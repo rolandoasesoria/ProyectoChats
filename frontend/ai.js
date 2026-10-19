@@ -139,6 +139,7 @@ async function decideSuggestion(send) {
     }
     await loadChatConversation();
     loadChats();
+    refreshNavCounts();
   } catch (err) {
     alert(err.message);
   } finally {

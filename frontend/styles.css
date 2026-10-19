@@ -1270,3 +1270,93 @@ body { background: var(--canvas); }
 .acct-chip.paused { opacity: .55; }
 /* Nuevo usuario: los campos de una fila, alineados por abajo aunque una etiqueta ocupe dos líneas */
 .user-form .form-grid > label { justify-content: flex-end; }
+
+/* ---------- Barra lateral: el icono se despliega con su nombre al pasar el ratón ----------
+   La etiqueta va detrás del icono (z-index negativo dentro del botón) y se abre hacia la derecha. */
+.sidebar { gap: 4px; }
+.sidebar .nav-btn { z-index: 1; }
+.sidebar .nav-btn:hover, .sidebar .nav-btn:focus-visible { z-index: 30; }
+.nav-label {
+  position: absolute; left: 0; top: 0; height: 100%; z-index: -1; display: flex; flex-direction: column;
+  justify-content: center; gap: 1px; padding: 0 16px 0 48px; border-radius: 10px; white-space: nowrap; text-align: left;
+  background: var(--panel); color: var(--text); border: 1px solid var(--border); box-shadow: var(--card-shadow);
+  clip-path: inset(0 calc(100% - 40px) 0 0 round 10px); opacity: 0; pointer-events: none;
+  transition: clip-path .18s ease, opacity .1s ease;
+}
+.nav-label strong { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.nav-label .nav-detail { font-size: 11px; color: var(--muted); line-height: 1.2; }
+.nav-label .nav-detail[hidden] { display: none; }
+.sidebar .nav-btn:hover .nav-label, .sidebar .nav-btn:focus-visible .nav-label {
+  clip-path: inset(0 0 0 0 round 10px); opacity: 1;
+}
+.sidebar .nav-btn:hover, .sidebar .nav-btn:focus-visible { color: var(--accent); }
+.sidebar .nav-btn.active .nav-label { border-color: color-mix(in srgb, var(--accent) 35%, var(--border)); }
+.nav-sep { width: 24px; height: 1px; background: var(--border); margin: 4px 0; flex-shrink: 0; }
+.nav-count { z-index: 2; }
+
+/* ---------- Avatares: un tono suave por persona (siempre el mismo para el mismo nombre) ---------- */
+.chat-avatar { --h: 258; background: hsl(var(--h) 70% 93%); color: hsl(var(--h) 45% 34%); }
+.av-0 { --h: 258; } .av-1 { --h: 205; } .av-2 { --h: 170; } .av-3 { --h: 140; }
+.av-4 { --h: 35; } .av-5 { --h: 12; } .av-6 { --h: 330; } .av-7 { --h: 290; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chat-avatar { background: hsl(var(--h) 28% 26%); color: hsl(var(--h) 75% 84%); }
+}
+:root[data-theme="dark"] .chat-avatar { background: hsl(var(--h) 28% 26%); color: hsl(var(--h) 75% 84%); }
+.chat-avatar.xl { width: 76px; height: 76px; font-size: 26px; font-weight: 600; box-shadow: 0 0 0 4px var(--panel), 0 2px 10px rgba(0,0,0,.12); }
+
+/* ---------- Panel de detalles: identidad centrada y tarjetas ---------- */
+#chat-details-body { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 380px; margin: 0 auto; }
+.cd-hero { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; padding: 8px 4px 6px; }
+.cd-hero .chat-avatar { margin-bottom: 6px; }
+.cd-name { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.cd-company { font-size: 13px; color: var(--muted); }
+.cd-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 6px; }
+.cd-pills #cd-priority { display: contents; }
+.status-pill {
+  display: inline-flex; align-items: center; font-size: 12px; font-weight: 600; padding: 2px 10px 2px 8px; border-radius: 999px;
+  background: color-mix(in srgb, var(--st, var(--other)) 12%, transparent); color: var(--text);
+}
+.status-pill.lead { --st: #8b5cf6; } .status-pill.active { --st: #16a34a; }
+.status-pill.issue { --st: #dc2626; } .status-pill.inactive { --st: #9ca3af; }
+.cd-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.cd-action {
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 62px; padding: 0; border: 0;
+  background: none; color: var(--muted); font-size: 11px; font-weight: 500; cursor: pointer;
+}
+.cd-action-icon {
+  width: 38px; height: 38px; border-radius: 50%; display: grid; place-items: center; color: var(--c, var(--accent));
+  background: color-mix(in srgb, var(--c, var(--accent)) 12%, var(--panel)); border: 1px solid var(--border);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.cd-action-icon svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cd-action:hover { color: var(--text); }
+.cd-action:hover .cd-action-icon { transform: translateY(-1px); box-shadow: var(--card-shadow); }
+.cd-action.email { --c: var(--email); } .cd-action.whatsapp { --c: var(--whatsapp); } .cd-action.telegram { --c: var(--telegram); }
+.cd-card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px 12px; }
+.cd-card h4 { margin: 0 0 8px; font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.cd-identities { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.cd-identity { display: flex; align-items: center; gap: 10px; padding: 5px 4px; border-radius: 8px; min-width: 0; }
+.cd-identity:hover { background: var(--hover); }
+.cd-ch-icon { width: 26px; height: 26px; flex-shrink: 0; border-radius: 8px; display: grid; place-items: center; color: var(--c, var(--muted));
+  background: color-mix(in srgb, var(--c, var(--muted)) 12%, transparent); }
+.cd-ch-icon svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.cd-identity.email { --c: var(--email); } .cd-identity.whatsapp { --c: var(--whatsapp); } .cd-identity.telegram { --c: var(--telegram); }
+.cd-handle { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-copy { width: 26px; height: 26px; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer;
+  display: grid; place-items: center; opacity: 0; transition: opacity .12s ease; }
+.cd-copy svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+.cd-identity:hover .cd-copy, .cd-copy:focus-visible { opacity: 1; }
+.cd-copy:hover { background: var(--bg); color: var(--text); }
+.cd-copy.copied { opacity: 1; color: var(--whatsapp); }
+.cd-person { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500; }
+.cd-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 5px 0; font-size: 13px; }
+.cd-row + .cd-row { border-top: 1px solid var(--border); }
+.cd-row > span { color: var(--muted); flex-shrink: 0; }
+.cd-row > strong { font-weight: 500; text-align: right; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cd-overdue { color: var(--danger-text); font-weight: 600; }
+.cd-empty { margin: 0; font-size: 13px; color: var(--muted); }
+.cd-add, .cd-link { background: none; border: 0; padding: 0; font: inherit; font-size: 12px; color: var(--accent); cursor: pointer; }
+.cd-add:hover, .cd-link:hover { text-decoration: underline; }
+.cd-link { margin-top: 8px; }
+.cd-card .chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.chat-details .cd-name { margin: 0; }

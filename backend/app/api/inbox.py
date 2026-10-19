@@ -5,12 +5,21 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, followups
+from .. import ai_reply, audit, followups, search
 from .. import inbox as unanswered_inbox
 from ..errors import InvalidInput, NotFound
 from .deps import CurrentUser
 
 router = APIRouter()
+
+
+@router.get("/api/me/counts")
+def nav_counts(user: CurrentUser):
+    """Contadores de la barra lateral que no calcula la pantalla: chats con mensajes sin leer y propuestas de la IA
+    por revisar (la bandeja y las tareas ya las carga la pantalla)."""
+    return {"unread_chats": len(search.chat_list(user["id"], "mine", "", True)),
+            "ai_pending": ai_reply.pending_count(user["id"]),
+            "ai_enabled": bool(ai_reply.get_settings()["enabled"])}
 
 
 @router.get("/api/inbox/counts")

@@ -50,6 +50,28 @@ try:
     b.wait("!document.querySelector('#chat-open').hidden && document.querySelectorAll('#chat-timeline .msg-row').length > 0")
     check("chats: pestañas por canal", b.js("document.querySelectorAll('#chat-tabs [data-channel]').length") >= 1)
     check("chats: detalles del contacto", b.js("!document.querySelector('#chat-details').hidden"))
+    # Panel de detalles: la identidad centrada con acciones rápidas y tarjetas (contacto, datos clave, actividad)
+    b.wait("document.querySelector('#cd-key-rows') && !document.querySelector('#cd-key-rows').textContent.includes('Cargando')")
+    check("detalles: identidad centrada con su estado y acciones por canal",
+          b.js("document.querySelector('.cd-name').textContent") == b.js("chatState.data.name")
+          and b.js("document.querySelectorAll('.cd-actions [data-cd-channel]').length") == b.js("chatState.channels.length")
+          and b.js("!!document.querySelector('.cd-hero .status-pill')"))
+    check("detalles: tarjetas de contacto (con copiar), responsable, etiquetas, datos clave y actividad",
+          b.js("[...document.querySelectorAll('.cd-card h4')].map((h) => h.textContent).join('|')")
+          == "Contacto|Responsable|Etiquetas|Datos clave|Actividad"
+          and b.js("document.querySelectorAll('.cd-identity .cd-copy').length") >= 1)
+    check("detalles: el avatar tiene el color propio de la persona",
+          b.js("/av-\\d/.test(document.querySelector('.cd-hero .chat-avatar').className)"))
+    b.shot("04-detalles")
+    current = b.js("chatState.channel")
+    other = b.js("chatState.channels.find((c) => c !== chatState.channel) || null")
+    if other:
+        b.click(f'.cd-actions [data-cd-channel="{other}"]')
+        b.wait(f"chatState.channel === '{other}'")
+        check("detalles: una acción rápida abre la conversación de ese canal", True)
+        b.click(f'#chat-tabs [data-channel="{current}"]')
+        b.wait(f"chatState.channel === '{current}'")
+        b.pump(0.8)
     cw = lambda sel: b.js(f"Math.round(document.querySelector('{sel}').getBoundingClientRect().width)")  # noqa: E731
     list_w, det_w = cw(".chats-pane"), cw("#chat-details")
     b.js("document.querySelector('#view-chats > .resizer[data-zone=\"list\"]').dispatchEvent(new KeyboardEvent('keydown', {key: 'ArrowRight'}))")
@@ -250,6 +272,24 @@ try:
     b.shot("04h-ia-propuesta")
     b.js("document.querySelector('#chat-ai-suggestion').hidden = true; document.querySelector('#chat-ai-toggle').hidden = true;")
 
+    # Barra lateral: el icono se despliega con su nombre al pasar el ratón y lleva contadores en vivo
+    nx, ny = b.js("(() => { const r = document.querySelector('#nav-chats').getBoundingClientRect(); return [r.left + r.width / 2, r.top + r.height / 2]; })()")
+    b.send("Input.dispatchMouseEvent", type="mouseMoved", x=nx, y=ny)
+    b.pump(0.4)
+    check("barra: al pasar el ratón, el icono se despliega con su nombre y un detalle",
+          b.js("getComputedStyle(document.querySelector('#nav-chats .nav-label')).opacity") == "1"
+          and b.js("document.querySelector('#nav-chats .nav-label strong').textContent") == "Mis Chats"
+          and b.js("!document.querySelector('#nav-chats .nav-detail').hidden"))
+    check("barra: solo se despliega ese icono",
+          b.js("getComputedStyle(document.querySelector('#nav-contacts .nav-label')).opacity") == "0")
+    b.shot("04c2-barra-desplegada")
+    b.send("Input.dispatchMouseEvent", type="mouseMoved", x=700, y=500)
+    unread = b.js("fetch('/api/me/counts').then((r) => r.json()).then((c) => c.unread_chats)", await_promise=True)
+    check("barra: contador en vivo de chats sin leer",
+          b.js("document.querySelector('#nav-chats .nav-count').hidden ? 0 : Number(document.querySelector('#nav-chats .nav-count').textContent)") == unread)
+    check("barra: orden por uso (trabajo, IA, textos, análisis)",
+          b.js("[...document.querySelectorAll('.sidebar .nav-btn:not(.company-btn)')].map((b) => b.id).join(',')")
+          == "nav-chats,nav-contacts,nav-tasks,nav-assistant,nav-ai,nav-templates,menu-replies,nav-dashboard")
     # Barra lateral
     check("barra lateral con sus secciones (y Administración para un administrador)",
           b.js("['#company-btn', '#nav-chats', '#nav-contacts', '#nav-tasks', '#nav-assistant', '#nav-dashboard', '#menu-accounts',"

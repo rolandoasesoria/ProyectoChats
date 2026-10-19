@@ -144,6 +144,7 @@ async function loadClientProperties(clientId) {
   const box = $("#client-props");
   const [props, { values }] = await Promise.all([loadContactProps(), api(`/api/clients/${clientId}/properties`)]);
   if (state.clientId !== clientId) return;
+  setDetailsProperties(clientId, props, values);
   box.dataset.client = clientId;
   box.innerHTML = props.length ? props.map((p) => `
     <label class="prop-field"><span class="muted small">${escapeHtml(p.label)}</span>${propertyInput(p, values[p.id])}</label>`).join("")

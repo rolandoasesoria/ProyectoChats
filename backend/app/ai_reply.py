@@ -252,6 +252,12 @@ def _own_conversation(conn, conversation_id: int, user: dict) -> dict:
     return conv
 
 
+def pending_count(user_id: int) -> int:
+    """Cuántas propuestas de la IA esperan a que esta persona las revise (en sus conversaciones)."""
+    with get_conn() as conn:
+        return repo.count_pending_for_owner(conn, user_id)
+
+
 def conversation_state(conversation_id: int, user: dict) -> dict:
     cfg = get_settings()
     with get_conn() as conn:
