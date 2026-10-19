@@ -1,14 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-labelledby="t">
   <title id="t">Hilvana Chat</title>
-  <!-- Fondo: índigo de ProyectoChats -->
-  <rect width="512" height="512" rx="116" fill="#4f4e96"/>
-  <!-- Bocadillo de conversación «hilvanado»: el contorno son puntadas -->
-  <path d="M136 150 h240 a44 44 0 0 1 44 44 v104 a44 44 0 0 1 -44 44 h-118 l-66 54 v-54 h-56 a44 44 0 0 1 -44 -44 v-104 a44 44 0 0 1 44 -44 z"
-        fill="none" stroke="#f8ebf6" stroke-width="22" stroke-linecap="round" stroke-linejoin="round"
-        stroke-dasharray="34 26"/>
-  <!-- El hilo que une las puntadas y entra en el bocadillo -->
-  <path d="M92 400 C 150 360, 196 300, 222 248" fill="none" stroke="#b2bfde" stroke-width="10" stroke-linecap="round"/>
-  <!-- La chispa (Chispa, la mascota) dentro del bocadillo -->
-  <path d="M300 186 C 304 220, 314 230, 348 234 C 314 238, 304 248, 300 282 C 296 248, 286 238, 252 234 C 286 230, 296 220, 300 186 Z"
-        fill="#f8ebf6"/>
+  <!-- Icono de la app (pestaña del navegador, accesos directos): la marca sobre un cuadrado índigo -->
+  <defs>
+    <linearGradient id="fondo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#6463ae"/><stop offset=".55" stop-color="#4f4e96"/><stop offset="1" stop-color="#2e2c5a"/>
+    </linearGradient>
+    <linearGradient id="bocadillo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f8ebf6"/><stop offset="1" stop-color="#cecfeb"/>
+    </linearGradient>
+    <!-- Hueco entre el bocadillo y las paredes de la H -->
+    <mask id="hueco" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+      <rect width="120" height="120" fill="#fff"/>
+      <path d="M79 38H41a11 11 0 0 0-11 11v19l-5 15 16-7h38a11 11 0 0 0 11-11V49a11 11 0 0 0-11-11z"
+            fill="#000" stroke="#000" stroke-width="9" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#fondo)"/>
+  <g transform="translate(60 60) scale(.74) translate(-60 -60)">
+    <g mask="url(#hueco)" fill="#f8ebf6">
+      <rect x="18" y="14" width="26" height="92" rx="11"/>
+      <rect x="76" y="14" width="26" height="92" rx="11"/>
+    </g>
+    <path d="M79 38H41a11 11 0 0 0-11 11v19l-5 15 16-7h38a11 11 0 0 0 11-11V49a11 11 0 0 0-11-11z" fill="url(#bocadillo)"/>
+    <rect x="44.5" y="53.5" width="7" height="7" rx="2.2" fill="#a3acd9"/>
+    <rect x="56.5" y="53.5" width="7" height="7" rx="2.2" fill="#7978bd"/>
+    <rect x="68.5" y="53.5" width="7" height="7" rx="2.2" fill="#4f4e96"/>
+  </g>
 </svg>
