@@ -1599,3 +1599,123 @@ select.chat-act { padding: 3px 24px 3px 8px !important; border: 0; background-co
 .profile-who strong { color: var(--text); font-weight: 600; }
 .profile-password { display: flex; align-items: center; justify-content: space-between; font-size: 14px; padding: 8px 0 0; border-top: 1px solid var(--border); }
 .user-cell { display: inline-flex; align-items: center; gap: 8px; }
+
+/* ---------- Toque moderno: degradados sutiles con la paleta ----------
+   Solo los tonos de la paleta (rosa lavanda, malva, lila, lavanda, pervinca e índigo), en transiciones suaves:
+   el fondo de la ventana con dos halos de color, la barra superior del índigo al lila, las tarjetas con un brillo
+   arriba y los botones, selecciones, burbujas y avatares con volumen. */
+:root {
+  --g-canvas:
+    radial-gradient(1100px 560px at 8% -12%, rgba(219, 209, 236, .85), transparent 62%),
+    radial-gradient(900px 620px at 108% 112%, rgba(178, 191, 222, .55), transparent 60%),
+    radial-gradient(700px 420px at 70% 0%, rgba(248, 235, 246, .9), transparent 65%),
+    linear-gradient(180deg, #efe9f5, #e8e4f2);
+  --g-topbar: linear-gradient(100deg, #2b2957 0%, #37346c 50%, #463c74 100%);
+  --g-card: linear-gradient(180deg, rgba(248, 235, 246, .55), rgba(248, 235, 246, 0) 150px);
+  --g-side: linear-gradient(180deg, #f6f3fb 0%, #eff0fa 55%, #eceefa 100%);
+  --g-accent: linear-gradient(135deg, #6463ae 0%, #4f4e96 55%, #46458b 100%);
+  --g-accent-soft: linear-gradient(135deg, #e6ddf2 0%, #d9d6f0 60%, #d2d6ef 100%);
+  --g-raised: linear-gradient(180deg, #ffffff, #f8f5fc);
+  --g-bubble-out: linear-gradient(135deg, #dcd3ee 0%, #cfd0ec 55%, #c3cbe8 100%);
+  --g-indigo: linear-gradient(135deg, #6463ae 0%, #4f4e96 60%, #45448a 100%);
+  --g-line: linear-gradient(90deg, var(--lavanda-5), var(--indigo));
+  --g-head: linear-gradient(180deg, #fbf6fb, var(--sub));
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, .75);
+  --glow: 0 6px 16px -6px rgba(79, 78, 150, .45);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --g-canvas:
+      radial-gradient(1000px 560px at 6% -14%, rgba(79, 78, 150, .45), transparent 62%),
+      radial-gradient(900px 640px at 110% 115%, rgba(122, 96, 168, .28), transparent 60%),
+      linear-gradient(180deg, #0e0c16, #0b0911);
+    --g-topbar: linear-gradient(100deg, #24224a 0%, #2c2957 50%, #3a3062 100%);
+    --g-card: linear-gradient(180deg, rgba(178, 191, 222, .075), rgba(178, 191, 222, 0) 170px);
+    --g-side: linear-gradient(180deg, #24213e 0%, #1c1a30 55%, #181627 100%);
+    --g-accent: linear-gradient(135deg, #d6d8f0 0%, #c1cae6 50%, #b0bbdf 100%);
+    --g-accent-soft: linear-gradient(135deg, #322d52 0%, #2a2848 60%, #262645 100%);
+    --g-raised: linear-gradient(180deg, #2a2640, #221f35);
+    --g-bubble-out: linear-gradient(135deg, #46427c 0%, #383567 55%, #2d2b58 100%);
+    --g-line: linear-gradient(90deg, var(--lavanda-3), var(--lavanda-5));
+    --g-head: linear-gradient(180deg, #1e1b2c, var(--sub));
+    --sheen: inset 0 1px 0 rgba(255, 255, 255, .07);
+    --glow: 0 6px 16px -8px rgba(0, 0, 0, .7);
+  }
+}
+:root[data-theme="dark"] {
+  --g-canvas:
+    radial-gradient(1000px 560px at 6% -14%, rgba(79, 78, 150, .45), transparent 62%),
+    radial-gradient(900px 640px at 110% 115%, rgba(122, 96, 168, .28), transparent 60%),
+    linear-gradient(180deg, #0e0c16, #0b0911);
+  --g-topbar: linear-gradient(100deg, #24224a 0%, #2c2957 50%, #3a3062 100%);
+  --g-card: linear-gradient(180deg, rgba(178, 191, 222, .075), rgba(178, 191, 222, 0) 170px);
+  --g-side: linear-gradient(180deg, #24213e 0%, #1c1a30 55%, #181627 100%);
+  --g-accent: linear-gradient(135deg, #d6d8f0 0%, #c1cae6 50%, #b0bbdf 100%);
+  --g-accent-soft: linear-gradient(135deg, #322d52 0%, #2a2848 60%, #262645 100%);
+  --g-raised: linear-gradient(180deg, #2a2640, #221f35);
+  --g-bubble-out: linear-gradient(135deg, #46427c 0%, #383567 55%, #2d2b58 100%);
+  --g-line: linear-gradient(90deg, var(--lavanda-3), var(--lavanda-5));
+  --g-head: linear-gradient(180deg, #1e1b2c, var(--sub));
+  --sheen: inset 0 1px 0 rgba(255, 255, 255, .07);
+  --glow: 0 6px 16px -8px rgba(0, 0, 0, .7);
+}
+
+/* Fondo de la ventana y barra superior */
+body:not(.login-page) { background: var(--g-canvas); background-attachment: fixed; }
+.topbar {
+  background: var(--brand-gradient) bottom / 100% 2px no-repeat, var(--g-topbar);
+  box-shadow: 0 2px 14px rgba(31, 27, 70, .22);
+}
+.topbar .palette-btn { background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06)); }
+.topbar .avatar:not(.has-photo) { background: linear-gradient(135deg, var(--lavanda-1), var(--lavanda-4)); }
+
+/* Tarjetas: un brillo suave arriba; la lista y los detalles, un degradado vertical del tono del asistente */
+.clients, .detail, .chat, .chat-main, .tpl-main, .zone-card, .cd-card, .stat-tile {
+  background-image: var(--g-card);
+}
+.clients, .detail, .chat, .chats-pane, .chat-main, .chat-details, .tpl-pane, .tpl-main, .zone-card {
+  box-shadow: var(--card-shadow), var(--sheen);
+}
+.chats-pane, .chat-details, .tpl-pane { background: var(--g-side); }
+.cd-card, .stat-tile { box-shadow: 0 1px 2px rgba(31, 27, 46, .04), var(--sheen); }
+.contacts-table th { background: var(--g-head); }
+
+/* Barra lateral: la sección activa con volumen y la marca del borde en degradado */
+.nav-btn.active { background: var(--g-accent-soft); box-shadow: var(--sheen), 0 1px 3px rgba(79, 78, 150, .12); }
+.nav-btn.active::before { background: var(--g-line); }
+
+/* Botones principales */
+button.primary { background: var(--g-accent); box-shadow: var(--glow), inset 0 1px 0 rgba(255, 255, 255, .18); transition: filter .12s ease, box-shadow .12s ease; }
+button.primary:hover:not(:disabled) { background: var(--g-accent); filter: brightness(1.07) saturate(1.05); }
+button.primary:active:not(:disabled) { filter: brightness(.97); }
+button.primary:disabled { box-shadow: none; }
+
+/* Selecciones: chat abierto, pestaña activa, control segmentado y contadores */
+.chats-list li[data-client].active { background: var(--g-accent-soft); box-shadow: var(--sheen); }
+.segmented { background: linear-gradient(180deg, color-mix(in srgb, var(--bg) 80%, var(--lavanda-3)), var(--bg)); }
+.segmented button.active { background: var(--g-raised); box-shadow: 0 1px 3px var(--shadow), var(--sheen); }
+.tabs button.active { border-bottom-color: transparent; border-image: var(--g-line) 1; }
+.count:not(.alert):not(:empty) { background: var(--g-accent-soft); color: var(--accent); }
+.crumb.current { background: var(--g-raised); }
+
+/* Burbujas: las del equipo y tus preguntas al asistente, con un degradado de la paleta */
+.msg-row.out .bubble { background: var(--g-bubble-out); }
+.msg.user { background: var(--g-indigo); }
+
+/* Avatares de color: del tono claro al algo más intenso de la misma persona */
+.chat-avatar[class*="av-"]:not(.has-photo) {
+  background: linear-gradient(140deg, hsl(var(--h) 80% 95%), hsl(var(--h) 62% 86%));
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chat-avatar[class*="av-"]:not(.has-photo) {
+    background: linear-gradient(140deg, hsl(var(--h) 32% 32%), hsl(var(--h) 28% 22%));
+  }
+}
+:root[data-theme="dark"] .chat-avatar[class*="av-"]:not(.has-photo) {
+  background: linear-gradient(140deg, hsl(var(--h) 32% 32%), hsl(var(--h) 28% 22%));
+}
+.chat-avatar.xl { box-shadow: 0 0 0 4px var(--panel), 0 4px 16px rgba(79, 78, 150, .22); }
+
+/* Ventanas, menús y avisos: el mismo brillo de las tarjetas */
+.dialog, .menu, .select-menu[popover], .toast { background: var(--g-card), var(--panel); }
+.dialog { box-shadow: 0 24px 64px var(--shadow), var(--sheen); }
