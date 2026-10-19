@@ -5,6 +5,7 @@
 """
 import hashlib
 import hmac
+import re
 import secrets
 from datetime import datetime, timedelta, timezone
 
@@ -21,6 +22,7 @@ SESSION_DAYS = 30
 COOKIE_SECURE = config.security.cookie_secure
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 128  # evita que una contraseña enorme se use para saturar el servidor
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")  # comprobación básica: algo@dominio.ext
 
 # Protección contra fuerza bruta: en una ventana de LOCK_MINUTES, como mucho
 # MAX_FAILS_PER_USER fallos por usuario y MAX_FAILS_PER_IP fallos por dirección IP.
@@ -205,6 +207,27 @@ def update_user(user_id: int, **fields) -> dict:
     if password and row["username"]:
         clear_failures(row["username"])  # restablecer la contraseña desbloquea la cuenta
     return row
+
+
+def update_profile(user_id: int, name: str | None = None, email: str | None = None, **fields) -> dict:
+    """Lo que cada usuario cambia de su propia cuenta: nombre y email (y, en `fields`, el tema y el tutorial visto).
+    None deja el dato como estaba; un email vacío lo quita."""
+    updates = {k: v for k, v in fields.items() if k in {"theme", "tour_version"} and v is not None}
+    if name is not None:
+        name = " ".join(name.split())
+        if not name:
+            raise InvalidInput("El nombre no puede quedar vacío.")
+        updates["name"] = name
+    if email is not None:
+        email = email.strip() or None
+        if email and not EMAIL_RE.match(email):
+            raise InvalidInput("Ese email no parece válido.")
+        updates["email"] = email
+    with get_conn() as conn:
+        if email and users_repo.email_exists(conn, email, except_id=user_id):
+            raise Conflict("Ese email ya lo usa otra persona del equipo.")
+        users_repo.update(conn, user_id, updates)
+        return users_repo.get(conn, user_id)
 
 
 def change_password(user_id: int, current_password: str, new_password: str, keep_token: str | None) -> None:
