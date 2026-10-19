@@ -183,7 +183,7 @@ function selectTemplate(name, language) {
 
 async function deleteSelectedTemplate() {
   const sel = tplState.selected;
-  if (!sel || !confirm(`¿Borrar la plantilla «${sel.name}» en Meta? Se borra en todos sus idiomas y no se puede deshacer.`)) return;
+  if (!sel || !(await appConfirm(`¿Borrar la plantilla «${sel.name}» en Meta? Se borra en todos sus idiomas y no se puede deshacer.`, { ok: "Borrar", danger: true }))) return;
   try {
     await api(`${tplState.account.base}/${tplState.account.id}/templates/${encodeURIComponent(sel.name)}`, { method: "DELETE" });
     tplState.selected = null;
