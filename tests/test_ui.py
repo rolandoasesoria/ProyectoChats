@@ -1,4 +1,5 @@
 """Recorrido de la interfaz en Edge: login, tutorial, cliente, pestañas, notas, tareas, diálogos, tema, Chispa."""
+import re
 import sys
 
 from apitest import BASE, check, receive, results
@@ -63,6 +64,18 @@ try:
     check("detalles: el avatar tiene el color propio de la persona",
           b.js("/av-\\d/.test(document.querySelector('.cd-hero .chat-avatar').className)"))
     b.shot("04-detalles")
+    b.wait("document.querySelector('#cd-tasks strong').textContent !== '—'")
+    dates = b.js("['Primer contacto', 'Último mensaje'].map((l) => [...document.querySelectorAll('.cd-row')]"
+                 ".find((r) => r.firstElementChild.textContent === l).lastElementChild.textContent)")
+    check("detalles: las fechas de Actividad con el mismo formato",
+          all(re.fullmatch(r"(Hoy|Ayer), \d\d:\d\d|\d{1,2} [a-zé]{3,4} \d{4}", d) for d in dates), dates)
+    b.js("{ const p = document.querySelector('#chat-details'); p.scrollTop = p.scrollHeight; }")
+    b.pump(0.3)
+    check("detalles: el panel se desplaza y la última tarjeta se ve entera",
+          b.js("getComputedStyle(document.querySelector('#chat-details')).overflowY") == "auto"
+          and b.js("(() => { const p = document.querySelector('#chat-details').getBoundingClientRect();"
+                   " const c = [...document.querySelectorAll('.cd-card')].at(-1).getBoundingClientRect();"
+                   " return c.bottom <= p.bottom - 8; })()"))
     current = b.js("chatState.channel")
     other = b.js("chatState.channels.find((c) => c !== chatState.channel) || null")
     if other:

@@ -1360,3 +1360,17 @@ body { background: var(--canvas); }
 .cd-link { margin-top: 8px; }
 .cd-card .chip-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .chat-details .cd-name { margin: 0; }
+
+/* El panel de detalles se desplaza si su contenido no cabe (la regla de las tarjetas le ponía overflow: hidden) */
+.app-body .chat-details { overflow-y: auto; }
+/* Panel de detalles algo más compacto: que quepa casi todo sin desplazarse */
+#chat-details-body { gap: 8px; }
+.chat-avatar.xl { width: 64px; height: 64px; font-size: 22px; }
+.cd-hero { padding: 4px 4px 2px; }
+.cd-hero .chat-avatar { margin-bottom: 4px; }
+.cd-actions { margin-top: 8px; }
+.cd-card { padding: 8px 12px 10px; }
+.cd-card h4 { margin-bottom: 6px; }
+.cd-row { padding: 4px 0; }
+.cd-identity { padding: 3px 4px; }
+.app-body .chat-details { scrollbar-width: thin; }
