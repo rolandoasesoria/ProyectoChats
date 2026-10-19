@@ -120,6 +120,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- Contacto abierto desde Contactos: el enlace «← Volver a la tabla» pasa a ser una cabecera de la lista
+  («Contactos», cuántos hay y si la tabla tiene filtros) con el estilo de las tarjetas.
 - Las plantillas de WhatsApp solo las crea y las borra un administrador (son de la empresa y Meta puntúa su
   calidad); los demás usuarios las ven y envían las aprobadas desde el chat.
 - «Sin responder» pasa a ser un filtro de Mis Chats («Todos · No leídos · Sin responder»). Desaparece la pantalla

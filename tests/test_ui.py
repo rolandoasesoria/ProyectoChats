@@ -229,6 +229,9 @@ try:
                " && document.querySelector('#contacts-mini').offsetHeight > 0 && document.querySelector('#chats-list').offsetHeight === 0"))
     check("la ruta: Contactos › contacto", crumbs()[-2:] == ["Contactos", b.js("chatState.data.name")], crumbs())
     b.shot("04b3-contacto")
+    check("volver a la tabla: cabecera de la lista con cuántos contactos hay",
+          b.js("document.querySelector('#contacts-back .back-text strong').textContent") == "Contactos"
+          and b.js("document.querySelector('#contacts-mini-count').textContent") == "3 contactos")
     b.click("#contacts-back")
     b.wait("!document.querySelector('#view-contacts').hidden")
     check("«← Volver a la tabla»", True)

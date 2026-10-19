@@ -152,7 +152,12 @@ function contactMiniHtml(c) {
 
 async function loadContactsMini() {
   try {
-    const items = await api(`/api/contacts?${contactsQuery()}`);
+    const query = contactsQuery();
+    const items = await api(`/api/contacts?${query}`);
+    // Bajo «Contactos»: cuántos hay en la lista y si la tabla tiene filtros puestos.
+    const filtered = [...query.entries()].some(([k, v]) => v && k !== "q") || !!query.get("q")?.trim();
+    $("#contacts-mini-count").textContent =
+      `${items.length} ${items.length === 1 ? "contacto" : "contactos"}${filtered ? " · con filtros" : ""}`;
     $("#contacts-mini").innerHTML = items.length ? items.map(contactMiniHtml).join("")
       : `<li class="chats-empty muted small">Ningún contacto coincide con los filtros.</li>`;
   } catch (err) {
