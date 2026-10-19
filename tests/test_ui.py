@@ -87,6 +87,33 @@ try:
     check("detalles: el avatar tiene el color propio de la persona",
           b.js("/av-\\d/.test(document.querySelector('.cd-hero .chat-avatar').className)"))
     b.shot("04-detalles")
+    # Responsable: se elige en una lista, sin abrir la ventana de Editar
+    check("detalles: sin responsable, la cabecera lo dice", "Sin responsable" in b.js("document.querySelector('#detail-company').textContent"))
+    b.click("[data-cd-assign]")
+    check("detalles: «Asignar responsable» abre una lista para elegir (no la ventana de Editar)",
+          b.js("!document.querySelector('#cd-assign-menu').hidden && !document.querySelector('#client-dialog').open")
+          and b.js("document.querySelectorAll('#cd-assign-menu [data-assign-to]').length") >= 3)
+    b.shot("04-asignar")
+    b.click('#cd-assign-menu [data-assign-to="1"]')
+    b.wait("document.querySelector('#detail-company').textContent.includes('Responsable: Ana Ruiz')")
+    check("detalles: al elegir, queda como responsable (en la cabecera y en Detalles)",
+          b.js("document.querySelector('.cd-person-name')?.textContent") == "Ana Ruiz")
+    b.click("[data-cd-assign]")
+    b.click('#cd-assign-menu [data-assign-to=""]')
+    b.wait("document.querySelector('#detail-company').textContent.includes('Sin responsable')")
+    check("detalles: y se puede dejar sin responsable", True)
+    # Etiquetas: añadir y quitar desde Detalles
+    b.click("[data-cd-tag]")
+    b.fill("#cd-tag-input", "Prueba rápida")
+    b.js("document.querySelector('#cd-tag-input').dispatchEvent(new KeyboardEvent('keydown', {key: 'Enter', bubbles: true, cancelable: true}))")
+    b.wait("[...document.querySelectorAll('.cd-tag')].some((t) => t.textContent.includes('Prueba rápida'))")
+    check("detalles: añadir una etiqueta sin abrir Editar", not b.js("document.querySelector('#client-dialog').open"))
+    b.click('[data-cd-untag="Prueba rápida"]')
+    b.wait("![...document.querySelectorAll('.cd-tag')].some((t) => t.textContent.includes('Prueba rápida'))")
+    check("detalles: y quitarla", True)
+    check("detalles: tras cambiar responsable o etiquetas, conserva datos clave y tareas",
+          b.js("document.querySelector('#cd-tasks strong').textContent") != "—"
+          and "Cargando" not in b.js("document.querySelector('#cd-key-rows').textContent"))
     b.wait("document.querySelector('#cd-tasks strong').textContent !== '—'")
     dates = b.js("['Primer contacto', 'Último mensaje'].map((l) => [...document.querySelectorAll('.cd-row')]"
                  ".find((r) => r.firstElementChild.textContent === l).lastElementChild.textContent)")
@@ -443,12 +470,14 @@ try:
     b.wait("chatState.channel === '' && document.querySelectorAll('#chat-timeline li').length > 0")
     b.pump(0.5)
     total = b.js("document.querySelectorAll('#chat-timeline li').length")
-    check("desde Contactos se ve el historial completo, con quién lleva cada conversación",
-          not b.js("document.querySelector('#only-mine').checked") and b.js("document.querySelectorAll('#chat-timeline .owner-tag').length") > 0)
+    check("desde Contactos se ve el historial completo, con la cuenta por la que entró cada conversación",
+          not b.js("document.querySelector('#only-mine').checked") and b.js("document.querySelectorAll('#chat-timeline .account-tag').length") > 0)
+    check("y sin «la lleva» en los mensajes: al cliente lo lleva su responsable",
+          "la lleva" not in b.js("document.querySelector('#chat-timeline').textContent"))
     b.click("#only-mine")
     b.wait(f"document.querySelectorAll('#chat-timeline li').length < {total}")
     check("«Solo mis conversaciones» oculta las de los compañeros",
-          b.js("document.querySelectorAll('#chat-timeline .owner-tag').length") == 0)
+          b.js("document.querySelectorAll('#chat-timeline .account-tag').length") == 0)
     b.click("#only-mine")
     b.wait(f"document.querySelectorAll('#chat-timeline li').length === {total}")
     check("conversación: pestañas por canal, con «Todos los canales»",
@@ -524,7 +553,10 @@ try:
     b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 5")
     check("con «Todo el equipo» el selector sigue visible",
           b.js("document.querySelector('#inbox-scope').getBoundingClientRect().height") > 20)
-    check("cada conversación dice quién la lleva", "La lleva Carlos Pérez" in b.js("document.querySelector('#inbox-list').textContent"))
+    check("cada conversación dice quién lleva al cliente: su responsable (o «Sin responsable»)",
+          b.js("[...document.querySelectorAll('#inbox-list .inbox-item .inbox-bottom > span:first-child')]"
+               ".every((s) => /^(Sin responsable|Responsable: .+)$/.test(s.textContent.trim()))")
+          and "La lleva" not in b.js("document.querySelector('#inbox-list').textContent"))
     b.shot("09b-bandeja-equipo")
     b.click('#inbox-scope [data-inbox-scope="mine"]')
     b.wait("document.querySelectorAll('#inbox-list .inbox-item').length === 2")
@@ -596,6 +628,19 @@ try:
     b.wait("chatState.channel === ''")
     b.click("#edit-client-btn")
     b.wait("document.querySelector('#client-dialog').open")
+    # Los desplegables de la ventana se pueden usar con el ratón (la lista va dentro de la ventana)
+    def mouse_click(x, y):
+        for kind in ("mousePressed", "mouseReleased"):
+            b.send("Input.dispatchMouseEvent", type=kind, x=x, y=y, button="left", buttons=1 if kind == "mousePressed" else 0, clickCount=1)
+    sx, sy = b.js("(() => { const r = document.querySelector('#cf-status').getBoundingClientRect(); return [r.left + 20, r.top + r.height / 2]; })()")
+    mouse_click(sx, sy)
+    b.wait("document.querySelector('.select-menu')?.matches(':popover-open')")
+    check("ventana: la lista del desplegable va dentro de la ventana", b.js("!!document.querySelector('.select-menu').closest('#client-dialog')"))
+    ox, oy = b.js("(() => { const o = [...document.querySelectorAll('.select-menu .select-option')].find((el) => el.textContent.trim() === 'Inactivo');"
+                  " const r = o.getBoundingClientRect(); return [r.left + 20, r.top + r.height / 2]; })()")
+    mouse_click(ox, oy)
+    b.wait("document.querySelector('#cf-status').value === 'inactive'")
+    check("ventana: se elige una opción con el ratón (Estado)", True)
     b.click("#sensitive-btn")
     b.wait("document.querySelectorAll('#sensitive-list li[data-message]').length === 1")
     check("encuentra el IBAN en sus mensajes", "IBAN" in b.js("document.querySelector('#sensitive-list li').textContent"))

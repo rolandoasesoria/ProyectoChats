@@ -125,8 +125,10 @@ function timelineHtml(messages) {
     const grouped = !newDay && prev.sender === m.sender && prev.direction === m.direction && prev.channel === m.channel
       && (at - new Date(prev.sent_at)) / 60000 <= GROUP_MINUTES;
     prev = m;
+    // Por qué cuenta del equipo entró la conversación (de ella sale la respuesta). Quién lleva al cliente es su
+    // responsable, que se ve en la cabecera y en Detalles.
     const owner = m.owner_id !== currentUser.id
-      ? ` · <span class="owner-tag" title="Conversación que lleva ${escapeHtml(m.owner)}">la lleva ${escapeHtml(m.owner)}</span>` : "";
+      ? ` · <span class="account-tag" title="Entró por la cuenta de ${escapeHtml(m.owner)}: se responde desde esa cuenta">cuenta de ${escapeHtml(m.owner)}</span>` : "";
     const time = at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
     return `${newDay ? `<li class="day-sep"><span>${escapeHtml(dayLabel(at))}</span></li>` : ""}
     <li class="msg-row ${m.direction} ${escapeHtml(m.channel)}${grouped ? " grouped" : ""}" data-id="${m.id}">

@@ -124,6 +124,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Quién lleva a un cliente es su responsable** (uno solo, o «Sin responsable»), no quien tenga cada conversación:
+  desaparece «la lleva X» de los mensajes (queda «cuenta de X», la cuenta por la que entró) y la bandeja dice el
+  responsable. En Detalles, el responsable y las etiquetas se cambian directamente, sin abrir «Editar».
 - Contacto abierto desde Contactos: el enlace «← Volver a la tabla» pasa a ser una cabecera de la lista
   («Contactos», cuántos hay y si la tabla tiene filtros) con el estilo de las tarjetas.
 - Las plantillas de WhatsApp solo las crea y las borra un administrador (son de la empresa y Meta puntúa su
@@ -216,6 +219,7 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Los desplegables dentro de una ventana (p. ej. Estado y Responsable en «Editar cliente») no dejaban elegir.
 - Chats: al volver de un correo nuevo a otra pestaña, el botón de enviar ya no sigue diciendo «Enviar correo».
 - Posibles duplicados: si hay varios (p. ej. el mismo remitente desde varias direcciones), un solo aviso con todos
   y «Unir todos aquí», en vez de un aviso amarillo por cada uno.
