@@ -61,6 +61,13 @@ def set_status(conn: Conn, reply_id: int, status: str, user_id: int | None = Non
             WHERE id = ?""", (status, user_id, text, reply_id))
 
 
+def count_pending_for_owner(conn: Conn, user_id: int) -> int:
+    """Propuestas de la IA esperando que las revise quien lleva la conversación."""
+    return conn.execute(
+        """SELECT count(*) FROM ai_replies r JOIN conversations c ON c.id = r.conversation_id
+            WHERE r.status = 'pending' AND c.owner_user_id = ?""", (user_id,)).fetchone()[0]
+
+
 def pending_for(conn: Conn, conversation_id: int) -> dict | None:
     """La propuesta pendiente de la conversación (la más reciente)."""
     row = conn.execute(

@@ -49,6 +49,10 @@ check("y no se trata dos veces el mismo mensaje", ai_reply.run_once() == {})
 st, state = carlos.get(f"/api/conversations/{conv}/ai")
 check("Carlos ve la propuesta en el chat", st == 200 and state["pending"]["text"] == decision["message"], state)
 check("Marta no decide en la conversación de Carlos = 403", marta.get(f"/api/conversations/{conv}/ai")[0] == 403)
+counts = carlos.get("/api/me/counts")[1]
+check("la barra lateral cuenta la propuesta pendiente de Carlos (y no la de Marta)",
+      counts["ai_pending"] == 1 and counts["ai_enabled"] is True and isinstance(counts["unread_chats"], int)
+      and marta.get("/api/me/counts")[1]["ai_pending"] == 0, counts)
 with get_conn() as conn:
     avisos = conn.execute("SELECT count(*) FROM notifications WHERE user_id = 2 AND kind = 'ai_suggestion'").fetchone()[0]
 check("y le llega un aviso", avisos == 1)
