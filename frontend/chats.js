@@ -295,7 +295,7 @@ async function prepareComposer() {
   };
   if (!conv) {
     const other = chatState.data.conversations.find((c) => c.channel === channel);
-    return disable(other ? `Esta conversación la lleva ${other.owner}: responde ella o él.` : "");
+    return disable(other ? `Esta conversación entró por la cuenta de ${other.owner}: se responde desde su cuenta.` : "");
   }
   try {
     const s = await api(`/api/conversations/${conv.id}/sender`);
@@ -484,14 +484,23 @@ function renderChatDetails(data) {
       <h4>Contacto</h4>
       ${identities ? `<ul class="cd-identities">${identities}</ul>` : `<p class="cd-empty">Sin datos de contacto.</p>`}
     </section>
-    <section class="cd-card">
+    <section class="cd-card cd-pop-card">
       <h4>Responsable</h4>
-      ${data.assignee ? `<div class="cd-person"><span class="chat-avatar small ${avatarClass(data.assignee)}">${escapeHtml(initialsOf(data.assignee))}</span>${escapeHtml(data.assignee)}</div>`
-        : `<button type="button" class="cd-add" data-cd-edit>+ Asignar responsable</button>`}
+      ${data.assignee ? `<button type="button" class="cd-person" data-cd-assign aria-haspopup="menu" title="Cambiar el responsable">
+          <span class="chat-avatar small ${avatarClass(data.assignee)}">${escapeHtml(initialsOf(data.assignee))}</span>
+          <span class="cd-person-name">${escapeHtml(data.assignee)}</span><span class="cd-change">Cambiar</span></button>`
+        : `<button type="button" class="cd-add" data-cd-assign aria-haspopup="menu">+ Asignar responsable</button>`}
+      <div class="menu cd-menu" id="cd-assign-menu" role="menu" hidden></div>
     </section>
-    <section class="cd-card">
+    <section class="cd-card cd-pop-card">
       <h4>Etiquetas</h4>
-      <div class="chip-row">${tagChips(data.tags)}<button type="button" class="cd-add" data-cd-edit>+ ${data.tags.length ? "Añadir" : "Añadir etiqueta"}</button></div>
+      <div class="chip-row">${data.tags.map((t) => `<span class="chip-tag cd-tag">${escapeHtml(t)}<button type="button" class="cd-untag"
+          data-cd-untag="${escapeHtml(t)}" title="Quitar la etiqueta" aria-label="Quitar la etiqueta ${escapeHtml(t)}">×</button></span>`).join("")}
+        <button type="button" class="cd-add" data-cd-tag aria-haspopup="true">+ ${data.tags.length ? "Añadir" : "Añadir etiqueta"}</button></div>
+      <div class="menu cd-menu cd-tag-menu" id="cd-tag-menu" hidden>
+        <input id="cd-tag-input" maxlength="40" placeholder="Escribe o elige una etiqueta" autocomplete="off">
+        <ul class="cd-menu-list" id="cd-tag-options"></ul>
+      </div>
     </section>
     <section class="cd-card" id="cd-key">
       <h4>Datos clave</h4>
@@ -505,8 +514,19 @@ function renderChatDetails(data) {
       ${row("Conversaciones", `${convs.length} · ${messages} ${messages === 1 ? "mensaje" : "mensajes"}`)}
       ${row("Tareas abiertas", "—", "cd-tasks")}
     </section>`;
-  chatState.keyFacts = null;
-  chatState.keyProps = null;
+  // Al redibujar el mismo contacto (tras cambiar su responsable o sus etiquetas) se conserva lo que ya se cargó:
+  // prioridad, datos clave y tareas. Con otro contacto se espera a que lleguen los suyos.
+  if (chatState.detailsFor !== data.id) {
+    chatState.detailsFor = data.id;
+    chatState.keyFacts = null;
+    chatState.keyProps = null;
+    chatState.detailsProfile = null;
+    chatState.detailsTasks = null;
+    return;
+  }
+  if (chatState.detailsProfile) $("#cd-priority").innerHTML = priorityChips(chatState.detailsProfile);
+  renderDetailsKeyData();
+  if (chatState.detailsTasks) setDetailsTasks(data.id, chatState.detailsTasks);
 }
 
 // Datos clave: los de la Ficha (los extrae la IA o se añaden a mano) y las propiedades rellenas (DNI, origen…).
@@ -522,6 +542,7 @@ function renderDetailsKeyData() {
 // Al cargar la Ficha (profile.js): prioridad que ve la IA y sus datos clave.
 function setDetailsProfile(clientId, p) {
   if (chatState.clientId !== clientId || !$("#cd-priority")) return;
+  chatState.detailsProfile = p;
   $("#cd-priority").innerHTML = priorityChips(p);
   chatState.keyFacts = p.facts.map((f) => ({ label: f.label, value: f.value }));
   renderDetailsKeyData();
@@ -538,12 +559,99 @@ function setDetailsProperties(clientId, props, values) {
 function setDetailsTasks(clientId, open) {
   const row = $("#cd-tasks");
   if (chatState.clientId !== clientId || !row) return;
+  chatState.detailsTasks = open;
   const overdue = open.filter((t) => t.due_date && t.due_date <= todayIso()).length;
   row.querySelector("strong").innerHTML = open.length
     ? `${open.length}${overdue ? ` <span class="cd-overdue">· ${overdue} para hoy o vencida${overdue === 1 ? "" : "s"}</span>` : ""}` : "Ninguna";
 }
 
+/* ---------- Responsable y etiquetas, directamente desde Detalles ---------- */
+
+function closeDetailsMenus(except = null) {
+  document.querySelectorAll("#chat-details-body .cd-menu").forEach((m) => { if (m !== except) m.hidden = true; });
+}
+
+function toggleAssignMenu() {
+  const menu = $("#cd-assign-menu");
+  if (!menu.hidden) return closeDetailsMenus();
+  closeDetailsMenus(menu);
+  const current = chatState.data?.assignee_user_id ?? null;
+  const option = (id, label, avatar) => `<button type="button" role="menuitem" class="cd-menu-item${id === current ? " selected" : ""}"
+      data-assign-to="${id ?? ""}">${avatar}<span>${escapeHtml(label)}</span></button>`;
+  menu.innerHTML = team.map((u) => option(u.id, u.id === currentUser.id ? `${u.name} (tú)` : u.name,
+    `<span class="chat-avatar tiny ${avatarClass(u.name)}">${escapeHtml(initialsOf(u.name))}</span>`)).join("")
+    + option(null, "Sin responsable", `<span class="chat-avatar tiny cd-none">–</span>`);
+  menu.hidden = false;
+}
+
+async function assignClient(userId) {
+  closeDetailsMenus();
+  const clientId = chatState.clientId;
+  try {
+    await api(`/api/clients/${clientId}`, { method: "PATCH", body: JSON.stringify({ assignee_user_id: userId }) });
+    if (chatState.clientId !== clientId) return;
+    const data = await refreshCurrentClient();
+    toast(data.assignee ? `Ahora lleva a ${data.name}: ${data.assignee}.` : `${data.name} queda sin responsable.`, "success");
+    loadClients();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+// Sugerencias al añadir una etiqueta: las básicas y las que ya usa el equipo, filtradas por lo escrito.
+function renderDetailsTagOptions() {
+  const typed = $("#cd-tag-input").value.trim();
+  const have = new Set((chatState.data?.tags || []).map((t) => t.toLowerCase()));
+  const all = [...new Set([...BASIC_TAGS, ...knownTags.map((t) => t.tag)])].filter((t) => !have.has(t.toLowerCase()));
+  const matches = all.filter((t) => normText(t).includes(normText(typed))).slice(0, 8);
+  const create = typed && !all.some((t) => t.toLowerCase() === typed.toLowerCase()) && !have.has(typed.toLowerCase());
+  $("#cd-tag-options").innerHTML = (create ? [`<li><button type="button" class="cd-menu-item" data-add-tag="${escapeHtml(typed)}">Crear «${escapeHtml(typed)}»</button></li>`] : [])
+    .concat(matches.map((t) => `<li><button type="button" class="cd-menu-item" data-add-tag="${escapeHtml(t)}">${escapeHtml(t)}</button></li>`))
+    .join("") || `<li class="muted small cd-menu-empty">Ya tiene todas las etiquetas.</li>`;
+}
+
+function toggleTagMenu() {
+  const menu = $("#cd-tag-menu");
+  if (!menu.hidden) return closeDetailsMenus();
+  closeDetailsMenus(menu);
+  menu.hidden = false;
+  $("#cd-tag-input").value = "";
+  renderDetailsTagOptions();
+  $("#cd-tag-input").focus();
+}
+
+async function saveTags(tags, message) {
+  closeDetailsMenus();
+  const clientId = chatState.clientId;
+  try {
+    await api(`/api/clients/${clientId}/tags`, { method: "PUT", body: JSON.stringify({ tags }) });
+    if (chatState.clientId !== clientId) return;
+    await refreshCurrentClient();
+    toast(message, "success");
+    loadTagOptions().catch(() => {});
+    loadClients();
+  } catch (err) {
+    alert(err.message);
+  }
+}
+
+function addDetailsTag(tag) {
+  const tags = [...(chatState.data?.tags || []), tag.trim()];
+  return saveTags(tags, `Etiqueta «${tag.trim()}» añadida.`);
+}
+
 async function onDetailsClick(e) {
+  if (e.target.closest("[data-cd-assign]")) return toggleAssignMenu();
+  const assign = e.target.closest("[data-assign-to]");
+  if (assign) return assignClient(assign.dataset.assignTo ? Number(assign.dataset.assignTo) : null);
+  if (e.target.closest("[data-cd-tag]")) return toggleTagMenu();
+  const add = e.target.closest("[data-add-tag]");
+  if (add) return addDetailsTag(add.dataset.addTag);
+  const untag = e.target.closest("[data-cd-untag]");
+  if (untag) {
+    const tag = untag.dataset.cdUntag;
+    return saveTags((chatState.data?.tags || []).filter((t) => t !== tag), `Etiqueta «${tag}» quitada.`);
+  }
   const channel = e.target.closest("[data-cd-channel]");
   if (channel) {
     showDetailTab("conversation");
@@ -670,6 +778,13 @@ function bindChatsEvents() {
   $("#chat-file-chip").addEventListener("click", (e) => { if (e.target.closest("#chat-file-remove")) setChatFile(null); });
   $("#chat-details-toggle").addEventListener("click", () => toggleChatDetails());
   $("#chat-details-body").addEventListener("click", onDetailsClick);
+  $("#chat-details-body").addEventListener("input", (e) => { if (e.target.id === "cd-tag-input") renderDetailsTagOptions(); });
+  $("#chat-details-body").addEventListener("keydown", (e) => {
+    if (e.target.id !== "cd-tag-input") return;
+    if (e.key === "Escape") { e.stopPropagation(); closeDetailsMenus(); }
+    if (e.key === "Enter" && e.target.value.trim()) { e.preventDefault(); addDetailsTag(e.target.value); }
+  });
+  document.addEventListener("click", (e) => { if (!e.target.closest(".cd-pop-card")) closeDetailsMenus(); });
   $("#chat-details-tabs").addEventListener("click", (e) => {
     const tab = e.target.closest("[data-pane]");
     if (tab) showDetailsPane(tab.dataset.pane);
