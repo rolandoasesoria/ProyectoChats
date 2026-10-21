@@ -130,6 +130,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Chispa renovada e interactiva**: ahora es el bocadillo de la marca con ojos, en degradado índigo. Flota y
+  parpadea, te sigue con la mirada, se eleva al pasar el ratón, mira al panel cuando está abierto y, mientras
+  prepara la respuesta, sus ojos se vuelven tres puntos «escribiendo…». Sin animaciones si el sistema pide menos movimiento.
 - **Componentes restantes con el sistema de diseño**: etiquetas de la barra lateral, contadores, estado y prioridad
   en píldora, avisos (novedades, solo lectura, duplicados, errores), borradores de la IA, adjuntos, paleta Ctrl+K con
   icono de búsqueda, panel de Chispa, gráficos y pantalla de entrada; barras de desplazamiento finas. Toda la hoja de
