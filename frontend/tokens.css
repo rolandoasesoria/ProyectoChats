@@ -135,6 +135,13 @@
   --color-info:            light-dark(var(--indigo-600), var(--lavanda-5));
   --color-info-bg:         light-dark(var(--indigo-50), #1d1b33);
 
+  /* --- Estado del cliente (punto, etiqueta y texto) y contadores de avisos --------------------------------------- */
+  --color-status-lead:     light-dark(#6f5fd0, #a99cf0);   /* Potencial: violeta de la familia índigo */
+  --color-status-active:   light-dark(var(--green-600), var(--green-400));
+  --color-status-issue:    light-dark(var(--red-600), var(--red-400));
+  --color-status-inactive: light-dark(var(--ink-500), var(--night-300));
+  --color-notification:    #c93a50;                        /* fondo de los contadores de avisos (texto blanco, 5:1) */
+
   /* --- Canales: paleta categórica validada (el color sigue al canal en etiquetas, historial y gráficos) ------------- */
   --color-email:           light-dark(#eb6834, #d95926);
   --color-telegram:        light-dark(#2a78d6, #3987e5);

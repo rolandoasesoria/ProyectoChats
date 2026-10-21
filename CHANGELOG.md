@@ -130,6 +130,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Componentes restantes con el sistema de diseño**: etiquetas de la barra lateral, contadores, estado y prioridad
+  en píldora, avisos (novedades, solo lectura, duplicados, errores), borradores de la IA, adjuntos, paleta Ctrl+K con
+  icono de búsqueda, panel de Chispa, gráficos y pantalla de entrada; barras de desplazamiento finas. Toda la hoja de
+  estilos usa ya los radios, sombras y colores de tokens.css.
 - **Todas las pantallas con el nuevo sistema de diseño**: la ficha en listas agrupadas al estilo iOS, tareas y
   notas en tarjetas, burbujas tipo iMessage, etiquetas de canal en píldora, tablas unificadas, ajustes de IA
   agrupados y estados vacíos con icono. Misma lógica y mismo funcionamiento.
