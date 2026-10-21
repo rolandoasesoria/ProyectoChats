@@ -101,7 +101,7 @@ function chatItemHtml(c) {
       <div class="chat-item-body">
         <div class="chat-item-top"><strong>${escapeHtml(c.name)}</strong><span class="chat-item-time">${escapeHtml(chatTime(c.last_at))}</span></div>
         <div class="chat-item-bottom">
-          <span class="chat-preview">${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}</span>${unreadBadge(c.unread)}
+          <span class="chat-preview">${draftPreviewHtml(c.id) || `${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}`}</span>${unreadBadge(c.unread)}
         </div>
         <div class="chat-item-meta">${c.channels.map(badge).join("")}${tagChips(c.tags, 2)}</div>
       </div>
@@ -190,7 +190,11 @@ function markActiveContact() {
 // Abre un contacto en esta vista (o lo recarga, si ya estaba abierto).
 async function openChat(clientId) {
   const changed = chatState.clientId !== clientId;
+  // Lo que se estaba escribiendo se queda en su chat (borrador); la caja se vacía para el nuevo contacto.
+  const draftsChanged = changed && (saveChatDraft(chatState.clientId) || Boolean(chatDrafts()[clientId]));
   if (changed) {
+    clearComposerText();
+    chatState.composing = false; // el «está respondiendo» era para el otro contacto
     setChatFile(null); // el archivo elegido era para otro contacto
     clearReply();
     resetComposerExtras();
@@ -201,6 +205,7 @@ async function openChat(clientId) {
   state.clientId = clientId;
   markActiveContact();
   if (changed) heartbeat();
+  if (draftsChanged) loadChats(); // «Borrador: …» aparece en el chat que se deja y se quita del que se abre
   const data = await api(`/api/clients/${clientId}`);
   if (chatState.clientId !== clientId) return; // ya se eligió otro
   chatState.data = data;
@@ -213,6 +218,7 @@ async function openChat(clientId) {
   renderChannelTabs();
   $("#chat-empty").hidden = true;
   $("#chat-open").hidden = false;
+  if (changed) restoreChatDraft(clientId);
   $("#chat-avatar").textContent = initialsOf(data.name);
   $("#chat-avatar").className = `chat-avatar ${avatarClass(data.name)}`;
   renderClientHeader(data);
@@ -360,6 +366,7 @@ async function sendNewEmail(text) {
     const payload = { subject, text, file: file ? { filename: file.name, mime: file.type || null, data: await fileToBase64(file) } : null };
     await api(`/api/clients/${chatState.clientId}/emails`, { method: "POST", body: JSON.stringify(payload) });
     $("#chat-subject").value = "";
+    dropChatDraft(chatState.clientId);
     setChatFile(null);
     chatState.channel = "email";
     await openChat(chatState.clientId); // el correo abre un hilo nuevo: se recargan las conversaciones
@@ -407,6 +414,7 @@ async function sendChatMessage(text) {
     }
     setChatFile(null);
     clearReply();
+    dropChatDraft(chatState.clientId);
     resetComposerExtras({ keepFollowUp: true });
     const note = await scheduleFollowUp(convId);
     showComposerNote(note);
@@ -707,6 +715,9 @@ function toggleChatDetails(show) {
 // Sin ningún contacto abierto (al pulsar la sección en la ruta de navegación, al cambiar de sección, al borrarlo…).
 function closeChat() {
   const had = chatState.clientId !== null;
+  const draftsChanged = saveChatDraft(chatState.clientId);
+  clearComposerText();
+  clearReply();
   chatState.clientId = null;
   chatState.data = null;
   state.clientId = null;
@@ -721,6 +732,7 @@ function closeChat() {
   setChatFile(null);
   chatState.composing = false;
   if (had) heartbeat();
+  if (draftsChanged) loadChats();
   updateBreadcrumb();
 }
 
@@ -782,6 +794,8 @@ function bindChatsEvents() {
   });
   bindComposer($("#chat-composer"), $("#chat-text"), sendChatMessage);
   $("#chat-text").addEventListener("input", (e) => setComposing(!!e.target.value.trim()));
+  // Al recargar o cerrar la página, lo escrito se guarda como borrador de su chat
+  window.addEventListener("pagehide", () => saveChatDraft(chatState.clientId));
   $("#chat-file").addEventListener("change", (e) => setChatFile(e.target.files[0]));
   $("#chat-new-email").addEventListener("click", () => {
     if (chatState.newEmail) prepareComposer().then(() => setNewEmail(false)); else setNewEmail(true);

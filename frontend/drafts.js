@@ -183,3 +183,82 @@ function bindDraftEvents() {
   $("#draft-rewrite").addEventListener("change", rewriteDraft);
   $("#draft-undo").addEventListener("click", undoRewrite);
 }
+
+/* ---------- Borrador de cada chat ---------- */
+
+// Lo escrito y sin enviar se queda en su chat, como en WhatsApp: al cambiar de contacto se guarda (con la cita y el
+// asunto, si los hay), al volver se recupera y, mientras tanto, la lista muestra «Borrador: …». Se guarda en esta
+// pestaña del navegador: sobrevive a recargar la página, no a cerrarla ni a cerrar la sesión.
+let chatDraftsCache = null;
+
+function draftsKey() {
+  return `hilvana.borradores.${currentUser.id}`;
+}
+
+function chatDrafts() {
+  if (!chatDraftsCache) {
+    try {
+      chatDraftsCache = JSON.parse(sessionStorage.getItem(draftsKey()) || "{}");
+    } catch {
+      chatDraftsCache = {};
+    }
+  }
+  return chatDraftsCache;
+}
+
+function storeChatDrafts() {
+  try {
+    sessionStorage.setItem(draftsKey(), JSON.stringify(chatDrafts()));
+  } catch { /* sin almacenamiento: los borradores viven solo en memoria */ }
+}
+
+// Guarda lo que hay en la caja como borrador del chat (o lo quita, si está vacía). Devuelve si había o hay borrador.
+function saveChatDraft(clientId) {
+  if (clientId == null) return false;
+  const text = $("#chat-text").value;
+  const subject = $("#chat-subject").value;
+  const had = Boolean(chatDrafts()[clientId]);
+  if (text.trim() || subject.trim()) chatDrafts()[clientId] = { text, subject, reply: chatState.replyTo };
+  else delete chatDrafts()[clientId];
+  storeChatDrafts();
+  return had || Boolean(chatDrafts()[clientId]);
+}
+
+// Deja la caja vacía (lo que había era para otro contacto).
+function clearComposerText() {
+  $("#chat-text").value = "";
+  $("#chat-text").style.height = "";
+  $("#chat-subject").value = "";
+}
+
+// Pone en la caja el borrador del chat que se abre.
+function restoreChatDraft(clientId) {
+  const draft = chatDrafts()[clientId];
+  if (!draft) return;
+  const input = $("#chat-text");
+  input.value = draft.text || "";
+  $("#chat-subject").value = draft.subject || "";
+  input.style.height = "auto";
+  input.style.height = `${input.scrollHeight}px`;
+  if (draft.reply) showReply(draft.reply);
+}
+
+// Al enviar, el borrador del chat ya no hace falta.
+function dropChatDraft(clientId) {
+  if (!chatDrafts()[clientId]) return;
+  delete chatDrafts()[clientId];
+  storeChatDrafts();
+}
+
+// «Borrador: …» en lugar del último mensaje, en la lista (no en el chat abierto: ahí está la caja).
+function draftPreviewHtml(clientId) {
+  const draft = chatDrafts()[clientId];
+  if (!draft || clientId === chatState.clientId) return "";
+  return `<span class="chat-draft">Borrador:</span> ${escapeHtml(firstLine(draft.text) || draft.subject || "")}`;
+}
+
+function forgetChatDrafts() {
+  try {
+    sessionStorage.removeItem(draftsKey());
+  } catch { /* no había nada guardado */ }
+}

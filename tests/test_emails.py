@@ -43,4 +43,10 @@ m = parse(b"From: Jorge <jorge@talleresmartin.com>\nTo: ana@miempresa.com\nSubje
 check("solo adjunto: el cuerpo lo nombra y el archivo se conserva",
       m["body"] == "📎 f.pdf" and [(a["filename"], a["mime"]) for a in m["attachments"]] == [("f.pdf", "application/pdf")], m)
 check("sin remitente se ignora", parse(b"Subject: x\n\nhola\n") is None)
+m = parse("From: Tienda <promo@tienda.example>\nTo: ana@miempresa.com\nSubject: Oferta\nContent-Type: text/plain; "
+          "charset=utf-8\n\nDise&#241;ado para ti &#8211; M&#225;s info &amp; precios\n".encode())
+check("texto plano con caracteres escritos como «&#241;»: se leen bien",
+      m["body"] == "Diseñado para ti – Más info & precios", m["body"])
+m = parse(b"From: Ana <ana@miempresa.com>\nTo: x@y.com\nSubject: x\nContent-Type: text/plain\n\nAT&T y R&D\n")
+check("el texto plano normal no se toca", m["body"] == "AT&T y R&D", m["body"])
 sys.exit(0 if results["ok"] else 1)

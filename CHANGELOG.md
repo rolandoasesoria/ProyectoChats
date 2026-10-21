@@ -254,6 +254,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   dice quién la lleva.
 
 ### Corregido
+- Lo escrito en un chat ya no pasa al siguiente contacto: cada chat guarda su borrador (con la cita y el asunto) y
+  la lista muestra «Borrador: …», como en WhatsApp. Tampoco se arrastra el «está respondiendo» al cambiar de chat.
+- Correos con caracteres escritos como «Dise&#241;ado» en el texto plano: ahora se leen bien. En el correo, los
+  logos de la firma y las imágenes pequeñas siguen como adjunto en vez de ocupar la burbuja.
 - Una lista desplegable podía cerrarse sola si se abría justo después de desplazar la ventana.
 - Los desplegables dentro de una ventana (p. ej. Estado y Responsable en «Editar cliente») no dejaban elegir.
 - Chats: al volver de un correo nuevo a otra pestaña, el botón de enviar ya no sigue diciendo «Enviar correo».

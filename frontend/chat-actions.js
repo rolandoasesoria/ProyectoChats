@@ -40,11 +40,17 @@ async function startReply(id, retried = false) {
     await loadChatConversation();
     return startReply(id, true);
   }
-  chatState.replyTo = { id: m.id, conversationId: m.conversation_id };
-  $("#chat-reply-sender").textContent = m.direction === "out" ? `${m.sender} · equipo` : m.sender;
-  $("#chat-reply-text").textContent = firstLine(m.body) || "📎 Archivo";
-  $("#chat-reply").hidden = false;
+  showReply({ id: m.id, conversationId: m.conversation_id, sender: m.direction === "out" ? `${m.sender} · equipo` : m.sender,
+              text: firstLine(m.body) || "📎 Archivo" });
   $("#chat-text").focus();
+}
+
+// «Respondiendo a…» con el mensaje citado (también al recuperar el borrador de un chat).
+function showReply(reply) {
+  chatState.replyTo = reply;
+  $("#chat-reply-sender").textContent = reply.sender || "";
+  $("#chat-reply-text").textContent = reply.text || "";
+  $("#chat-reply").hidden = false;
 }
 
 function clearReply() {

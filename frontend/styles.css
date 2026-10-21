@@ -2233,3 +2233,6 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 @media (prefers-reduced-motion: reduce) {
   .bubble-reactions { animation: none; }
 }
+
+/* «Borrador: …» en la lista de chats, como en WhatsApp */
+.chat-draft { color: var(--color-success); font-weight: var(--font-weight-semibold); }

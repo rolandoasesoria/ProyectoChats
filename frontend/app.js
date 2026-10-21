@@ -132,8 +132,14 @@ function formatMessage(body, channel) {
   return html;
 }
 
-// Fotos, vídeos y audios dentro de la burbuja (las fotos se amplían en el visor); el resto, como adjunto.
+// Fotos, vídeos y audios dentro de la burbuja (las fotos se amplían en el visor); el resto, como adjunto. En el correo,
+// las imágenes pequeñas (logos de la firma, píxeles de seguimiento) siguen como adjunto.
 const INLINE_MEDIA = /^(image|video|audio)\//;
+const EMAIL_PHOTO_MIN = 40 * 1024;
+
+function showsInline(a, channel) {
+  return INLINE_MEDIA.test(a.mime || "") && (channel !== "email" || !a.mime.startsWith("image/") || a.size >= EMAIL_PHOTO_MIN);
+}
 
 function mediaHtml(files) {
   return files.map((a) => {
@@ -199,8 +205,8 @@ function timelineHtml(messages) {
       ? ` · <span class="account-tag" title="Entró por la cuenta de ${escapeHtml(m.owner)}: se responde desde esa cuenta">cuenta de ${escapeHtml(m.owner)}</span>` : "";
     const time = at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
     const files = m.attachments || [];
-    const inline = files.filter((a) => INLINE_MEDIA.test(a.mime || ""));
-    const others = files.filter((a) => !INLINE_MEDIA.test(a.mime || ""));
+    const inline = files.filter((a) => showsInline(a, m.channel));
+    const others = files.filter((a) => !showsInline(a, m.channel));
     // «📎 foto.jpg» sin más texto: con la foto a la vista, sobra
     const onlyMedia = inline.length && !others.length && inline.some((a) => m.body === `📎 ${a.filename}`);
     return `${newDay ? `<li class="day-sep"><span>${escapeHtml(dayLabel(at))}</span></li>` : ""}
