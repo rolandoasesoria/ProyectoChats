@@ -184,8 +184,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 .topbar .menu { color: var(--text); }
 .topbar :focus-visible { outline-color: var(--lavanda-5); }
 .brand { font-weight: 600; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
-.brand-logo { width: 26px; height: 26px; display: block; }
-.login-card .brand-logo { width: 40px; height: 40px; }
+.brand-logo { width: 36px; height: 36px; display: block; }
+.login-card .brand-logo { width: 44px; height: 44px; }
+/* En la barra superior el logo es protagonista: alineado con los iconos de la barra lateral y con un brillo suave */
+.topbar .brand { font-size: 16px; gap: 12px; margin-left: -4px; }
+.topbar .brand-logo { filter: drop-shadow(0 2px 8px rgba(178, 191, 222, .35)); }
 select, input[type="search"], .form input {
   background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
 }
