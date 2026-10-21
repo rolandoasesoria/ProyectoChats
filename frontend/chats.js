@@ -24,7 +24,7 @@ let contactsMiniTimer = null;
 
 // Vistas. «client» es la vista de contacto abierta desde Contactos: usa la misma pantalla que Mis Chats, con la lista
 // de contactos a la izquierda, y en la barra lateral cuenta como Contactos.
-const VIEWS = { chats: "#view-chats", client: "#view-chats", contacts: "#view-contacts", tasks: "#view-tasks",
+const VIEWS = { chats: "#view-chats", client: "#view-chats", mail: "#view-mail", contacts: "#view-contacts", tasks: "#view-tasks",
                 assistant: "#view-assistant", templates: "#view-templates", ai: "#view-ai", dashboard: "#view-dashboard" };
 let viewName = null;
 
@@ -56,6 +56,10 @@ function showView(name) {
     loadContactsMini();
   }
   if (name === "contacts") loadContacts();
+  if (name === "mail") {
+    $("#mail-scope").hidden = !canViewTeamChats();
+    loadMail();
+  }
   if (name === "tasks") loadMyTasks().catch((err) => alert(err.message));
   if (name === "assistant") showGeneralAssistant();
   if (name === "ai") loadAISettings().catch((err) => alert(err.message));
@@ -69,7 +73,7 @@ function showView(name) {
 function savedView() {
   try {
     const saved = localStorage.getItem(VIEW_KEY);
-    return ["contacts", "tasks", "assistant", "templates", "ai", "dashboard"].includes(saved) ? saved : "chats";
+    return ["mail", "contacts", "tasks", "assistant", "templates", "ai", "dashboard"].includes(saved) ? saved : "chats";
   } catch { return "chats"; }
 }
 
@@ -242,6 +246,7 @@ async function loadChatConversation(keepScroll = false) {
     if (clientId) loadSharedCounts(clientId);
     return;
   }
+  $("#chat-mail-view").hidden = channel !== "email"; // los mismos correos, en bandejas (sección Correo)
   const params = new URLSearchParams({ scope: state.scope });
   if (channel) params.set("channel", channel);
   const messages = await api(`/api/clients/${clientId}/timeline?${params}`);

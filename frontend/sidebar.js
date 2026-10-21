@@ -3,7 +3,7 @@
 // algo: al abrir un chat, al decidir una propuesta de la IA, al cambiar la bandeja o las tareas.
 
 const NAV_REFRESH = 30000;
-const navState = { unreadChats: 0, waiting: 0, late: 0, aiPending: 0, aiEnabled: false };
+const navState = { unreadChats: 0, unreadMail: 0, waiting: 0, late: 0, aiPending: 0, aiEnabled: false };
 
 function setNavBadge(view, n, alert = false) {
   const badge = document.querySelector(`.sidebar [data-view="${view}"] .nav-count`);
@@ -30,6 +30,8 @@ function renderNav() {
   setNavDetail("chats", [s.unreadChats && plural(s.unreadChats, "sin leer", "sin leer"),
     s.waiting && `${plural(s.waiting, "espera", "esperan")} respuesta${s.late ? ` (${s.late} fuera de plazo)` : ""}`]
     .filter(Boolean).join(" · ") || "Todo al día");
+  setNavBadge("mail", s.unreadMail);
+  setNavDetail("mail", s.unreadMail ? plural(s.unreadMail, "correo sin leer", "correos sin leer") : "Todo leído");
   setNavBadge("ai", s.aiPending);
   setNavDetail("ai", s.aiEnabled
     ? `Activada${s.aiPending ? ` · ${plural(s.aiPending, "propuesta", "propuestas")} por revisar` : ""}` : "Desactivada");
@@ -54,6 +56,7 @@ async function refreshNavCounts() {
   try {
     const c = await api("/api/me/counts");
     navState.unreadChats = c.unread_chats;
+    navState.unreadMail = c.unread_mail;
     navState.aiPending = c.ai_pending;
     navState.aiEnabled = c.ai_enabled;
     renderNav();
