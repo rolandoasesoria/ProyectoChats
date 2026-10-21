@@ -1,0 +1,416 @@
+/* =====================================================================================================================
+   Hilvana Chat · Tokens de diseño
+   ---------------------------------------------------------------------------------------------------------------------
+   La base visual de la app en un solo sitio: colores, tipografía, radios, sombras, espaciados, materiales (cristal),
+   movimiento y capas. Estética: moderna y minimalista, al estilo iOS/Apple, con la paleta lavanda/índigo de la marca,
+   contrastes sutiles, esquinas generosas y sombras muy finas.
+
+   Tres niveles:
+     1. Primitivos   → los valores en bruto (escalas de color, tamaños). No se usan directamente en los componentes.
+     2. Semánticos   → lo que significa cada valor (superficie, texto secundario, borde, acento…). Es lo que usan los
+                       componentes, y lo que cambia entre el tema claro y el oscuro.
+     3. Compatibles  → los nombres que ya usa styles.css (--panel, --muted, --g-card…), apuntando a los semánticos.
+
+   Tema claro y oscuro sin duplicar bloques: cada color semántico se declara una sola vez con light-dark(claro, oscuro),
+   y lo resuelve `color-scheme`, que sigue al data-theme de la raíz (common.js, applyTheme):
+     sin data-theme → como el sistema · data-theme="light" → claro · data-theme="dark" → oscuro.
+   light-dark() funciona en Chrome/Edge 123+, Firefox 120+ y Safari 17.5+.
+
+   Para adoptarlo (todavía NO está enlazado):
+     1. En index.html y login.html, <link rel="stylesheet" href="tokens.css"> ANTES de styles.css.
+     2. Quitar de styles.css los bloques :root de variables (tema claro, los dos oscuros y la capa de degradados): si no,
+        al cargarse después, sus valores taparían a estos.
+     3. Ir pasando los valores sueltos de styles.css (radios, sombras, tamaños…) a estos tokens.
+
+   Contraste (WCAG, medido en el navegador sobre todas las superficies y rellenos, en los dos temas): texto principal
+   ≥ 14:1, secundario ≥ 5,5:1, terciario ≥ 4,5:1; acento y enlaces ≥ 6,5:1; textos de estado sobre su fondo ≥ 4,8:1.
+   ===================================================================================================================== */
+
+:root {
+  color-scheme: light dark;
+
+  /* ===================================================================================================================
+     1. PRIMITIVOS
+     =================================================================================================================== */
+
+  /* --- Identidad: la paleta pastel de la marca (de más clara a más intensa) ---------------------------------------- */
+  --lavanda-1: #f8ebf6;   /* rosa lavanda */
+  --lavanda-2: #e7d7ea;   /* malva */
+  --lavanda-3: #dbd1ec;   /* lila */
+  --lavanda-4: #cecfeb;   /* lavanda */
+  --lavanda-5: #b2bfde;   /* pervinca */
+
+  /* --- Índigo: el color de acción de la marca. 600 es el índigo de siempre (7,3:1 sobre blanco) ---------------------- */
+  --indigo-50:  #f4f4fb;
+  --indigo-100: #e9e8f7;
+  --indigo-200: #d4d3ef;
+  --indigo-300: #b6b5e1;
+  --indigo-400: #908ecc;
+  --indigo-500: #6a69b5;
+  --indigo-600: #4f4e96;
+  --indigo-700: #43418a;
+  --indigo-800: #36346a;
+  --indigo-900: #2e2c5a;
+  --indigo-950: #1e1c3d;
+
+  /* --- Tinta: neutros con un punto de violeta (nunca gris puro), para textos, bordes y fondos claros ----------------- */
+  --ink-0:   #ffffff;
+  --ink-25:  #fcfbfe;
+  --ink-50:  #f8f6fb;
+  --ink-75:  #f3f0f8;
+  --ink-100: #edeaf4;
+  --ink-150: #e5e1ee;
+  --ink-200: #dcd7e7;
+  --ink-300: #c6bfd4;
+  --ink-400: #a19ab2;
+  --ink-500: #6f6982;     /* el texto más tenue: 4,5:1 incluso sobre los rellenos grises */
+  --ink-600: #625c76;
+  --ink-700: #4a4560;
+  --ink-800: #2f2b40;
+  --ink-900: #1f1b2e;
+
+  /* --- Noche: las superficies del tema oscuro, del fondo más profundo al más elevado -------------------------------- */
+  --night-1000: #0b0a10;
+  --night-950:  #100e17;
+  --night-900:  #15131d;
+  --night-850:  #1b1826;
+  --night-800:  #221f30;
+  --night-750:  #2a2639;
+  --night-700:  #353048;
+  --night-100:  #ece8f4;  /* texto principal en oscuro */
+  --night-200:  #aaa4be;
+  --night-300:  #8a84a0;
+
+  /* --- Estados: tonos apagados, sin estridencias ------------------------------------------------------------------- */
+  --green-600: #17785a;   --green-400: #5fd0a6;   --green-50: #e9f6f0;   --green-950: #12271f;
+  --amber-600: #9a5b0c;   --amber-400: #f0b85b;   --amber-50: #fdf3e2;   --amber-950: #2c2112;
+  --red-600:   #b42b40;   --red-400:   #f39aa5;   --red-50:   #fcebee;   --red-950:   #33171c;
+
+  /* ===================================================================================================================
+     2. SEMÁNTICOS (claro, oscuro)
+     =================================================================================================================== */
+
+  /* --- Fondos y superficies (de atrás hacia delante) --------------------------------------------------------------- */
+  --color-canvas:          light-dark(#f1edf6, var(--night-1000));   /* el fondo de la ventana */
+  --color-surface:         light-dark(var(--ink-0), var(--night-900)); /* tarjetas y paneles */
+  --color-surface-raised:  light-dark(var(--ink-0), var(--night-850)); /* menús, ventanas, avisos */
+  --color-surface-sunken:  light-dark(var(--ink-50), var(--night-950)); /* cabeceras de tabla, pozos */
+  --color-surface-tint:    light-dark(#f4f3fb, #1a1829);               /* paneles laterales (tono asistente) */
+
+  /* --- Rellenos de controles e interacción ------------------------------------------------------------------------- */
+  --color-fill:            light-dark(var(--ink-75), var(--night-850));  /* botones neutros, campos, segmentados */
+  --color-fill-hover:      light-dark(var(--ink-100), var(--night-800));
+  --color-hover:           light-dark(rgba(79, 78, 150, .06), rgba(255, 255, 255, .05)); /* capa al pasar el ratón */
+  --color-pressed:         light-dark(rgba(79, 78, 150, .10), rgba(255, 255, 255, .08));
+  --color-selected:        light-dark(#ebe8f7, #252240);               /* fila o elemento seleccionado */
+
+  /* --- Texto -------------------------------------------------------------------------------------------------------- */
+  --color-text:            light-dark(var(--ink-900), var(--night-100));
+  --color-text-secondary:  light-dark(var(--ink-600), var(--night-200));
+  --color-text-tertiary:   light-dark(var(--ink-500), var(--night-300));
+  --color-text-disabled:   light-dark(var(--ink-400), #5e5872);
+  --color-text-link:       light-dark(var(--indigo-600), var(--indigo-300));
+  --color-text-on-accent:  light-dark(#ffffff, var(--night-900));
+
+  /* --- Bordes y separadores: finos y de bajo contraste ------------------------------------------------------------- */
+  --color-border:          light-dark(#e8e3ef, #262233);
+  --color-border-strong:   light-dark(#d6cfe2, var(--night-700));
+  --color-separator:       light-dark(rgba(31, 27, 46, .07), rgba(255, 255, 255, .06));
+
+  /* --- Acento (índigo en claro; pervinca en oscuro, que se lee mejor sobre fondo profundo) -------------------------- */
+  --color-accent:          light-dark(var(--indigo-600), var(--lavanda-5));
+  --color-accent-hover:    light-dark(var(--indigo-700), #c4cdea);
+  --color-accent-pressed:  light-dark(var(--indigo-800), #a3b0d6);
+  --color-accent-soft:     light-dark(#ebe8f7, #252240);
+  --color-accent-softer:   light-dark(var(--indigo-50), #1b1930);
+  --color-focus-ring:      light-dark(rgba(79, 78, 150, .28), rgba(178, 191, 222, .35));
+
+  /* --- Estados (texto · fondo · borde) ----------------------------------------------------------------------------- */
+  --color-success:         light-dark(var(--green-600), var(--green-400));
+  --color-success-bg:      light-dark(var(--green-50), var(--green-950));
+  --color-warning:         light-dark(var(--amber-600), var(--amber-400));
+  --color-warning-bg:      light-dark(var(--amber-50), var(--amber-950));
+  --color-danger:          light-dark(var(--red-600), var(--red-400));
+  --color-danger-bg:       light-dark(var(--red-50), var(--red-950));
+  --color-info:            light-dark(var(--indigo-600), var(--lavanda-5));
+  --color-info-bg:         light-dark(var(--indigo-50), #1d1b33);
+
+  /* --- Canales: paleta categórica validada (el color sigue al canal en etiquetas, historial y gráficos) ------------- */
+  --color-email:           light-dark(#eb6834, #d95926);
+  --color-telegram:        light-dark(#2a78d6, #3987e5);
+  --color-whatsapp:        light-dark(#1baf7a, #199e70);
+  --color-phone:           light-dark(#4a3aa7, #9085e9);
+  --color-other:           #9ca3af;
+
+  /* --- Conversación ------------------------------------------------------------------------------------------------- */
+  --color-chat-bg:         light-dark(#f8f3fa, var(--night-950));
+  --color-bubble-in:       light-dark(var(--ink-0), #1f1c2b);
+  --color-bubble-out:      light-dark(#dcdcf2, #34315c);
+
+  /* --- Gráficos ------------------------------------------------------------------------------------------------------ */
+  --color-chart-grid:      light-dark(#ece6f0, #2c2a36);
+  --color-chart-axis:      light-dark(#cfc6d6, #3a3747);
+  --color-chart-muted:     #898781;
+
+  /* --- Velo detrás de las ventanas --------------------------------------------------------------------------------- */
+  --color-backdrop:        light-dark(rgba(31, 27, 46, .38), rgba(5, 4, 10, .6));
+
+  /* ===================================================================================================================
+     TIPOGRAFÍA · San Francisco en Apple; Inter (incluida en la app) o Segoe UI Variable en el resto
+     =================================================================================================================== */
+  --font-sans:    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI Variable Text", "Segoe UI", Roboto, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI Variable Display", "Segoe UI", sans-serif;
+  --font-mono:    ui-monospace, "SF Mono", "Cascadia Code", Consolas, monospace;
+
+  /* Escala (cuerpo de 14 px, densidad de app de escritorio). Sustituye a los 12 tamaños sueltos de ahora */
+  --font-size-2xs:  10px;   /* contadores */
+  --font-size-xs:   11px;   /* etiquetas en mayúsculas, insignias */
+  --font-size-sm:   12px;   /* metadatos, horas, ayudas */
+  --font-size-md:   13px;   /* listas, tablas, controles compactos */
+  --font-size-base: 14px;   /* cuerpo */
+  --font-size-lg:   15px;   /* nombres destacados */
+  --font-size-xl:   17px;   /* títulos de sección */
+  --font-size-2xl:  20px;   /* títulos de página */
+  --font-size-3xl:  24px;   /* cifras grandes */
+  --font-size-4xl:  28px;
+
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     650;   /* la fuente es variable: un punto más fino que 700 */
+
+  --line-height-tight:   1.2;    /* títulos */
+  --line-height-snug:    1.35;   /* textos de una o dos líneas */
+  --line-height-normal:  1.45;   /* cuerpo */
+  --line-height-relaxed: 1.6;    /* textos largos (resúmenes, ayuda) */
+
+  --letter-spacing-tight:  -0.015em;  /* títulos grandes */
+  --letter-spacing-snug:   -0.01em;   /* títulos y nombres */
+  --letter-spacing-normal: 0;
+  --letter-spacing-wide:   0.04em;    /* etiquetas en mayúsculas */
+
+  /* ===================================================================================================================
+     RADIOS · esquinas generosas al estilo iOS. Regla para anidar: radio interior = radio exterior − separación
+     (una tarjeta de 14 px con 4 px de margen interior lleva dentro elementos de 10 px).
+     Sustituyen a los 13 radios sueltos de ahora
+     =================================================================================================================== */
+  --radius-2xs:  4px;     /* kbd, marcas diminutas */
+  --radius-xs:   6px;     /* etiquetas, chips pequeños */
+  --radius-sm:   8px;     /* botones y campos compactos, elementos de menú */
+  --radius-md:   10px;    /* botones, campos, filas de lista */
+  --radius-lg:   14px;    /* tarjetas, menús */
+  --radius-xl:   18px;    /* paneles, barra superior */
+  --radius-2xl:  24px;    /* ventanas (diálogos) */
+  --radius-pill: 999px;   /* píldoras, segmentados, buscador */
+  --radius-full: 50%;     /* avatares, puntos */
+
+  /* ===================================================================================================================
+     SOMBRAS · muy finas, en capas y teñidas de tinta (no negro puro). Sustituyen a las sombras escritas a mano
+     =================================================================================================================== */
+  --shadow-hairline: 0 0 0 1px light-dark(rgba(31, 27, 46, .06), rgba(255, 255, 255, .06));
+  --shadow-xs:       0 1px 1px light-dark(rgba(31, 27, 46, .04), rgba(0, 0, 0, .3));
+  --shadow-sm:       0 1px 2px light-dark(rgba(31, 27, 46, .05), rgba(0, 0, 0, .35)),
+                     0 1px 1px light-dark(rgba(31, 27, 46, .03), rgba(0, 0, 0, .2));
+  --shadow-md:       0 2px 6px -1px light-dark(rgba(31, 27, 46, .06), rgba(0, 0, 0, .4)),
+                     0 1px 2px light-dark(rgba(31, 27, 46, .04), rgba(0, 0, 0, .25));
+  --shadow-lg:       0 8px 24px -6px light-dark(rgba(31, 27, 46, .10), rgba(0, 0, 0, .5)),
+                     0 2px 6px -2px light-dark(rgba(31, 27, 46, .05), rgba(0, 0, 0, .3));
+  --shadow-xl:       0 24px 48px -12px light-dark(rgba(31, 27, 46, .18), rgba(0, 0, 0, .6)),
+                     0 4px 12px -4px light-dark(rgba(31, 27, 46, .06), rgba(0, 0, 0, .35));
+  /* Brillo de 1 px en el borde superior: da volumen a tarjetas y botones sin oscurecer nada */
+  --shadow-highlight: inset 0 1px 0 light-dark(rgba(255, 255, 255, .75), rgba(255, 255, 255, .06));
+  --shadow-focus:     0 0 0 3px var(--color-focus-ring);
+  /* Usos con nombre */
+  --shadow-card:      var(--shadow-sm), var(--shadow-highlight);
+  --shadow-popover:   var(--shadow-lg), var(--shadow-hairline);
+  --shadow-dialog:    var(--shadow-xl), var(--shadow-hairline);
+  --shadow-button:    0 1px 2px light-dark(rgba(46, 44, 90, .18), rgba(0, 0, 0, .35)), inset 0 1px 0 rgba(255, 255, 255, .16);
+
+  /* ===================================================================================================================
+     ESPACIADO · rejilla de 4 px (con medios pasos de 2 px para ajustes finos)
+     =================================================================================================================== */
+  --space-0:   0;
+  --space-px:  1px;
+  --space-0-5: 2px;
+  --space-1:   4px;
+  --space-1-5: 6px;
+  --space-2:   8px;
+  --space-2-5: 10px;
+  --space-3:   12px;
+  --space-4:   16px;
+  --space-5:   20px;
+  --space-6:   24px;
+  --space-8:   32px;
+  --space-10:  40px;
+  --space-12:  48px;
+  --space-16:  64px;
+
+  /* ===================================================================================================================
+     TAMAÑOS · controles, iconos, avatares y estructura
+     =================================================================================================================== */
+  --control-height-xs: 24px;
+  --control-height-sm: 28px;
+  --control-height-md: 34px;   /* botones y campos */
+  --control-height-lg: 40px;
+  --icon-size-sm: 16px;
+  --icon-size-md: 18px;
+  --icon-size-lg: 22px;
+  --avatar-size-xs: 22px;
+  --avatar-size-sm: 28px;
+  --avatar-size-md: 38px;
+  --avatar-size-lg: 56px;
+  --avatar-size-xl: 76px;
+  --topbar-height: 52px;
+  --sidebar-width: 60px;
+
+  /* ===================================================================================================================
+     MATERIALES · cristal translúcido al estilo de iOS (de más fino a más denso) para barras y menús flotantes
+     =================================================================================================================== */
+  --material-thin:    light-dark(rgba(255, 255, 255, .55), rgba(30, 28, 56, .50));
+  --material-regular: light-dark(rgba(255, 255, 255, .68), rgba(36, 34, 74, .58));
+  --material-thick:   light-dark(rgba(255, 255, 255, .84), rgba(28, 26, 48, .80));
+  --material-border:  light-dark(rgba(255, 255, 255, .85), rgba(255, 255, 255, .09));
+  --material-blur:    16px;
+  --material-filter:  blur(var(--material-blur)) saturate(1.2);
+
+  /* ===================================================================================================================
+     DEGRADADOS · sutiles, solo con tonos de la paleta
+     =================================================================================================================== */
+  --gradient-brand-line: linear-gradient(90deg, var(--lavanda-1), var(--lavanda-2), var(--lavanda-3), var(--lavanda-4), var(--lavanda-5));
+  --gradient-canvas:
+    radial-gradient(1100px 560px at 8% -12%, light-dark(rgba(219, 209, 236, .85), rgba(79, 78, 150, .45)), transparent 62%),
+    radial-gradient(900px 620px at 108% 112%, light-dark(rgba(178, 191, 222, .55), rgba(122, 96, 168, .28)), transparent 60%),
+    linear-gradient(180deg, light-dark(#efe9f5, #0e0c16), light-dark(#e8e4f2, var(--night-1000)));
+  --gradient-sheen:      linear-gradient(180deg, light-dark(rgba(248, 235, 246, .55), rgba(178, 191, 222, .075)), transparent 160px);
+  --gradient-side:       linear-gradient(180deg, light-dark(#f6f3fb, #24213e), light-dark(#eceefa, #181627));
+  --gradient-accent:     linear-gradient(135deg, light-dark(#6463ae, #d6d8f0) 0%, light-dark(#4f4e96, #c1cae6) 55%, light-dark(#46458b, #b0bbdf) 100%);
+  --gradient-accent-soft: linear-gradient(135deg, light-dark(#e6ddf2, #322d52), light-dark(#d2d6ef, #262645));
+  --gradient-raised:     linear-gradient(180deg, light-dark(#ffffff, #2a2640), light-dark(#f8f5fc, #221f35));
+  --gradient-bubble-out: linear-gradient(135deg, light-dark(#dcd3ee, #46427c), light-dark(#c3cbe8, #2d2b58));
+  --gradient-indigo:     linear-gradient(135deg, #6463ae 0%, #4f4e96 60%, #45448a 100%);
+  --gradient-line:       linear-gradient(90deg, light-dark(var(--lavanda-5), var(--lavanda-3)), light-dark(var(--indigo-600), var(--lavanda-5)));
+
+  /* ===================================================================================================================
+     MOVIMIENTO · rápido y suave, con la curva de salida típica de iOS
+     =================================================================================================================== */
+  --duration-instant: 80ms;
+  --duration-fast:    120ms;   /* hover, foco */
+  --duration-normal:  180ms;   /* menús, avisos */
+  --duration-slow:    260ms;   /* paneles, ventanas */
+  --ease-standard: cubic-bezier(.2, 0, 0, 1);
+  --ease-out:      cubic-bezier(.16, 1, .3, 1);
+  --ease-in-out:   cubic-bezier(.65, 0, .35, 1);
+  --ease-spring:   cubic-bezier(.34, 1.36, .64, 1);   /* un rebote apenas perceptible */
+
+  /* ===================================================================================================================
+     CAPAS (z-index)
+     =================================================================================================================== */
+  --z-base:     0;
+  --z-raised:   1;
+  --z-sticky:   10;    /* cabeceras de tabla */
+  --z-topbar:   30;    /* la barra superior y sus menús, por encima del contenido */
+  --z-dropdown: 60;
+  --z-overlay:  100;
+  --z-toast:    200;   /* (avisos y menús de selección van además en la capa superior del navegador) */
+
+  /* ===================================================================================================================
+     3. COMPATIBLES · los nombres que usa hoy styles.css, apuntando a los semánticos. Al adoptar este archivo,
+        styles.css sigue funcionando igual; después se pueden ir renombrando los usos y retirar estos alias.
+     =================================================================================================================== */
+  --indigo: var(--indigo-600);
+  --brand-gradient: var(--gradient-brand-line);
+
+  --canvas: var(--color-canvas);
+  --panel: var(--color-surface);
+  --bg: var(--color-fill);
+  --hover: var(--color-fill-hover);
+  --sub: var(--color-surface-sunken);
+  --sub-hover: var(--color-fill-hover);
+  --assistant-bg: var(--color-surface-tint);
+  --assistant-bubble: light-dark(#ffffff, #24213a);
+
+  --text: var(--color-text);
+  --muted: var(--color-text-secondary);
+  --border: var(--color-border);
+  --accent: var(--color-accent);
+  --accent-soft: var(--color-accent-soft);
+  --on-accent: var(--color-text-on-accent);
+
+  --danger-bg: var(--color-danger-bg);
+  --danger-text: var(--color-danger);
+  --warn: var(--color-warning);
+
+  --email: var(--color-email);
+  --telegram: var(--color-telegram);
+  --whatsapp: var(--color-whatsapp);
+  --phone: var(--color-phone);
+  --other: var(--color-other);
+
+  --chat-bg: var(--color-chat-bg);
+  --bubble-in: var(--color-bubble-in);
+  --bubble-out: var(--color-bubble-out);
+  --in-bubble: var(--color-bubble-in);
+  --out-bubble: var(--indigo-600);
+
+  --chart-grid: var(--color-chart-grid);
+  --chart-axis: var(--color-chart-axis);
+  --chart-muted: var(--color-chart-muted);
+
+  --shadow: light-dark(rgba(31, 27, 46, .12), rgba(0, 0, 0, .5));
+  --card-shadow: var(--shadow-sm);
+  --backdrop: var(--color-backdrop);
+  --radius: var(--radius-sm);
+
+  /* Capa de degradados */
+  --g-canvas: var(--gradient-canvas);
+  --g-card: var(--gradient-sheen);
+  --g-side: var(--gradient-side);
+  --g-accent: var(--gradient-accent);
+  --g-accent-soft: var(--gradient-accent-soft);
+  --g-raised: var(--gradient-raised);
+  --g-bubble-out: var(--gradient-bubble-out);
+  --g-indigo: var(--gradient-indigo);
+  --g-line: var(--gradient-line);
+  --g-head: linear-gradient(180deg, light-dark(#fbf6fb, #1e1b2c), var(--color-surface-sunken));
+  --g-topbar: var(--material-regular);
+  --sheen: var(--shadow-highlight);
+  --glow: 0 6px 16px -6px light-dark(rgba(79, 78, 150, .45), rgba(0, 0, 0, .7));
+
+  /* Barra superior (flotante, de cristal) */
+  --topbar-bg: var(--material-regular);
+  --topbar-glass: var(--material-regular);
+  --topbar-glass-border: var(--material-border);
+  --topbar-text: light-dark(var(--indigo-900), #f5f1fa);
+  --topbar-muted: light-dark(#5d5878, #c8c2de);
+  --topbar-hover: var(--color-hover);
+  --topbar-group: light-dark(rgba(79, 78, 150, .06), rgba(255, 255, 255, .06));
+  --topbar-field: light-dark(rgba(255, 255, 255, .8), rgba(255, 255, 255, .08));
+  --topbar-field-hover: light-dark(#ffffff, rgba(255, 255, 255, .12));
+  --topbar-field-border: light-dark(rgba(79, 78, 150, .12), rgba(255, 255, 255, .14));
+  --topbar-kbd-border: light-dark(var(--lavanda-3), rgba(255, 255, 255, .22));
+  --topbar-shadow: 0 8px 24px light-dark(rgba(79, 78, 150, .12), rgba(0, 0, 0, .4)), var(--shadow-highlight);
+  --topbar-glow: drop-shadow(0 2px 6px light-dark(rgba(79, 78, 150, .18), rgba(178, 191, 222, .35)));
+  --topbar-focus: var(--color-accent);
+  --topbar-chip: linear-gradient(135deg, light-dark(#f8ebf6, rgba(255, 255, 255, .07)), light-dark(#e6ddf2, rgba(255, 255, 255, .07)));
+  --topbar-chip-border: light-dark(var(--lavanda-3), rgba(255, 255, 255, .14));
+  --topbar-chip-text: light-dark(var(--indigo-600), var(--lavanda-3));
+}
+
+/* Tema elegido por la persona (data-theme): fija el esquema y, con él, todos los light-dark() de arriba */
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"]  { color-scheme: dark; }
+
+/* Esquinas «continuas» de iOS donde el navegador las sepa dibujar (mejora progresiva: sin soporte, esquina redonda) */
+@supports (corner-shape: squircle) {
+  :root { --corner-shape: squircle; }
+}
+
+/* Quien pide menos movimiento en su sistema no ve animaciones */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-instant: 0ms;
+    --duration-fast:    0ms;
+    --duration-normal:  0ms;
+    --duration-slow:    0ms;
+  }
+}
