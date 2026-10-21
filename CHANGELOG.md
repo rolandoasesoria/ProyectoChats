@@ -6,6 +6,13 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Organizar los chats (fase 3 del chat al estilo de WhatsApp)**, cada uno su propia lista: desde la flecha de cada
+  chat (o con clic derecho) **fijar** arriba (hasta 3), **archivar** (fila «Archivados»; vuelve a la lista si el
+  cliente escribe), **silenciar** 8 horas, 1 semana o siempre (no cuenta en los chats sin leer de la barra lateral)
+  y **marcar como no leído** o leído. **Mensajes destacados** (★ al pasar el ratón) y la lista de los de todos los
+  chats junto al buscador. En Detalles, **«Archivos, enlaces y destacados»**: las últimas fotos y una ventana con las
+  fotos y vídeos por meses, los documentos, los enlaces y los destacados, con «Ir al mensaje». Al unir dos clientes se
+  conserva cómo tenía cada uno su chat. Migración `0008_chat_organizar.sql`.
 - **Chat al estilo de WhatsApp (fase 2)**: notas de voz (grabarlas con el micrófono, con tiempo y nivel del sonido;
   llegan como nota de voz en WhatsApp y Telegram; las grabaciones WebM del navegador se pasan a Ogg/Opus sin
   recodificar) y un reproductor propio con velocidad 1×/1,5×/2×; enviar y recibir **ubicaciones** (la actual, unas

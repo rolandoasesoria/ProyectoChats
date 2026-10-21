@@ -139,7 +139,12 @@
   <section class="chats-view" id="view-chats" data-origin="chats" hidden>
     <aside class="chats-pane">
       <div class="pane-chats">
-        <input id="chats-search" type="search" placeholder="Buscar contacto…" autocomplete="off">
+        <div class="chats-search-row">
+          <input id="chats-search" type="search" placeholder="Buscar contacto…" autocomplete="off">
+          <button type="button" class="icon-btn" id="chats-starred" aria-label="Mensajes destacados" title="Mensajes destacados de todos los chats">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.6l2.6 5.2 5.8.9-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8-4.2-4.1 5.8-.9z"/></svg>
+          </button>
+        </div>
         <div class="chats-filters">
           <div class="segmented" id="chats-filter" role="group" aria-label="Qué chats mostrar">
             <button data-filter="all" class="active">Todos</button>
@@ -1169,6 +1174,22 @@
     </form>
   </dialog>
 
+  <!-- Organizar los chats: opciones de cada chat y lo compartido en él (ver chat-organize.js) -->
+  <div class="menu chat-item-menu" id="chat-item-menu" role="menu" aria-label="Opciones del chat" hidden></div>
+  <dialog id="shared-dialog" class="dialog shared-dialog">
+    <div class="dialog-head">
+      <h2 id="shared-title">Archivos, enlaces y destacados</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <div class="segmented shared-tabs" id="shared-tabs" role="tablist" aria-label="Qué ver">
+      <button type="button" role="tab" data-shared-tab="media">Fotos y vídeos <span class="count"></span></button>
+      <button type="button" role="tab" data-shared-tab="docs">Documentos <span class="count"></span></button>
+      <button type="button" role="tab" data-shared-tab="links">Enlaces <span class="count"></span></button>
+      <button type="button" role="tab" data-shared-tab="starred">Destacados <span class="count"></span></button>
+    </div>
+    <div class="shared-body" id="shared-body"></div>
+  </dialog>
+
   <dialog id="msg-info-dialog" class="dialog msg-info-dialog">
     <div class="dialog-head">
       <h2>Info del mensaje</h2>
@@ -1204,6 +1225,7 @@
   <script src="chat-actions.js"></script>
   <script src="chat-cards.js"></script>
   <script src="chat-compose.js"></script>
+  <script src="chat-organize.js"></script>
   <script src="company.js"></script>
   <script src="breadcrumb.js"></script>
   <script src="app.js"></script>

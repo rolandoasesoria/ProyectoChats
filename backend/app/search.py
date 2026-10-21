@@ -9,6 +9,7 @@ import re
 
 from . import attachments
 from .db import get_conn
+from .repositories import chat_prefs as chat_prefs_repo
 from .repositories import clients as clients_repo
 from .repositories import conversations as conversations_repo
 from .repositories import messages as messages_repo
@@ -58,11 +59,13 @@ def chat_list(user_id: int, scope: str = "mine", query: str = "", unread_only: b
 
 
 def record_visit(user_id: int, client_id: int) -> dict:
-    """Registra que el usuario abre el cliente. Devuelve lo que ha llegado desde la visita anterior."""
+    """Registra que el usuario abre el cliente (si lo había marcado como no leído, deja de estarlo). Devuelve lo
+    que ha llegado desde la visita anterior."""
     with get_conn() as conn:
         prev = clients_repo.get_visit(conn, user_id, client_id)
         stats = messages_repo.client_stats_since(conn, client_id, prev["last_message_id"] if prev else 0)
         clients_repo.save_visit(conn, user_id, client_id, stats["max_id"])
+        chat_prefs_repo.clear_unread(conn, user_id, client_id)
     return {
         "previous_visit_at": prev["visited_at"] if prev else None,
         "since_message_id": prev["last_message_id"] if prev else None,

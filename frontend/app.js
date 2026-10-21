@@ -182,15 +182,15 @@ function reactionsHtml(m) {
     `<span class="reaction" title="${escapeHtml(who(r))}">${escapeHtml(r.emoji)}</span>`).join("")}</div>`;
 }
 
-// Al pasar el ratón por un mensaje: «Info del mensaje» y, en tus conversaciones de WhatsApp o Telegram, reaccionar
-// (WhatsApp) y citarlo.
+// Al pasar el ratón por un mensaje: destacarlo (★), «Info del mensaje» y, en tus conversaciones de WhatsApp o
+// Telegram, reaccionar (WhatsApp) y citarlo.
 const ICON_REACT = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>';
 const ICON_REPLY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 
 function actionsHtml(m) {
   const mine = chatState.data?.conversations.some((c) => c.id === m.conversation_id && c.is_mine);
   const chat = mine && m.channel !== "email";
-  return `<div class="msg-actions">${chat && m.reactable ? `<button type="button" class="msg-act" data-react="${m.id}" title="Reaccionar" aria-label="Reaccionar">${ICON_REACT}</button>` : ""}${chat ? `<button type="button" class="msg-act" data-quote-reply="${m.id}" title="Responder citando" aria-label="Responder citando">${ICON_REPLY}</button>` : ""}<button type="button" class="msg-act" data-info="${m.id}" title="Info del mensaje" aria-label="Info del mensaje">${ICON_INFO}</button></div>`;
+  return `<div class="msg-actions">${chat && m.reactable ? `<button type="button" class="msg-act" data-react="${m.id}" title="Reaccionar" aria-label="Reaccionar">${ICON_REACT}</button>` : ""}${chat ? `<button type="button" class="msg-act" data-quote-reply="${m.id}" title="Responder citando" aria-label="Responder citando">${ICON_REPLY}</button>` : ""}<button type="button" class="msg-act${m.starred ? " on" : ""}" data-star="${m.id}" title="${m.starred ? "Quitar de destacados" : "Destacar"}" aria-label="${m.starred ? "Quitar de destacados" : "Destacar"}" aria-pressed="${Boolean(m.starred)}">${ICON_STAR}</button><button type="button" class="msg-act" data-info="${m.id}" title="Info del mensaje" aria-label="Info del mensaje">${ICON_INFO}</button></div>`;
 }
 
 function timelineHtml(messages) {
@@ -216,7 +216,7 @@ function timelineHtml(messages) {
         ${grouped ? "" : `<div class="bubble-sender">${escapeHtml(m.sender)}</div>`}
         ${quoteHtml(m)}${mediaHtml(inline, m)}${payloadHtml(m)}${linkPreviewHtml(m)}
         ${hideBody ? "" : `<div class="bubble-text">${formatMessage(m.body, m.channel)}</div>`}${attachmentChips(others)}
-        <div class="bubble-meta">${m.by_ai ? `<span class="ai-mark" title="Escrito por la IA">🤖 IA</span> · ` : ""}<span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}${ticksHtml(m)}</div>
+        <div class="bubble-meta">${m.by_ai ? `<span class="ai-mark" title="Escrito por la IA">🤖 IA</span> · ` : ""}${m.starred ? `<span class="star-mark" title="Destacado">${ICON_STAR}</span> ` : ""}<span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}${ticksHtml(m)}</div>
         ${reactionsHtml(m)}
       </div>
       ${actionsHtml(m)}
@@ -465,6 +465,7 @@ function bindEvents() {
   bindChatActions();
   bindChatCards();
   bindChatCompose();
+  bindChatOrganize();
   $("#help-close").addEventListener("click", () => toggleHelp(false));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#help-panel").hidden && !tour) toggleHelp(false);

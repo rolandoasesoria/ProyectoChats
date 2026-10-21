@@ -24,6 +24,7 @@ from .api import (
     inbox,
     messaging,
     notes,
+    organize,
     profile,
     replies,
     search,
@@ -142,6 +143,7 @@ app.include_router(users.router)
 app.include_router(settings.router)
 app.include_router(integrations_api.router)
 app.include_router(messaging.router)
+app.include_router(organize.router)
 app.include_router(dashboard.router)
 app.include_router(privacy_api.router)
 app.include_router(properties_api.router)

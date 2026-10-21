@@ -5,6 +5,7 @@ import unicodedata
 from . import notes
 from .db import get_conn
 from .errors import Conflict, InvalidInput, NotFound
+from .repositories import chat_prefs as chat_prefs_repo
 from .repositories import clients as clients_repo
 from .repositories import messages as messages_repo
 from .repositories import properties as properties_repo
@@ -201,6 +202,7 @@ def merge_clients(source_id: int, target_id: int) -> dict:
         moved = clients_repo.move_related(conn, source_id, target_id)
         clients_repo.copy_tags(conn, source_id, target_id)
         clients_repo.merge_visits(conn, source_id, target_id)
+        chat_prefs_repo.merge(conn, source_id, target_id)
         clients_repo.archive_assistant_chats(conn, source_id, target_id)
         properties_repo.merge_values(conn, source_id, target_id)
         # El resumen de IA del que se queda deja de estar al día: se fuerza a mostrar mensajes nuevos.

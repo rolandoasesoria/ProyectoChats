@@ -83,9 +83,9 @@ try:
           b.js("document.querySelector('.cd-name').textContent") == b.js("chatState.data.name")
           and b.js("document.querySelectorAll('.cd-actions [data-cd-channel]').length") == b.js("chatState.channels.length")
           and b.js("!!document.querySelector('.cd-hero .status-pill')"))
-    check("detalles: tarjetas de contacto (con copiar), responsable, etiquetas, datos clave y actividad",
+    check("detalles: tarjetas de contacto (con copiar), lo compartido, responsable, etiquetas, datos clave y actividad",
           b.js("[...document.querySelectorAll('.cd-card h4')].map((h) => h.textContent).join('|')")
-          == "Contacto|Responsable|Etiquetas|Datos clave|Actividad"
+          == "Contacto|Archivos, enlaces y destacados|Responsable|Etiquetas|Datos clave|Actividad"
           and b.js("document.querySelectorAll('.cd-identity .cd-copy').length") >= 1)
     check("detalles: el avatar tiene el color propio de la persona",
           b.js("/av-\\d/.test(document.querySelector('.cd-hero .chat-avatar').className)"))

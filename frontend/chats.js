@@ -90,18 +90,20 @@ function chatTime(iso) {
   return at.toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "2-digit" });
 }
 
-function unreadBadge(n) {
-  return n ? `<span class="unread" title="Mensajes sin leer">${n > 99 ? "99+" : n}</span>` : "";
+// Número de mensajes sin leer o, si lo marcaste como no leído, un punto.
+function unreadBadge(n, marked = false) {
+  if (n) return `<span class="unread" title="Mensajes sin leer">${n > 99 ? "99+" : n}</span>`;
+  return marked ? `<span class="unread dot" title="Marcado como no leído"></span>` : "";
 }
 
 function chatItemHtml(c) {
   return `
-    <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread ? " has-unread" : ""}">
+    <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread || c.marked_unread ? " has-unread" : ""}${c.muted ? " muted" : ""}">
       <span class="chat-avatar ${avatarClass(c.name)}">${escapeHtml(initialsOf(c.name))}</span>
       <div class="chat-item-body">
         <div class="chat-item-top"><strong>${escapeHtml(c.name)}</strong><span class="chat-item-time">${escapeHtml(chatTime(c.last_at))}</span></div>
         <div class="chat-item-bottom">
-          <span class="chat-preview">${draftPreviewHtml(c.id) || `${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}`}</span>${unreadBadge(c.unread)}
+          <span class="chat-preview">${draftPreviewHtml(c.id) || `${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}`}</span>${chatFlagsHtml(c)}${unreadBadge(c.unread, c.marked_unread)}${chatMenuButtonHtml(c)}
         </div>
         <div class="chat-item-meta">${c.channels.map(badge).join("")}${tagChips(c.tags, 2)}</div>
       </div>
@@ -114,9 +116,8 @@ async function loadChats() {
   if (chatState.filter === "unread") params.set("unread", "true");
   try {
     const items = await api(`/api/chats?${params}`);
-    $("#chats-list").innerHTML = items.length ? items.map(chatItemHtml).join("")
-      : `<li class="chats-empty muted small">${chatState.filter === "unread" ? "No tienes chats sin leer." : chatState.query
-        ? "Ningún chat coincide con la búsqueda." : "Todavía no hay conversaciones. Conecta tus cuentas en «Mis cuentas»."}</li>`;
+    $("#chats-list").innerHTML = chatListHtml(items, chatState.filter === "unread" ? "No tienes chats sin leer." : chatState.query
+      ? "Ningún chat coincide con la búsqueda." : "Todavía no hay conversaciones. Conecta tus cuentas en «Mis cuentas».");
   } catch (err) {
     $("#chats-list").innerHTML = `<li class="form-error">${escapeHtml(err.message)}</li>`;
   }
@@ -125,6 +126,7 @@ async function loadChats() {
 // Todos · No leídos · Sin responder (la bandeja: quién espera respuesta, con sus plazos).
 function setChatsFilter(filter) {
   chatState.filter = filter;
+  chatState.archivedView = false;
   document.querySelectorAll("#chats-filter [data-filter]").forEach((b) => b.classList.toggle("active", b.dataset.filter === filter));
   loadChats(); // con «Sin responder», la bandeja (inbox.js), en la misma lista
 }
@@ -237,6 +239,7 @@ async function loadChatConversation(keepScroll = false) {
     $("#chat-timeline").innerHTML = `<li class="muted">${state.scope === "mine" && chatState.data?.conversations.length
       ? "Tú no has hablado con este cliente. Desmarca «Solo mis conversaciones» para ver las del equipo." : "Sin mensajes."}</li>`;
     if (chatState.data) await prepareComposer();
+    if (clientId) loadSharedCounts(clientId);
     return;
   }
   const params = new URLSearchParams({ scope: state.scope });
@@ -246,7 +249,7 @@ async function loadChatConversation(keepScroll = false) {
   const list = $("#chat-timeline");
   // Al refrescar sola, la conversación no se vuelve a pintar si no ha cambiado nada, ni mientras suena un audio o un
   // vídeo o está abierto el menú de reacciones (se cortarían).
-  const sig = JSON.stringify(messages.map((m) => [m.id, m.status, m.reactions, m.reply_to_id, m.body.length]));
+  const sig = JSON.stringify(messages.map((m) => [m.id, m.status, m.reactions, m.reply_to_id, m.body.length, m.starred]));
   const busy = [...list.querySelectorAll("audio, video")].some((x) => !x.paused)
     || !$("#react-tray").hidden || !$("#emoji-picker").hidden;
   if (keepScroll && (sig === list.dataset.sig || busy)) return prepareComposer();
@@ -256,6 +259,7 @@ async function loadChatConversation(keepScroll = false) {
   list.innerHTML = messages.length ? timelineHtml(messages) : `<li class="muted">Sin mensajes por este canal.</li>`;
   if (!keepScroll || atBottom) list.scrollTop = list.scrollHeight;
   hydrateLinkPreviews(list);
+  loadSharedCounts(clientId); // lo compartido en el chat (panel Detalles) puede haber cambiado
   await prepareComposer();
 }
 
@@ -513,6 +517,10 @@ function renderChatDetails(data) {
       <h4>Contacto</h4>
       ${identities ? `<ul class="cd-identities">${identities}</ul>` : `<p class="cd-empty">Sin datos de contacto.</p>`}
     </section>
+    <section class="cd-card" id="cd-shared">
+      <h4>Archivos, enlaces y destacados</h4>
+      <div id="cd-shared-body"><p class="cd-empty">Cargando…</p></div>
+    </section>
     <section class="cd-card cd-pop-card">
       <h4>Responsable</h4>
       ${data.assignee ? `<button type="button" class="cd-person" data-cd-assign aria-haspopup="menu" title="Cambiar el responsable">
@@ -551,8 +559,10 @@ function renderChatDetails(data) {
     chatState.keyProps = null;
     chatState.detailsProfile = null;
     chatState.detailsTasks = null;
+    chatState.shared = null;
     return;
   }
+  renderSharedCard();
   if (chatState.detailsProfile) $("#cd-priority").innerHTML = priorityChips(chatState.detailsProfile);
   renderDetailsKeyData();
   if (chatState.detailsTasks) setDetailsTasks(data.id, chatState.detailsTasks);
@@ -774,6 +784,7 @@ function bindChatsEvents() {
   });
   ["#chats-list", "#contacts-mini"].forEach((sel) => $(sel).addEventListener("click", (e) => {
     const li = e.target.closest("li[data-client]");
+    if (e.target.closest("[data-chat-menu]")) return; // la flecha abre sus opciones (chat-organize.js)
     // Los de «Sin responder» los abre la bandeja (inbox.js), en el mensaje que espera respuesta.
     if (li && !li.classList.contains("inbox-item")) openChat(Number(li.dataset.client)).catch((err) => alert(err.message));
   }));

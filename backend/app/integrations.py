@@ -34,6 +34,7 @@ from . import attachments, clients, conversations, emails, insights, notes, secr
 from .config import config
 from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
+from .repositories import chat_prefs as chat_prefs_repo
 from .repositories import integrations as repo
 from .repositories import messages as messages_repo
 
@@ -345,8 +346,11 @@ def store(integ: dict, handle: str, client_name: str, messages: list[dict], subj
         "handle": existing_handle(channel, handle), "client_name": client_name, "subject": subject,
         "messages": messages,
     })
-    # Mensaje nuevo del cliente: la IA pone al día ficha, tareas, prioridad y estado (unos minutos después).
+    # Mensaje nuevo del cliente: su chat sale de archivados y la IA pone al día ficha, tareas, prioridad y estado (unos
+    # minutos después).
     if analyze and result["messages"] and any(m["direction"] == "in" for m in messages):
+        with get_conn() as conn:
+            chat_prefs_repo.unarchive(conn, result["client_id"])
         clients.reactivate(result["client_id"], settings.get("inactive_days"))
         insights.schedule_analysis(result["client_id"])
     return result

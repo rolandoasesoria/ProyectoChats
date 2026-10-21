@@ -15,9 +15,11 @@ router = APIRouter()
 
 @router.get("/api/me/counts")
 def nav_counts(user: CurrentUser):
-    """Contadores de la barra lateral que no calcula la pantalla: chats con mensajes sin leer y propuestas de la IA
-    por revisar (la bandeja y las tareas ya las carga la pantalla)."""
-    return {"unread_chats": len(search.chat_list(user["id"], "mine", "", True)),
+    """Contadores de la barra lateral que no calcula la pantalla: chats con mensajes sin leer (o marcados como no
+    leídos; los silenciados y los archivados no cuentan) y propuestas de la IA por revisar (la bandeja y las tareas ya
+    las carga la pantalla)."""
+    unread = [c for c in search.chat_list(user["id"], "mine", "", True) if not c["muted"] and not c["archived"]]
+    return {"unread_chats": len(unread),
             "ai_pending": ai_reply.pending_count(user["id"]),
             "ai_enabled": bool(ai_reply.get_settings()["enabled"])}
 
