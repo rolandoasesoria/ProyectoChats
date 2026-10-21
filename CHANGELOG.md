@@ -130,6 +130,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **La barra superior sigue el tema**: en claro es clara (de blanco a lavanda) con el logo y los textos en
+  índigo; en oscuro, índigo profundo como hasta ahora.
 - **Logo nuevo**: dos paredes que forman una H con un bocadillo entre ellas y tres puntos «escribiendo…», con
   la paleta de la app. Versión para fondo claro y oscuro (barra superior y entrada) e icono para la pestaña:
   la H sin fondo, ocupando todo el icono, que cambia de tonos con el tema del navegador.
