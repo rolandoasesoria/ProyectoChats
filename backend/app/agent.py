@@ -211,14 +211,23 @@ mensaje, la hora y el número de mensajes sin leer; buscador por nombre, empresa
 "Sin responder" (la bandeja, ver más abajo), las tres con la misma lista, el mismo buscador y el mismo selector; \
 los administradores, y quien tenga el permiso "Puede ver los chats de \
 todo el equipo" (lo da un administrador en Administración > Usuarios, al crear el usuario o al editarlo), pueden \
-elegir "Todo el equipo" en vez de "Mis chats"; cada vez queda en el registro de accesos. Al elegir uno se abre en el centro (ver "Vista de contacto"). Se actualiza sola cada 20 segundos.
+elegir "Todo el equipo" en vez de "Mis chats"; cada vez queda en el registro de accesos. Al elegir uno se abre en el centro (ver "Vista de contacto"). Se actualiza sola cada 20 segundos. \
+Como en WhatsApp, cada uno organiza su lista: al pasar el ratón por un chat aparece una flecha (o clic derecho) con \
+"Archivar chat" (sale de la lista y queda en la fila "Archivados" de arriba; vuelve solo cuando el cliente escribe; \
+"Desarchivar chat" lo devuelve), "Silenciar…" (8 horas, 1 semana o siempre: su número de no leídos se ve en gris y no \
+cuenta en el número de chats sin leer de la barra lateral; "Dejar de silenciar"), "Fijar chat" (arriba del todo, con \
+una chincheta; hasta 3) y "Marcar como no leído" (un punto, hasta que lo abras) o "Marcar como leído". La estrella \
+junto al buscador abre los mensajes destacados de todos los chats ("Ir al mensaje" lo abre en su chat).
 - Vista de contacto (al abrir un chat en Mis Chats o un contacto en Contactos): tres zonas. A la izquierda, la lista \
 de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (se oculta con el botón ⓘ) o "Asistente IA" (el \
 asistente sobre ese contacto, ver "Asistente"). "Detalles": arriba, centrados, su avatar (cada persona con su color), \
 nombre, empresa, estado y la prioridad que ve la IA, y botones rápidos para abrir su conversación de cada canal \
 (WhatsApp, Correo, Telegram) y "Editar"; debajo, tarjetas con "Contacto" (correo, teléfono…; al pasar el ratón, un \
 botón copia el dato), "Responsable" (al pulsarlo, o "+ Asignar responsable", se elige de una lista sin abrir Editar; también "Sin \
-responsable"), "Etiquetas" ("+ Añadir" con sugerencias o escribiendo una nueva; la × de cada una la quita), "Datos clave" (los de la Ficha y las propiedades \
+responsable"), "Etiquetas" ("+ Añadir" con sugerencias o escribiendo una nueva; la × de cada una la quita), "Archivos, enlaces y destacados" (las últimas fotos y cuántas fotos y vídeos, \
+documentos, enlaces y mensajes destacados hay en sus conversaciones; al pulsar, una ventana con cada cosa: las fotos \
+por meses, que se abren en grande, los documentos, los enlaces de WhatsApp y Telegram y los destacados, cada uno con \
+"Ir al mensaje"), "Datos clave" (los de la Ficha y las propiedades \
 rellenas, con "Ver la ficha completa") y "Actividad" (primer contacto, último mensaje, conversaciones y mensajes, \
 tareas abiertas). El ancho \
 de la izquierda y la derecha se ajusta arrastrando la línea que las separa del centro (o con Tab y las flechas); \
@@ -371,7 +380,8 @@ para avanzar y la velocidad 1×, 1,5× o 2×, que vale para todos). Una ubicaci�
 sitio (al pulsarla se abre Google Maps) y un contacto, como tarjeta con nombre, empresa, teléfonos y email (con un \
 botón para copiar sus datos). El texto respeta el formato de WhatsApp (*negrita*, _cursiva_, ~tachado~), los enlaces \
 se pueden pulsar y, en WhatsApp y Telegram, muestran su vista previa (título, descripción e imagen de la página). Al \
-pasar el ratón por cualquier mensaje aparece ⓘ "Info del mensaje": el mensaje tal cual y sus datos (en lo enviado por \
+pasar el ratón por cualquier mensaje aparecen ★ (destacar el mensaje para encontrarlo luego en "Destacados"; se ve \
+una estrellita junto a la hora; cada uno destaca los suyos) y ⓘ "Info del mensaje": el mensaje tal cual y sus datos (en lo enviado por \
 WhatsApp, a qué hora se leyó, se entregó y se envió; quién lo envió, por qué canal y cuenta, a qué responde, sus \
 archivos y las reacciones). En tus conversaciones de WhatsApp o Telegram aparecen además dos botones: la carita, para \
 reaccionar con un emoji (solo WhatsApp: \
