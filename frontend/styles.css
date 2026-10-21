@@ -25,10 +25,19 @@
   --panel: #ffffff;
   --sub: var(--lavanda-1);       /* columna de clientes */
   --sub-hover: var(--lavanda-2);
-  /* Barra superior: índigo profundo (la versión oscura del color de los botones) con texto lavanda */
-  --topbar-bg: #2e2c5a;
-  --topbar-text: #f5f1fa;
-  --topbar-muted: #c8c2de;
+  /* Barra superior: sigue el tema. En claro, de blanco a lavanda con textos e iconos en índigo; en oscuro, índigo
+     profundo con texto lavanda (ver los temas oscuros) */
+  --topbar-bg: #f6f2fa;
+  --topbar-text: #2e2c5a;
+  --topbar-muted: #5d5878;
+  --topbar-hover: rgba(79, 78, 150, .08);
+  --topbar-field: #ffffff;
+  --topbar-field-hover: #fbf8fd;
+  --topbar-field-border: var(--lavanda-2);
+  --topbar-kbd-border: var(--lavanda-3);
+  --topbar-shadow: 0 1px 0 rgba(79, 78, 150, .06), 0 2px 12px rgba(79, 78, 150, .08);
+  --topbar-glow: drop-shadow(0 2px 6px rgba(79, 78, 150, .18));
+  --topbar-focus: var(--indigo);
   /* Asistente: pervinca muy suave (de lavanda-4) para distinguirlo de la ficha y de la conversación */
   --assistant-bg: #f0f1fa;
   --assistant-bubble: #ffffff;
@@ -78,6 +87,14 @@
     --topbar-bg: #29264a;
     --topbar-text: #f5f1fa;
     --topbar-muted: #c8c2de;
+    --topbar-hover: rgba(255, 255, 255, .1);
+    --topbar-field: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
+    --topbar-field-hover: rgba(255, 255, 255, .12);
+    --topbar-field-border: rgba(255, 255, 255, .14);
+    --topbar-kbd-border: rgba(255, 255, 255, .22);
+    --topbar-shadow: 0 2px 14px rgba(31, 27, 70, .22);
+    --topbar-glow: drop-shadow(0 2px 8px rgba(178, 191, 222, .35));
+    --topbar-focus: var(--lavanda-5);
     --assistant-bg: #1c1a2d;
     --assistant-bubble: #24213a;
     --text: #ece6f2;
@@ -116,6 +133,14 @@
   --topbar-bg: #29264a;
   --topbar-text: #f5f1fa;
   --topbar-muted: #c8c2de;
+  --topbar-hover: rgba(255, 255, 255, .1);
+  --topbar-field: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
+  --topbar-field-hover: rgba(255, 255, 255, .12);
+  --topbar-field-border: rgba(255, 255, 255, .14);
+  --topbar-kbd-border: rgba(255, 255, 255, .22);
+  --topbar-shadow: 0 2px 14px rgba(31, 27, 70, .22);
+  --topbar-glow: drop-shadow(0 2px 8px rgba(178, 191, 222, .35));
+  --topbar-focus: var(--lavanda-5);
   --assistant-bg: #1c1a2d;
   --assistant-bubble: #24213a;
   --text: #ece6f2;
@@ -174,21 +199,29 @@ input:focus-visible, select:focus-visible, textarea:focus-visible {
 /* Controles sobre la barra oscura; los menús desplegables recuperan los colores normales */
 .topbar .icon-btn, .topbar .user-btn { color: var(--topbar-muted); }
 .topbar .icon-btn:hover, .topbar .user-btn:hover, .topbar .icon-btn[aria-expanded="true"] {
-  background: rgba(255, 255, 255, .1); color: var(--topbar-text);
+  background: var(--topbar-hover); color: var(--topbar-text);
 }
 .topbar .user-btn #user-name { color: var(--topbar-text); }
-.topbar .palette-btn { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .14); color: var(--topbar-muted); }
-.topbar .palette-btn:hover { background: rgba(255, 255, 255, .12); color: var(--topbar-text); }
-.topbar .palette-btn kbd { background: transparent; border-color: rgba(255, 255, 255, .22); color: var(--topbar-muted); }
+.topbar .palette-btn { background: var(--topbar-field); border-color: var(--topbar-field-border); color: var(--topbar-muted); }
+.topbar .palette-btn:hover { background: var(--topbar-field-hover); color: var(--topbar-text); }
+.topbar .palette-btn kbd { background: transparent; border-color: var(--topbar-kbd-border); color: var(--topbar-muted); }
 .topbar .avatar { background: var(--lavanda-3); color: var(--indigo); }
 .topbar .menu { color: var(--text); }
-.topbar :focus-visible { outline-color: var(--lavanda-5); }
+.topbar :focus-visible { outline-color: var(--topbar-focus); }
 .brand { font-weight: 600; letter-spacing: -.01em; display: flex; align-items: center; gap: 10px; }
 .brand-logo { width: 36px; height: 36px; display: block; }
 .login-card .brand-logo { width: 44px; height: 44px; }
 /* En la barra superior el logo es protagonista: alineado con los iconos de la barra lateral y con un brillo suave */
 .topbar .brand { font-size: 16px; gap: 12px; margin-left: -4px; }
-.topbar .brand-logo { filter: drop-shadow(0 2px 8px rgba(178, 191, 222, .35)); }
+.topbar .brand-logo { filter: var(--topbar-glow); }
+/* El logo de la barra: la versión índigo en tema claro y la lavanda en oscuro */
+.topbar .logo-on-dark { display: none; }
+:root[data-theme="dark"] .topbar .logo-on-light { display: none; }
+:root[data-theme="dark"] .topbar .logo-on-dark { display: block; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .topbar .logo-on-light { display: none; }
+  :root:not([data-theme="light"]) .topbar .logo-on-dark { display: block; }
+}
 select, input[type="search"], .form input {
   background: var(--panel); border: 1px solid var(--border); border-radius: 6px; padding: 6px 10px;
 }
@@ -1613,7 +1646,7 @@ select.chat-act { padding: 3px 24px 3px 8px !important; border: 0; background-co
     radial-gradient(900px 620px at 108% 112%, rgba(178, 191, 222, .55), transparent 60%),
     radial-gradient(700px 420px at 70% 0%, rgba(248, 235, 246, .9), transparent 65%),
     linear-gradient(180deg, #efe9f5, #e8e4f2);
-  --g-topbar: linear-gradient(100deg, #2b2957 0%, #37346c 50%, #463c74 100%);
+  --g-topbar: linear-gradient(100deg, #ffffff 0%, #faf6fb 45%, #efeaf8 100%);
   --g-card: linear-gradient(180deg, rgba(248, 235, 246, .55), rgba(248, 235, 246, 0) 150px);
   --g-side: linear-gradient(180deg, #f6f3fb 0%, #eff0fa 55%, #eceefa 100%);
   --g-accent: linear-gradient(135deg, #6463ae 0%, #4f4e96 55%, #46458b 100%);
@@ -1667,10 +1700,9 @@ select.chat-act { padding: 3px 24px 3px 8px !important; border: 0; background-co
 body:not(.login-page) { background: var(--g-canvas); background-attachment: fixed; }
 .topbar {
   background: var(--brand-gradient) bottom / 100% 2px no-repeat, var(--g-topbar);
-  box-shadow: 0 2px 14px rgba(31, 27, 70, .22);
+  box-shadow: var(--topbar-shadow);
 }
-.topbar .palette-btn { background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06)); }
-.topbar .avatar:not(.has-photo) { background: linear-gradient(135deg, var(--lavanda-1), var(--lavanda-4)); }
+.topbar .avatar:not(.has-photo) { background: linear-gradient(135deg, var(--lavanda-1), var(--lavanda-4)); box-shadow: inset 0 0 0 1px rgba(79, 78, 150, .14); }
 
 /* Tarjetas: un brillo suave arriba; la lista y los detalles, un degradado vertical del tono del asistente */
 .clients, .detail, .chat, .chat-main, .tpl-main, .zone-card, .cd-card, .stat-tile {
