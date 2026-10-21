@@ -410,6 +410,7 @@ function bindEvents() {
   bindBreadcrumbEvents();
   bindCompanyEvents();
   bindSidebarEvents();
+  bindTopbarEvents();
   bindContactsEvents();
   bindTemplatesEvents();
   bindAIEvents();

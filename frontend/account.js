@@ -102,6 +102,7 @@ function renderOwnIdentity() {
   top.innerHTML = avatarUrl(u) ? `<img src="${avatarUrl(u)}" alt="">` : escapeHtml(u.name.trim().charAt(0).toUpperCase());
   $("#pf-avatar").innerHTML = userAvatarHtml(u, "xl");
   $("#pf-photo-remove").hidden = !avatarUrl(u);
+  renderGreeting();
   const me = team.find((t) => t.id === u.id);
   if (me) Object.assign(me, { name: u.name, avatar_version: u.avatar_version });
 }

@@ -40,10 +40,12 @@ function setNavInbox(waiting, late) {
   navState.waiting = waiting;
   navState.late = late;
   renderNav();
+  setTopbarToday({ inbox: waiting, late });
 }
 
 // Las tareas (profile.js) avisan de cuántas tiene la persona y cuántas vencen hoy o ya vencieron.
 function setNavTasks(open, overdue) {
+  setTopbarToday({ tasks: overdue });
   setNavDetail("tasks", open ? `${plural(open, "pendiente", "pendientes")}${overdue ? ` · ${overdue} para hoy o vencidas` : ""}`
     : "Ninguna pendiente");
 }
