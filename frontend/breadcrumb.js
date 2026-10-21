@@ -32,6 +32,11 @@ function contactCrumbs(section, back) {
 function breadcrumbParts(view) {
   if (view === "chats") return contactCrumbs("Mis Chats", closeChat);
   if (view === "client") return contactCrumbs("Contactos", () => showView("contacts"));
+  if (view === "mail") {
+    const parts = [{ label: "Correo", icon: sectionIcon("mail") },
+                   { label: MAIL_FOLDERS[mailState.folder], action: mailState.open ? closeMail : null }];
+    return mailState.open ? [...parts, { label: mailState.open.subject || "(sin asunto)" }] : parts;
+  }
   if (view === "templates") {
     const open = tplState.selected?.name || (!$("#tpl-form").hidden ? "Nueva plantilla" : null);
     const icon = sectionIcon("templates");

@@ -10,6 +10,7 @@ const SHORTCUTS = [
   ["/", "Buscar en la lista (chats o contactos)"],
   ["j / k", "Chat o contacto siguiente / anterior"],
   ["r", "Escribir la respuesta al contacto abierto"],
+  ["g  e", "Ir a Correo (bandejas)"],
   ["g  c", "Ir a Contactos"],
   ["g  s", "Ir a Sin responder (Mis Chats)"],
   ["g  t", "Ir a Tareas"],
@@ -20,6 +21,8 @@ const SHORTCUTS = [
 function paletteActions() {
   const actions = [
     { label: "Ir a Mis Chats", run: () => showView("chats") },
+    { label: "Ir a Correo", hint: "g e", run: () => goToSide("mail") },
+    { label: "Escribir un correo nuevo", run: () => { showView("mail"); openNewMail(); } },
     { label: "Ir a Contactos", hint: "g c", run: () => goToSide("contacts") },
     { label: "Ir a Sin responder", hint: "g s", run: () => goToSide("inbox") },
     { label: "Ir a Tareas", hint: "g t", run: () => goToSide("tasks") },
@@ -111,8 +114,9 @@ function startReply() {
   $("#chat-text").focus();
 }
 
-// Atajos «g c / g s / g t»: Contactos, Sin responder (en Mis Chats) y Tareas.
+// Atajos «g e / g c / g s / g t»: Correo, Contactos, Sin responder (en Mis Chats) y Tareas.
 function goToSide(side) {
+  if (side === "mail") return showView("mail");
   if (side === "contacts") return showView("contacts");
   if (side === "tasks") return showView("tasks");
   if (currentView() !== "chats") showView("chats");
@@ -160,7 +164,7 @@ function onGlobalKey(e) {
   if (e.ctrlKey || e.metaKey || e.altKey || isTyping(e) || document.querySelector("dialog[open]") || tour) return;
   if (Date.now() - pendingG < 1500) {
     pendingG = 0;
-    const side = { c: "contacts", s: "inbox", t: "tasks" }[e.key];
+    const side = { e: "mail", c: "contacts", s: "inbox", t: "tasks" }[e.key];
     if (side) { e.preventDefault(); goToSide(side); }
     return;
   }

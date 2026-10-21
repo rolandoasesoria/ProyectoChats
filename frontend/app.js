@@ -466,6 +466,7 @@ function bindEvents() {
   bindChatCards();
   bindChatCompose();
   bindChatOrganize();
+  bindMail();
   $("#help-close").addEventListener("click", () => toggleHelp(false));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#help-panel").hidden && !tour) toggleHelp(false);

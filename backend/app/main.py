@@ -22,6 +22,7 @@ from .api import (
     documents,
     drafts,
     inbox,
+    mailbox,
     messaging,
     notes,
     organize,
@@ -144,6 +145,7 @@ app.include_router(settings.router)
 app.include_router(integrations_api.router)
 app.include_router(messaging.router)
 app.include_router(organize.router)
+app.include_router(mailbox.router)
 app.include_router(dashboard.router)
 app.include_router(privacy_api.router)
 app.include_router(properties_api.router)
