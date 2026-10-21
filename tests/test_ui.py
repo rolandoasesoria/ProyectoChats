@@ -36,6 +36,9 @@ try:
     b.wait("location.pathname === '/' && !!currentUser && !document.body.classList.contains('booting')")
     b.pump(1.5)
     check("login correcto", True)
+    check("barra superior: saluda por el nombre, con la fecha de hoy",
+          re.fullmatch(r"Buen(os días|as tardes|as noches), Ana", b.js("document.querySelector('#greeting-hello').textContent"))
+          and re.fullmatch(r"\w+, \d{1,2} de \w+", b.js("document.querySelector('#greeting-date').textContent")))
     # El tutorial está en pausa (TOUR_ENABLED = false en tour.js) mientras la interfaz cambia a menudo
     check("el tutorial no arranca ni se ofrece en el menú",
           b.js("!document.querySelector('.tour-card') && document.querySelector('#menu-tour').hidden"))
@@ -579,9 +582,16 @@ try:
     b.shot("08d-gestionar-respuestas")
     b.js("document.querySelector('#replies-dialog').close()")
 
-    # Bandeja sin responder: el filtro «Sin responder» de Mis Chats
-    b.click("#nav-chats")
-    b.click('#chats-filter [data-filter="inbox"]')
+    # Bandeja sin responder: el filtro «Sin responder» de Mis Chats, también desde el resumen del día de la barra
+    b.click("#nav-contacts")
+    b.wait("!document.querySelector('#today-inbox').hidden")
+    check("barra superior: el resumen del día dice cuántas esperan respuesta (en rojo si hay fuera de plazo)",
+          b.js("document.querySelector('#today-inbox').textContent") == "2 sin responder"
+          and b.js("document.querySelector('#today-inbox').classList.contains('late')")
+          and b.js("document.querySelector('#today-done').hidden"))
+    b.click("#today-inbox")
+    b.wait("currentView() === 'chats' && chatState.filter === 'inbox'")
+    check("barra superior: pulsarlo lleva a «Sin responder» en Mis Chats", True)
     b.wait("document.querySelectorAll('#chats-list .inbox-item').length > 0")
     check("«Sin responder» usa la misma lista, buscador y selector que Todos y No leídos",
           b.js("!document.querySelector('#chats-list').hidden && !document.querySelector('#chats-search').hidden"
