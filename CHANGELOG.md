@@ -130,6 +130,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Todas las pantallas con el nuevo sistema de diseño**: la ficha en listas agrupadas al estilo iOS, tareas y
+  notas en tarjetas, burbujas tipo iMessage, etiquetas de canal en píldora, tablas unificadas, ajustes de IA
+  agrupados y estados vacíos con icono. Misma lógica y mismo funcionamiento.
 - **Sistema de diseño con tokens** (tokens.css): botones, campos, tarjetas, ventanas, menús y navegación con
   esquinas al estilo iOS, sombras muy finas, rejilla de 4 px y transiciones suaves; tema claro y oscuro en un solo bloque.
 - **Barra superior nueva**: flota sobre el fondo con efecto cristal, saluda por el nombre con la fecha y muestra
