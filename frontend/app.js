@@ -117,6 +117,74 @@ function dayLabel(date) {
   });
 }
 
+// Formato de WhatsApp (*negrita*, _cursiva_, ~tachado~, ```monoespaciado```) y enlaces, sobre el texto ya escapado.
+const URL_RE = /https?:\/\/[^\s<]+?(?=(?:&quot;|&#39;|[.,;:!?)\]])*(?:\s|<|$))/g;
+const STYLE_MARKS = [["*", "strong"], ["_", "em"], ["~", "s"]];
+
+function formatMessage(body, channel) {
+  let html = escapeHtml(body).replace(URL_RE, (url) => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+  if (channel !== "whatsapp" && channel !== "telegram") return html;
+  html = html.replace(/```([\s\S]+?)```/g, "<code>$1</code>");
+  for (const [mark, tag] of STYLE_MARKS) {
+    const re = new RegExp(`(^|[\\s(])\\${mark}(?=\\S)([^${mark}\\n]*?\\S)\\${mark}(?=$|[\\s).,!?:;])`, "gm");
+    html = html.replace(re, `$1<${tag}>$2</${tag}>`);
+  }
+  return html;
+}
+
+// Fotos, vídeos y audios dentro de la burbuja (las fotos se amplían en el visor); el resto, como adjunto.
+const INLINE_MEDIA = /^(image|video|audio)\//;
+
+function mediaHtml(files) {
+  return files.map((a) => {
+    const url = attachmentUrl(a.id);
+    const name = escapeHtml(a.filename);
+    if (a.mime.startsWith("image/")) {
+      return `<button type="button" class="bubble-media" data-viewer="${url}" data-name="${name}" aria-label="Ver ${name}"><img src="${url}" alt="${name}" loading="lazy"></button>`;
+    }
+    if (a.mime.startsWith("video/")) return `<video class="bubble-video" src="${url}" controls preload="metadata"></video>`;
+    return `<audio class="bubble-audio" src="${url}" controls preload="metadata"></audio>`;
+  }).join("");
+}
+
+// Checks de lo enviado por WhatsApp: uno (enviado), dos (entregado), dos azules (leído) o «No entregado» con el motivo.
+function ticksHtml(m) {
+  if (m.direction !== "out" || !m.status) return "";
+  if (m.status === "failed") {
+    const why = escapeHtml(`No entregado${m.status_error ? `: ${m.status_error}` : ""}`);
+    return ` <span class="ticks failed" role="img" aria-label="${why}" title="${why}"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.8v3.7M8 11.2h.01"/></svg>No entregado</span>`;
+  }
+  const hm = (t) => new Date(t).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+  const label = [{ sent: "Enviado", delivered: "Entregado", read: "Leído" }[m.status],
+    m.delivered_at ? `entregado a las ${hm(m.delivered_at)}` : "", m.read_at ? `leído a las ${hm(m.read_at)}` : ""]
+    .filter(Boolean).join(" · ");
+  const paths = m.status === "sent" ? '<path d="M3 6.5l3 3 6.5-7"/>' : '<path d="M1 6.5l3 3 6.5-7"/><path d="M7.5 8.5l1 1 6.5-7"/>';
+  return ` <span class="ticks ${m.status}" role="img" aria-label="${label}" title="${label}"><svg viewBox="0 0 16 12" aria-hidden="true">${paths}</svg></span>`;
+}
+
+function quoteHtml(m) {
+  if (!m.reply_to_id) return "";
+  return `<button type="button" class="bubble-quote ${m.reply_direction === "out" ? "out" : "in"}" data-jump="${m.reply_to_id}" title="Ir al mensaje citado">
+    <strong>${escapeHtml(m.reply_sender || "Mensaje")}</strong><span>${escapeHtml(firstLine(m.reply_body) || "📎 Archivo")}</span></button>`;
+}
+
+function reactionsHtml(m) {
+  if (!m.reactions?.length) return "";
+  const who = (r) => (r.side === "client" ? "Reacción del cliente" : `Reacción del equipo${r.user ? ` (${r.user})` : " (desde el móvil)"}`);
+  return `<div class="bubble-reactions">${m.reactions.map((r) =>
+    `<span class="reaction" title="${escapeHtml(who(r))}">${escapeHtml(r.emoji)}</span>`).join("")}</div>`;
+}
+
+// Al pasar el ratón por un mensaje de tus conversaciones de WhatsApp o Telegram: reaccionar (WhatsApp) y citarlo.
+const ICON_REACT = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>';
+const ICON_REPLY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
+
+function actionsHtml(m) {
+  const mine = chatState.data?.conversations.some((c) => c.id === m.conversation_id && c.is_mine);
+  if (!mine || m.channel === "email") return "";
+  return `<div class="msg-actions">${m.reactable ? `<button type="button" class="msg-act" data-react="${m.id}" title="Reaccionar" aria-label="Reaccionar">${ICON_REACT}</button>` : ""}<button type="button" class="msg-act" data-quote-reply="${m.id}" title="Responder citando" aria-label="Responder citando">${ICON_REPLY}</button></div>`;
+}
+
 function timelineHtml(messages) {
   let prev = null;
   return messages.map((m) => {
@@ -130,13 +198,21 @@ function timelineHtml(messages) {
     const owner = m.owner_id !== currentUser.id
       ? ` · <span class="account-tag" title="Entró por la cuenta de ${escapeHtml(m.owner)}: se responde desde esa cuenta">cuenta de ${escapeHtml(m.owner)}</span>` : "";
     const time = at.toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" });
+    const files = m.attachments || [];
+    const inline = files.filter((a) => INLINE_MEDIA.test(a.mime || ""));
+    const others = files.filter((a) => !INLINE_MEDIA.test(a.mime || ""));
+    // «📎 foto.jpg» sin más texto: con la foto a la vista, sobra
+    const onlyMedia = inline.length && !others.length && inline.some((a) => m.body === `📎 ${a.filename}`);
     return `${newDay ? `<li class="day-sep"><span>${escapeHtml(dayLabel(at))}</span></li>` : ""}
-    <li class="msg-row ${m.direction} ${escapeHtml(m.channel)}${grouped ? " grouped" : ""}" data-id="${m.id}">
+    <li class="msg-row ${m.direction} ${escapeHtml(m.channel)}${grouped ? " grouped" : ""}${m.reactions?.length ? " has-reactions" : ""}" data-id="${m.id}">
       <div class="bubble" title="${escapeHtml(formatDate(m.sent_at))}">
         ${grouped ? "" : `<div class="bubble-sender">${escapeHtml(m.sender)}</div>`}
-        <div class="bubble-text">${escapeHtml(m.body)}</div>${attachmentChips(m.attachments)}
-        <div class="bubble-meta">${m.by_ai ? `<span class="ai-mark" title="Escrito por la IA">🤖 IA</span> · ` : ""}<span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}</div>
+        ${quoteHtml(m)}${mediaHtml(inline)}
+        ${onlyMedia ? "" : `<div class="bubble-text">${formatMessage(m.body, m.channel)}</div>`}${attachmentChips(others)}
+        <div class="bubble-meta">${m.by_ai ? `<span class="ai-mark" title="Escrito por la IA">🤖 IA</span> · ` : ""}<span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}${ticksHtml(m)}</div>
+        ${reactionsHtml(m)}
       </div>
+      ${actionsHtml(m)}
     </li>`;
   }).join("");
 }
@@ -379,6 +455,7 @@ function bindEvents() {
   bindComposer($("#help-form"), $("#help-input"), sendHelp);
   $("#mascot").addEventListener("click", () => toggleHelp());
   bindChispa();
+  bindChatActions();
   $("#help-close").addEventListener("click", () => toggleHelp(false));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#help-panel").hidden && !tour) toggleHelp(false);

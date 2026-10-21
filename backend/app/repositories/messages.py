@@ -49,6 +49,7 @@ def timeline(conn: Conn, client_id: int, user_id: int, scope: str, channel: str 
         SELECT * FROM (
             SELECT m.id, m.direction, m.sender, m.body, m.sent_at, m.by_ai,
                    m.status, m.status_error, m.delivered_at, m.read_at,
+                   coalesce(m.external_id LIKE 'wa:%', false) AS reactable,
                    m.reply_to_id, r.sender AS reply_sender, r.direction AS reply_direction,
                    substr(r.body, 1, 200) AS reply_body,
                    c.id AS conversation_id, c.channel, c.owner_user_id AS owner_id, u.name AS owner
