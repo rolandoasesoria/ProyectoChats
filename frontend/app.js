@@ -336,12 +336,14 @@ async function sendHelp(text) {
   if (!text.trim()) return;
   const log = $("#help-log");
   $("#help-send").disabled = true;
+  setChispaThinking(true);
   try {
     await askBot(log, text, async () => {
       const res = await api("/api/help", { method: "POST", body: JSON.stringify({ message: text }) });
       return renderMarkdown(res.reply);
     }, () => { log.scrollTop = log.scrollHeight; });
   } finally {
+    setChispaThinking(false);
     $("#help-send").disabled = false;
     log.scrollTop = log.scrollHeight;
   }
@@ -376,6 +378,7 @@ function bindEvents() {
 
   bindComposer($("#help-form"), $("#help-input"), sendHelp);
   $("#mascot").addEventListener("click", () => toggleHelp());
+  bindChispa();
   $("#help-close").addEventListener("click", () => toggleHelp(false));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#help-panel").hidden && !tour) toggleHelp(false);
