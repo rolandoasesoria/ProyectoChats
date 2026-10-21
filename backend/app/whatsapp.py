@@ -1,7 +1,8 @@
 """Recepción de WhatsApp Business (Cloud API): los avisos que Meta envía al webhook.
 
-Mensajes de los clientes y, con la coexistencia (el número sigue en la app WhatsApp Business del móvil), también lo
-que se envía desde el móvil, el historial, los nombres de la agenda y la desconexión. Cada aviso se guarda como
+Mensajes de los clientes (con sus reacciones y lo que citan), el estado de entrega de lo enviado (enviado,
+entregado, leído o no entregado) y, con la coexistencia (el número sigue en la app WhatsApp Business del móvil), también
+lo que se envía desde el móvil, el historial, los nombres de la agenda y la desconexión. Cada aviso se guarda como
 conversación de la persona dueña de la cuenta (integrations.ingest/store). El alta está en whatsapp_signup.py, las
 plantillas en whatsapp_templates.py y el envío y la comprobación de credenciales en integrations.py.
 """
@@ -13,6 +14,7 @@ from datetime import datetime, timezone
 
 from . import clients, integrations
 from .db import get_conn
+from .repositories import messages as messages_repo
 from .repositories import users as users_repo
 
 log = logging.getLogger(__name__)
@@ -77,16 +79,76 @@ def _owner_name(integ: dict) -> str:
     return owner["name"] if owner else "Equipo"
 
 
+def _wa_quoted(m: dict) -> str | None:
+    """El mensaje que cita (al pulsar «Responder» en WhatsApp), como identificador externo."""
+    quoted = (m.get("context") or {}).get("id")
+    return f"wa:{quoted}" if quoted else None
+
+
+def _wa_reaction(m: dict, side: str) -> None:
+    """Reacción con emoji a un mensaje (del cliente, o de la empresa desde el móvil). Sin emoji, la quita. No es un
+    mensaje nuevo: se guarda en el mensaje al que reacciona."""
+    reaction = m.get("reaction") or {}
+    with get_conn() as conn:
+        target = messages_repo.by_external(conn, f"wa:{reaction.get('message_id')}")
+        if not target:
+            return
+        if reaction.get("emoji"):
+            messages_repo.set_reaction(conn, target["id"], side, reaction["emoji"], None)
+        else:
+            messages_repo.delete_reaction(conn, target["id"], side)
+
+
+# Orden de los estados de entrega: un aviso que llega tarde (p. ej. «entregado» después de «leído») no hace retroceder.
+STATUS_RANK = {"sent": 1, "delivered": 2, "read": 3}
+
+
+def _status_error(status: dict) -> str:
+    """Por qué no se entregó, explicado (los casos conocidos) o tal como lo da Meta."""
+    err = (status.get("errors") or [{}])[0]
+    return (integrations.META_SEND_LIMITS.get(err.get("code")) or (err.get("error_data") or {}).get("details")
+            or err.get("title") or err.get("message") or "WhatsApp no pudo entregar el mensaje.")
+
+
+def _wa_statuses(value: dict) -> None:
+    """Estado de entrega de lo enviado desde la app: enviado, entregado, leído o no entregado."""
+    for s in value.get("statuses", []):
+        status, at = s.get("status"), _wa_time(s)
+        with get_conn() as conn:
+            msg = messages_repo.by_external(conn, f"wa:{s.get('id')}")
+            if not msg:
+                continue
+            current, delivered, read = msg["status"], msg["delivered_at"], msg["read_at"]
+            if status == "failed":
+                if current not in ("delivered", "read"):
+                    messages_repo.update_status(conn, msg["id"], "failed", _status_error(s), delivered, read)
+                continue
+            if status not in STATUS_RANK:
+                continue
+            if status in ("delivered", "read"):
+                delivered = delivered or at
+            if status == "read":
+                read = read or at
+            if current == "failed" or STATUS_RANK[status] > STATUS_RANK.get(current, 0):
+                current = status
+            messages_repo.update_status(conn, msg["id"], current, None, delivered, read)
+
+
 def _wa_incoming(integ: dict, value: dict) -> int:
-    """Mensajes que escriben los clientes."""
+    """Mensajes que escriben los clientes (y sus reacciones), y el estado de entrega de lo enviado."""
+    _wa_statuses(value)
     names = {c.get("wa_id"): c.get("profile", {}).get("name") for c in value.get("contacts", [])}
     imported = 0
     for m in value.get("messages", []):
+        if m.get("type") == "reaction":
+            _wa_reaction(m, "client")
+            continue
         wa_id = m.get("from", "")
         name = names.get(wa_id) or f"+{wa_id}"
         body, files = _wa_content(integ, m)
         imported += integrations.ingest(integ, handle=f"+{wa_id}", client_name=name, direction="in", sender=name, body=body,
-                           sent_at=_wa_time(m), external_id=f"wa:{m['id']}", attachments=files)["messages"]
+                           sent_at=_wa_time(m), external_id=f"wa:{m['id']}", attachments=files,
+                           reply_to_external=_wa_quoted(m))["messages"]
     return imported
 
 
@@ -95,10 +157,14 @@ def _wa_echoes(integ: dict, value: dict) -> int:
     sender = _owner_name(integ)
     imported = 0
     for m in value.get("message_echoes", []):
+        if m.get("type") == "reaction":
+            _wa_reaction(m, "team")
+            continue
         to = m.get("to", "")
         body, files = _wa_content(integ, m)
         imported += integrations.ingest(integ, handle=f"+{to}", client_name=f"+{to}", direction="out", sender=sender, body=body,
-                           sent_at=_wa_time(m), external_id=f"wa:{m['id']}", attachments=files)["messages"]
+                           sent_at=_wa_time(m), external_id=f"wa:{m['id']}", attachments=files,
+                           reply_to_external=_wa_quoted(m))["messages"]
     return imported
 
 
@@ -115,11 +181,13 @@ def _wa_history(integ: dict, value: dict) -> int:
             customer = integrations.digits(thread.get("id", ""))
             messages = []
             for m in thread.get("messages", []):
+                if m.get("type") == "reaction":
+                    continue  # las reacciones antiguas no se importan
                 outgoing = integrations.digits(m.get("from", "")) == business if business else integrations.digits(m.get("from", "")) != customer
                 body, _ = _wa_content(integ, m, download=False)
                 messages.append({"direction": "out" if outgoing else "in", "sender": sender if outgoing else f"+{customer}",
                                  "body": body, "sent_at": _wa_time(m), "external_id": f"wa:{m['id']}",
-                                 "attachments": []})
+                                 "attachments": [], "reply_to_external": _wa_quoted(m)})
             if customer and messages:
                 imported += integrations.store(integ, f"+{customer}", f"+{customer}", messages, analyze=False)["messages"]
         progress = chunk.get("metadata", {}).get("progress")

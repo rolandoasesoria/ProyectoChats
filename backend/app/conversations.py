@@ -35,7 +35,8 @@ def import_conversation(payload: dict) -> dict:
       "client_name": "Laura Gómez",     # usado si la identidad es nueva
       "client_id": null,                # opcional: forzar a qué cliente asociar
       "subject": "...",
-      "messages": [{"direction": "in", "sender": "Laura", "body": "...", "sent_at": "2026-09-01T10:00:00"}]
+      "messages": [{"direction": "in", "sender": "Laura", "body": "...", "sent_at": "2026-09-01T10:00:00",
+                    "reply_to_external": "wa:..."}]   # opcional: el mensaje que cita (su identificador externo)
     }
     """
     with get_conn() as conn:
@@ -63,8 +64,10 @@ def import_conversation(payload: dict) -> dict:
             seen.add(key)
             if ext:
                 seen_ext.add(ext)
+            quoted = m.get("reply_to_external")
+            reply_to_id = messages_repo.id_by_external(conn, conv_id, quoted) if quoted else None
             message_id = messages_repo.insert(conn, conv_id, m["direction"], m["sender"], m["body"], m["sent_at"],
-                                              ext)
+                                              ext, reply_to_id)
             new += 1
             for f in m.get("attachments") or []:
                 attachments.save(conn, client_id, f["filename"], f["data"], f.get("mime"), message_id,

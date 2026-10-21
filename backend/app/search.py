@@ -93,9 +93,11 @@ def timeline(client_id: int, user_id: int, scope: str = "mine",
     """Todos los mensajes de un cliente, de todos los canales, en orden cronológico."""
     with get_conn() as conn:
         result = messages_repo.timeline(conn, client_id, user_id, scope, channel, limit)
+        reactions = messages_repo.reactions_for(conn, [m["id"] for m in result])
     files = attachments.by_message([m["id"] for m in result])
     for m in result:
         m["attachments"] = files.get(m["id"], [])
+        m["reactions"] = [{k: r[k] for k in ("side", "emoji", "user")} for r in reactions if r["message_id"] == m["id"]]
     return result
 
 
