@@ -196,6 +196,7 @@ async function openChat(clientId) {
     clearComposerText();
     chatState.composing = false; // el «está respondiendo» era para el otro contacto
     setChatFile(null); // el archivo elegido era para otro contacto
+    discardVoice(); // y la nota de voz que se estaba grabando, también
     clearReply();
     resetComposerExtras();
     closeResults();
@@ -254,6 +255,7 @@ async function loadChatConversation(keepScroll = false) {
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
   list.innerHTML = messages.length ? timelineHtml(messages) : `<li class="muted">Sin mensajes por este canal.</li>`;
   if (!keepScroll || atBottom) list.scrollTop = list.scrollHeight;
+  hydrateLinkPreviews(list);
   await prepareComposer();
 }
 
@@ -272,6 +274,7 @@ function setNewEmail(on) {
     $("#chat-send-note").hidden = true;
     $("#chat-subject").focus();
   }
+  syncComposerTools();
 }
 
 // Canal por el que se responde: el de la pestaña o, en «Todos los canales», el más reciente.
@@ -302,6 +305,7 @@ async function prepareComposer() {
     $("#chat-ai-draft").disabled = !conv;
     $("#draft-copy").hidden = !conv; // sin cuenta conectada: se copia para pegarlo en el móvil o el correo
     $("#chat-template").hidden = true;
+    syncComposerTools();
     loadChatAI(conv?.channel === "whatsapp" ? conv.id : null);
   };
   if (!conv) {
@@ -323,6 +327,7 @@ async function prepareComposer() {
     $("#chat-ai-draft").disabled = false;
     $("#draft-copy").hidden = true;
     $("#chat-send").textContent = `Enviar por ${s.via}`;
+    syncComposerTools();
     loadChatAI(conv.channel === "whatsapp" ? conv.id : null);
   } catch {
     disable("No se ha podido comprobar la cuenta de envío.");
@@ -347,9 +352,16 @@ function setChatFile(file) {
   chatState.file = file || null;
   $("#chat-file").value = "";
   const chip = $("#chat-file-chip");
+  // Las fotos, con su miniatura (como al adjuntarlas en WhatsApp)
+  const thumb = file?.type.startsWith("image/") && file.size <= 8 * 1024 * 1024;
   chip.hidden = !file;
-  chip.innerHTML = file ? `📎 ${escapeHtml(file.name)} <span class="muted small">(${Math.max(1, Math.round(file.size / 1024))} KB)</span>
+  chip.innerHTML = file ? `${thumb ? '<img class="chip-thumb" alt="">' : "📎"} ${escapeHtml(file.name)} <span class="muted small">(${Math.max(1, Math.round(file.size / 1024))} KB)</span>
     <button type="button" class="link small" id="chat-file-remove" aria-label="Quitar el archivo">×</button>` : "";
+  if (thumb) {
+    const reader = new FileReader();
+    reader.onload = () => { if (chatState.file === file) chip.querySelector(".chip-thumb")?.setAttribute("src", reader.result); };
+    reader.readAsDataURL(file);
+  }
 }
 
 async function sendNewEmail(text) {

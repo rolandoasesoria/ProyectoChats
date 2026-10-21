@@ -132,8 +132,9 @@ function formatMessage(body, channel) {
   return html;
 }
 
-// Fotos, vídeos y audios dentro de la burbuja (las fotos se amplían en el visor); el resto, como adjunto. En el correo,
-// las imágenes pequeñas (logos de la firma, píxeles de seguimiento) siguen como adjunto.
+// Fotos, vídeos y audios dentro de la burbuja (las fotos se amplían en el visor; los audios y las notas de voz, con su
+// reproductor: chat-cards.js); el resto, como adjunto. En el correo, las imágenes pequeñas (logos de la firma, píxeles
+// de seguimiento) siguen como adjunto.
 const INLINE_MEDIA = /^(image|video|audio)\//;
 const EMAIL_PHOTO_MIN = 40 * 1024;
 
@@ -141,7 +142,7 @@ function showsInline(a, channel) {
   return INLINE_MEDIA.test(a.mime || "") && (channel !== "email" || !a.mime.startsWith("image/") || a.size >= EMAIL_PHOTO_MIN);
 }
 
-function mediaHtml(files) {
+function mediaHtml(files, m) {
   return files.map((a) => {
     const url = attachmentUrl(a.id);
     const name = escapeHtml(a.filename);
@@ -149,7 +150,7 @@ function mediaHtml(files) {
       return `<button type="button" class="bubble-media" data-viewer="${url}" data-name="${name}" aria-label="Ver ${name}"><img src="${url}" alt="${name}" loading="lazy"></button>`;
     }
     if (a.mime.startsWith("video/")) return `<video class="bubble-video" src="${url}" controls preload="metadata"></video>`;
-    return `<audio class="bubble-audio" src="${url}" controls preload="metadata"></audio>`;
+    return voiceNoteHtml(a, m);
   }).join("");
 }
 
@@ -181,14 +182,15 @@ function reactionsHtml(m) {
     `<span class="reaction" title="${escapeHtml(who(r))}">${escapeHtml(r.emoji)}</span>`).join("")}</div>`;
 }
 
-// Al pasar el ratón por un mensaje de tus conversaciones de WhatsApp o Telegram: reaccionar (WhatsApp) y citarlo.
+// Al pasar el ratón por un mensaje: «Info del mensaje» y, en tus conversaciones de WhatsApp o Telegram, reaccionar
+// (WhatsApp) y citarlo.
 const ICON_REACT = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>';
 const ICON_REPLY = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg>';
 
 function actionsHtml(m) {
   const mine = chatState.data?.conversations.some((c) => c.id === m.conversation_id && c.is_mine);
-  if (!mine || m.channel === "email") return "";
-  return `<div class="msg-actions">${m.reactable ? `<button type="button" class="msg-act" data-react="${m.id}" title="Reaccionar" aria-label="Reaccionar">${ICON_REACT}</button>` : ""}<button type="button" class="msg-act" data-quote-reply="${m.id}" title="Responder citando" aria-label="Responder citando">${ICON_REPLY}</button></div>`;
+  const chat = mine && m.channel !== "email";
+  return `<div class="msg-actions">${chat && m.reactable ? `<button type="button" class="msg-act" data-react="${m.id}" title="Reaccionar" aria-label="Reaccionar">${ICON_REACT}</button>` : ""}${chat ? `<button type="button" class="msg-act" data-quote-reply="${m.id}" title="Responder citando" aria-label="Responder citando">${ICON_REPLY}</button>` : ""}<button type="button" class="msg-act" data-info="${m.id}" title="Info del mensaje" aria-label="Info del mensaje">${ICON_INFO}</button></div>`;
 }
 
 function timelineHtml(messages) {
@@ -207,14 +209,13 @@ function timelineHtml(messages) {
     const files = m.attachments || [];
     const inline = files.filter((a) => showsInline(a, m.channel));
     const others = files.filter((a) => !showsInline(a, m.channel));
-    // «📎 foto.jpg» sin más texto: con la foto a la vista, sobra
-    const onlyMedia = inline.length && !others.length && inline.some((a) => m.body === `📎 ${a.filename}`);
+    const hideBody = !others.length && bodyIsAutomatic(m, inline);
     return `${newDay ? `<li class="day-sep"><span>${escapeHtml(dayLabel(at))}</span></li>` : ""}
     <li class="msg-row ${m.direction} ${escapeHtml(m.channel)}${grouped ? " grouped" : ""}${m.reactions?.length ? " has-reactions" : ""}" data-id="${m.id}">
       <div class="bubble" title="${escapeHtml(formatDate(m.sent_at))}">
         ${grouped ? "" : `<div class="bubble-sender">${escapeHtml(m.sender)}</div>`}
-        ${quoteHtml(m)}${mediaHtml(inline)}
-        ${onlyMedia ? "" : `<div class="bubble-text">${formatMessage(m.body, m.channel)}</div>`}${attachmentChips(others)}
+        ${quoteHtml(m)}${mediaHtml(inline, m)}${payloadHtml(m)}${linkPreviewHtml(m)}
+        ${hideBody ? "" : `<div class="bubble-text">${formatMessage(m.body, m.channel)}</div>`}${attachmentChips(others)}
         <div class="bubble-meta">${m.by_ai ? `<span class="ai-mark" title="Escrito por la IA">🤖 IA</span> · ` : ""}<span class="ch-dot"></span>${escapeHtml(IDENTITY_LABELS[m.channel] || m.channel)}${owner} · ${time}${ticksHtml(m)}</div>
         ${reactionsHtml(m)}
       </div>
@@ -462,6 +463,8 @@ function bindEvents() {
   $("#mascot").addEventListener("click", () => toggleHelp());
   bindChispa();
   bindChatActions();
+  bindChatCards();
+  bindChatCompose();
   $("#help-close").addEventListener("click", () => toggleHelp(false));
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !$("#help-panel").hidden && !tour) toggleHelp(false);

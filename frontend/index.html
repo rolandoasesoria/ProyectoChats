@@ -255,10 +255,28 @@
               <ul id="reply-suggest" class="mention-list reply-options" role="listbox" hidden></ul>
             </div>
             <div class="chat-composer-actions">
-              <label class="icon-btn attach-btn" id="chat-attach" title="Adjuntar un archivo (máximo 15 MB)">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7-7l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>
-                <input type="file" id="chat-file" hidden>
-              </label>
+              <!-- Adjuntar: un archivo (también pegándolo o arrastrándolo al chat), una ubicación o un contacto -->
+              <span class="attach-wrap">
+                <button type="button" class="icon-btn attach-btn" id="chat-attach" aria-haspopup="true" aria-expanded="false"
+                        aria-label="Adjuntar" title="Adjuntar un archivo, una ubicación o un contacto">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7-7l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>
+                </button>
+                <div class="menu attach-menu" id="attach-menu" role="menu" hidden>
+                  <label class="attach-item" role="menuitem" title="Máximo 15 MB. También puedes pegarlo (Ctrl+V) o arrastrarlo al chat">
+                    <span class="attach-ico doc"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></span>
+                    Documento, foto o vídeo
+                    <input type="file" id="chat-file" hidden>
+                  </label>
+                  <button type="button" class="attach-item" role="menuitem" id="attach-location">
+                    <span class="attach-ico place"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-6.5-5.6-6.5-11a6.5 6.5 0 0 1 13 0c0 5.4-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></svg></span>
+                    Ubicación
+                  </button>
+                  <button type="button" class="attach-item" role="menuitem" id="attach-contact">
+                    <span class="attach-ico person"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg></span>
+                    Contacto
+                  </button>
+                </div>
+              </span>
               <button type="button" class="icon-btn" id="chat-emoji" aria-label="Emojis" aria-haspopup="true" title="Emojis">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>
               </button>
@@ -299,9 +317,30 @@
                 <option value="14">⏰ Avisar si no contesta en 2 semanas</option>
               </select>
               <button type="button" class="ghost small-btn" id="draft-copy" hidden title="Copiar para pegarlo en WhatsApp, el correo…">Copiar</button>
+              <button type="button" class="icon-btn voice-btn" id="chat-voice" aria-label="Grabar una nota de voz" title="Grabar una nota de voz">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+              </button>
               <button type="submit" class="primary" id="chat-send">Enviar</button>
             </div>
+            <!-- Grabando una nota de voz (ver chat-compose.js) -->
+            <div class="voice-bar" id="voice-bar" hidden>
+              <button type="button" class="icon-btn" id="voice-cancel" aria-label="Descartar la nota de voz" title="Descartar">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4.5h6V7M6.5 7l1 13h9l1-13M10 11v5.5M14 11v5.5"/></svg>
+              </button>
+              <span class="voice-dot" aria-hidden="true"></span>
+              <span class="voice-time" id="voice-time" role="timer" aria-label="Tiempo grabado">0:00</span>
+              <canvas class="voice-level" id="voice-level" aria-hidden="true"></canvas>
+              <button type="button" class="primary voice-send" id="voice-send" aria-label="Enviar la nota de voz">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12l16-8-6 16-2.5-6.5z"/></svg> Enviar
+              </button>
+            </div>
           </form>
+          <!-- Al arrastrar un archivo sobre la conversación -->
+          <div class="drop-overlay" id="chat-drop" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 14v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"/></svg>
+            <strong id="chat-drop-title">Suelta el archivo para adjuntarlo</strong>
+            <span id="chat-drop-text">Se enviará con tu próximo mensaje</span>
+          </div>
         </section>
 
         <!-- Ficha: resumen y datos clave -->
@@ -1078,6 +1117,67 @@
     </div>
   </dialog>
 
+  <!-- Chat: enviar una ubicación o un contacto e «Info del mensaje» (ver chat-compose.js y chat-cards.js) -->
+  <dialog id="location-dialog" class="dialog">
+    <div class="dialog-head">
+      <h2>Enviar una ubicación</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <form id="location-form" class="form" novalidate>
+      <button type="button" class="ghost location-here" id="location-here">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/><circle cx="12" cy="12" r="7"/></svg>
+        Usar mi ubicación actual
+      </button>
+      <p class="muted small" id="location-status" role="status" hidden></p>
+      <label>Coordenadas o enlace de Google Maps
+        <input id="location-coords" autocomplete="off" placeholder="40.4168, -3.7038">
+      </label>
+      <p class="muted small location-hint">En Google Maps, pulsa con el botón derecho en el sitio: las coordenadas se copian al pulsarlas.</p>
+      <label>Nombre del sitio <span class="muted">(opcional)</span>
+        <input id="location-name" maxlength="200" placeholder="Nuestra oficina">
+      </label>
+      <label>Dirección <span class="muted">(opcional)</span>
+        <input id="location-address" maxlength="300" placeholder="Calle Mayor 1, Madrid">
+      </label>
+      <a class="link small" id="location-map" target="_blank" rel="noopener noreferrer" hidden>Comprobar en Google Maps ↗</a>
+      <p class="form-error" id="location-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="submit" class="primary" id="location-submit">Enviar ubicación</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="contact-dialog" class="dialog">
+    <div class="dialog-head">
+      <h2>Enviar un contacto</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <form id="contact-form" class="form" novalidate>
+      <label>Buscar en Contactos
+        <input id="contact-search" type="search" autocomplete="off" placeholder="Nombre, teléfono o email…">
+      </label>
+      <ul class="contact-results" id="contact-results" role="listbox" aria-label="Contactos" hidden></ul>
+      <label>Nombre <input id="contact-name" maxlength="200" autocomplete="off"></label>
+      <div class="form-grid">
+        <label>Teléfono <input id="contact-phone" type="tel" maxlength="40" autocomplete="off" placeholder="+34 600 000 000"></label>
+        <label>Email <span class="muted">(opcional)</span> <input id="contact-email" type="email" maxlength="320" autocomplete="off"></label>
+      </div>
+      <p class="form-error" id="contact-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button type="submit" class="primary" id="contact-submit">Enviar contacto</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="msg-info-dialog" class="dialog msg-info-dialog">
+    <div class="dialog-head">
+      <h2>Info del mensaje</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+    <div class="msg-info-preview" id="msg-info-preview"></div>
+    <dl class="msg-info" id="msg-info-list"></dl>
+  </dialog>
+
   <script src="ui.js"></script>
   <script src="account.js"></script>
   <script src="dashboard.js"></script>
@@ -1102,6 +1202,8 @@
   <script src="topbar.js"></script>
   <script src="chispa.js"></script>
   <script src="chat-actions.js"></script>
+  <script src="chat-cards.js"></script>
+  <script src="chat-compose.js"></script>
   <script src="company.js"></script>
   <script src="breadcrumb.js"></script>
   <script src="app.js"></script>
