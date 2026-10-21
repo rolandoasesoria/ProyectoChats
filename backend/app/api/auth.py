@@ -1,8 +1,7 @@
 """Inicio y cierre de sesión, perfil propio y contraseña."""
-from typing import Literal
-
 import base64
 import binascii
+from typing import Literal
 
 from fastapi import APIRouter, Cookie, Request, Response
 from pydantic import BaseModel, Field
