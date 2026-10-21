@@ -40,6 +40,7 @@ function toggleMenu(open) {
 }
 
 async function logout() {
+  forgetChatDrafts();
   try { await api("/api/auth/logout", { method: "POST" }); } catch { /* se redirige igualmente */ }
   window.location.href = "/login.html";
 }

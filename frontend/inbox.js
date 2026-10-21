@@ -73,7 +73,7 @@ function inboxItemHtml(i, kind = "waiting") {
       <span class="chat-avatar ${avatarClass(i.client)}">${escapeHtml(initialsOf(i.client))}</span>
       <div class="chat-item-body">
         <div class="chat-item-top"><strong>${escapeHtml(i.client)}</strong>${when}</div>
-        <div class="chat-item-bottom"><span class="chat-preview">${kind === "followup" ? "↪ " : ""}${escapeHtml(body)}</span></div>
+        <div class="chat-item-bottom"><span class="chat-preview">${draftPreviewHtml(i.client_id) || `${kind === "followup" ? "↪ " : ""}${escapeHtml(body)}`}</span></div>
         <div class="chat-item-meta">${badge(i.channel)}${kind === "waiting" ? priorityChips(i) : ""}
           <span class="inbox-resp">${kind === "followup" ? "Seguimiento" : responsibleLabel(i.assignee_id, i.assignee)}</span></div>
       </div>
