@@ -5,7 +5,7 @@ from typing import Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import ai_reply, audit, auth, followups, search
+from .. import ai_reply, audit, auth, followups, mailbox, search
 from .. import inbox as unanswered_inbox
 from ..errors import Forbidden, InvalidInput, NotFound
 from .deps import CurrentUser
@@ -19,7 +19,7 @@ def nav_counts(user: CurrentUser):
     leídos; los silenciados y los archivados no cuentan) y propuestas de la IA por revisar (la bandeja y las tareas ya
     las carga la pantalla)."""
     unread = [c for c in search.chat_list(user["id"], "mine", "", True) if not c["muted"] and not c["archived"]]
-    return {"unread_chats": len(unread),
+    return {"unread_chats": len(unread), "unread_mail": mailbox.unread_count(user),
             "ai_pending": ai_reply.pending_count(user["id"]),
             "ai_enabled": bool(ai_reply.get_settings()["enabled"])}
 
