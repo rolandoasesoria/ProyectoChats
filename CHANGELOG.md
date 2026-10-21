@@ -131,7 +131,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 
 ### Cambiado
 - **Logo nuevo**: dos paredes que forman una H con un bocadillo entre ellas y tres puntos «escribiendo…», con
-  la paleta de la app. Versión para fondo claro y oscuro (barra superior y entrada) e icono para la pestaña.
+  la paleta de la app. Versión para fondo claro y oscuro (barra superior y entrada) e icono para la pestaña:
+  la H sin fondo, ocupando todo el icono, que cambia de tonos con el tema del navegador.
 - **Aspecto más moderno**, con la misma paleta: degradados sutiles en el fondo, la barra superior, las tarjetas,
   los botones principales, las selecciones, las burbujas de los mensajes y los avatares (en tema claro y oscuro).
 - **«Sin responder» se ve y funciona como «Todos» y «No leídos»**: la misma lista, el mismo buscador y el mismo
