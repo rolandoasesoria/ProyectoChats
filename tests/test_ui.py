@@ -403,10 +403,10 @@ try:
           b.js("document.querySelector('#nav-chats .nav-count').hidden ? 0 : Number(document.querySelector('#nav-chats .nav-count').textContent)") == unread)
     check("barra: orden por uso (trabajo, IA, textos, análisis)",
           b.js("[...document.querySelectorAll('.sidebar .nav-btn:not(.company-btn)')].map((b) => b.id).join(',')")
-          == "nav-chats,nav-contacts,nav-tasks,nav-assistant,nav-ai,nav-templates,menu-replies,nav-dashboard")
+          == "nav-chats,nav-mail,nav-contacts,nav-tasks,nav-assistant,nav-ai,nav-templates,menu-replies,nav-dashboard")
     # Barra lateral
     check("barra lateral con sus secciones (y Administración para un administrador)",
-          b.js("['#company-btn', '#nav-chats', '#nav-contacts', '#nav-tasks', '#nav-assistant', '#nav-dashboard', '#menu-accounts',"
+          b.js("['#company-btn', '#nav-chats', '#nav-mail', '#nav-contacts', '#nav-tasks', '#nav-assistant', '#nav-dashboard', '#menu-accounts',"
                " '#menu-replies', '#menu-admin'].every((s) => { const e = document.querySelector(s); return e && e.closest('.sidebar') && !e.hidden; })"))
 
     # Las zonas de la vista de contacto: se recuerdan al recargar y en pantalla estrecha se ven las tres
