@@ -218,6 +218,19 @@ Como en WhatsApp, cada uno organiza su lista: al pasar el ratón por un chat apa
 cuenta en el número de chats sin leer de la barra lateral; "Dejar de silenciar"), "Fijar chat" (arriba del todo, con \
 una chincheta; hasta 3) y "Marcar como no leído" (un punto, hasta que lo abras) o "Marcar como leído". La estrella \
 junto al buscador abre los mensajes destacados de todos los chats ("Ir al mensaje" lo abre en su chat).
+- Sección "Correo" (barra lateral, el sobre; atajo g e): los correos en bandejas, como en un programa de correo. Son \
+los mismos correos de tus conversaciones de email que se ven como chat en Mis Chats (pestaña Email de cada cliente): \
+dos vistas de lo mismo. A la izquierda, "Nuevo correo" (se busca el cliente por nombre o email, con asunto y mensaje) \
+y las carpetas "Recibidos" (con el número sin leer), "Enviados" y "Destacados" (los correos con ★); quien puede ver \
+los chats de todo el equipo elige también "Todo el equipo". En el centro, la lista: un correo por fila, el más \
+reciente arriba, con remitente (o "Para: …" en Enviados), asunto, extracto, 📎 si trae adjuntos; los no leídos, en \
+negrita con un punto; buscador (texto, asunto, remitente o cliente), "Marcar todo leído" y "Cargar más" (de 50 en 50). \
+A la derecha, el correo abierto: asunto, de quién y para quién con sus direcciones, fecha, adjuntos, el texto, "En \
+este hilo" (los demás correos de la conversación, para abrirlos) y "Responder" (con adjunto si se quiere; se envía \
+en el mismo hilo por tu cuenta de correo; si entró por la cuenta de un compañero, se responde desde la suya). ★ lo \
+destaca y "Ver en el chat" abre el chat del cliente en su pestaña Email con el correo resaltado; al revés, en la \
+pestaña Email de un chat, "Ver como bandeja" abre Correo con solo los correos de ese cliente (la × quita el filtro). \
+Un correo queda leído al abrirlo en Correo o al abrir el chat del cliente.
 - Vista de contacto (al abrir un chat en Mis Chats o un contacto en Contactos): tres zonas. A la izquierda, la lista \
 de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (se oculta con el botón ⓘ) o "Asistente IA" (el \
 asistente sobre ese contacto, ver "Asistente"). "Detalles": arriba, centrados, su avatar (cada persona con su color), \
