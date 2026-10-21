@@ -6,6 +6,12 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Correo en bandejas** (sección «Correo» de la barra lateral, atajo «g e»): los correos de las conversaciones de
+  email también se ven como en un programa de correo, además de como chat. Carpetas Recibidos (con los no leídos),
+  Enviados y Destacados; lista con remitente, asunto, extracto y adjuntos; buscador, «Marcar todo leído» y páginas de
+  50; el correo abierto con sus direcciones, adjuntos y el resto del hilo, para responder ahí mismo; «Nuevo correo»
+  eligiendo el cliente. «Ver en el chat» y «Ver como bandeja» (pestaña Email del chat) pasan de una vista a la otra.
+  Un correo queda leído al abrirlo en la bandeja o al abrir el chat del cliente. Migración `0009_correo_bandejas.sql`.
 - **Organizar los chats (fase 3 del chat al estilo de WhatsApp)**, cada uno su propia lista: desde la flecha de cada
   chat (o con clic derecho) **fijar** arriba (hasta 3), **archivar** (fila «Archivados»; vuelve a la lista si el
   cliente escribe), **silenciar** 8 horas, 1 semana o siempre (no cuenta en los chats sin leer de la barra lateral)
