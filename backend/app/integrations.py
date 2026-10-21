@@ -35,6 +35,7 @@ from .config import config
 from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
 from .repositories import integrations as repo
+from .repositories import messages as messages_repo
 
 log = logging.getLogger(__name__)
 
@@ -326,10 +327,11 @@ def existing_handle(channel: str, handle: str) -> str:
 
 def ingest(integ: dict, *, handle: str, client_name: str, direction: str, sender: str, body: str,
            sent_at: str, external_id: str | None, subject: str | None = None,
-           attachments: list | None = None) -> dict:
+           attachments: list | None = None, reply_to_external: str | None = None) -> dict:
     return store(integ, handle, client_name, [{"direction": direction, "sender": sender, "body": body,
                                                 "sent_at": sent_at, "external_id": external_id,
-                                                "attachments": attachments or []}], subject)
+                                                "attachments": attachments or [],
+                                                "reply_to_external": reply_to_external}], subject)
 
 
 def store(integ: dict, handle: str, client_name: str, messages: list[dict], subject: str | None = None,
@@ -519,22 +521,26 @@ def sync_telegram(integ: dict) -> int:
         if not body:
             continue
         sent = datetime.fromtimestamp(m["date"], tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S")
+        quoted = (m.get("reply_to_message") or {}).get("message_id")
         res = ingest(integ, handle=f"user{m['chat']['id']}", client_name=name, direction="in", sender=name,
-                     body=body, sent_at=sent, external_id=f"tg:{m['chat']['id']}:{m['message_id']}", attachments=files)
+                     body=body, sent_at=sent, external_id=f"tg:{m['chat']['id']}:{m['message_id']}", attachments=files,
+                     reply_to_external=f"tg:{m['chat']['id']}:{quoted}" if quoted else None)
         imported += res["messages"]
     _save_state(integ["id"], state)
     return imported
 
 
-def send_telegram(integ: dict, handle: str, text: str) -> str:
+def send_telegram(integ: dict, handle: str, text: str, reply_to: int | None = None) -> str:
     if not handle.startswith("user") or not handle[4:].isdigit():
         raise IntegrationError("Este cliente no ha escrito al bot: Telegram solo deja responder a quien escribió antes al bot.")
-    resp = http_request("POST", f"{TELEGRAM_API}/bot{integ['config']['bot_token']}/sendMessage",
-                        body={"chat_id": int(handle[4:]), "text": text})
+    body = {"chat_id": int(handle[4:]), "text": text}
+    if reply_to:  # citando un mensaje; si ya no existe, se envía igualmente sin cita
+        body["reply_parameters"] = {"message_id": reply_to, "allow_sending_without_reply": True}
+    resp = http_request("POST", f"{TELEGRAM_API}/bot{integ['config']['bot_token']}/sendMessage", body=body)
     return f"tg:{handle[4:]}:{resp['result']['message_id']}"
 
 
-def send_telegram_file(integ: dict, handle: str, attachment: dict, caption: str) -> str:
+def send_telegram_file(integ: dict, handle: str, attachment: dict, caption: str, reply_to: int | None = None) -> str:
     if not handle.startswith("user") or not handle[4:].isdigit():
         raise IntegrationError("Este cliente no ha escrito al bot: Telegram solo deja responder a quien escribió antes al bot.")
     photo = attachment["mime"] in ("image/jpeg", "image/png")
@@ -542,6 +548,8 @@ def send_telegram_file(integ: dict, handle: str, attachment: dict, caption: str)
     form = {"chat_id": handle[4:], field: (attachment["filename"], attachment["mime"], attachment["data"])}
     if caption:
         form["caption"] = caption
+    if reply_to:
+        form["reply_to_message_id"] = str(reply_to)
     resp = http_request("POST", f"{TELEGRAM_API}/bot{integ['config']['bot_token']}/{method}", form=form, timeout=60)
     return f"tg:{handle[4:]}:{resp['result']['message_id']}"
 
@@ -599,14 +607,35 @@ def check_whatsapp(integ: dict) -> str:
     return " · ".join(filter(None, [info.get("display_phone_number"), info.get("verified_name")]))
 
 
-def send_whatsapp(integ: dict, handle: str, text: str) -> str:
+def send_whatsapp(integ: dict, handle: str, text: str, reply_to: str | None = None) -> str:
+    """Envía un texto; con `reply_to` (id de WhatsApp de un mensaje) lo cita, como «Responder» en el móvil."""
     to = digits(handle)
     if len(to) < 8:
         raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
     cfg = integ["config"]
-    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
-                         body={"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}})
+    body = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}}
+    if reply_to:
+        body["context"] = {"message_id": reply_to}
+    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"], body=body)
     return f"wa:{resp['messages'][0]['id']}"
+
+
+def send_whatsapp_reaction(integ: dict, handle: str, message_id: str, emoji: str) -> None:
+    """Reacciona con `emoji` al mensaje de WhatsApp `message_id` («» quita la reacción)."""
+    to = digits(handle)
+    if len(to) < 8:
+        raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
+    cfg = integ["config"]
+    graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
+                  body={"messaging_product": "whatsapp", "recipient_type": "individual", "to": to, "type": "reaction",
+                        "reaction": {"message_id": message_id, "emoji": emoji}})
+
+
+def whatsapp_mark_read(integ: dict, message_id: str) -> None:
+    """Marca como leído el mensaje del cliente (y los anteriores): en su móvil aparecen los checks azules."""
+    cfg = integ["config"]
+    graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
+                  body={"messaging_product": "whatsapp", "status": "read", "message_id": message_id}, timeout=15)
 
 
 # Tipo de mensaje de WhatsApp según el archivo (el resto va como documento).
@@ -614,7 +643,7 @@ WHATSAPP_MEDIA = {"image/jpeg": "image", "image/png": "image", "video/mp4": "vid
                   "audio/ogg": "audio", "audio/aac": "audio", "audio/mp4": "audio"}
 
 
-def send_whatsapp_file(integ: dict, handle: str, attachment: dict, caption: str) -> str:
+def send_whatsapp_file(integ: dict, handle: str, attachment: dict, caption: str, reply_to: str | None = None) -> str:
     """Sube el archivo a Meta y lo envía (imagen, vídeo, audio o documento) con `caption` como pie."""
     to = digits(handle)
     if len(to) < 8:
@@ -630,8 +659,10 @@ def send_whatsapp_file(integ: dict, handle: str, attachment: dict, caption: str)
         media["caption"] = caption
     if kind == "document":
         media["filename"] = attachment["filename"]
-    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
-                         body={"messaging_product": "whatsapp", "to": to, "type": kind, kind: media})
+    body = {"messaging_product": "whatsapp", "to": to, "type": kind, kind: media}
+    if reply_to:
+        body["context"] = {"message_id": reply_to}
+    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"], body=body)
     return f"wa:{resp['messages'][0]['id']}"
 
 
@@ -729,7 +760,7 @@ def reply_target(conversation_id: int, user: dict) -> tuple[dict, dict, list[str
     return integ, conv, idents
 
 
-def _attempt(integ: dict, send) -> str:
+def attempt(integ: dict, send):
     """Ejecuta `send()` (devuelve el identificador externo). Los fallos se explican y, si son de credenciales,
     marcan la cuenta."""
     try:
@@ -741,12 +772,14 @@ def _attempt(integ: dict, send) -> str:
         raise ExternalServiceError(f"No se pudo enviar: {error}")
 
 
-def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_ai: bool = False) -> dict:
+def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_ai: bool = False,
+            reply_to_id: int | None = None) -> dict:
     """Envía con `send()` y guarda `text` en la conversación como enviado por quien lo escribió (o por la IA, con
-    `by_ai`)."""
-    ext = _attempt(integ, send)
+    `by_ai`), citando `reply_to_id` si lo hay. Lo de WhatsApp queda «enviado» hasta que Meta avise de la entrega."""
+    ext = attempt(integ, send)
     with get_conn() as conn:
-        message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext, by_ai)
+        message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext, by_ai,
+                                              reply_to_id, "sent" if ext.startswith("wa:") else None)
     return {"message_id": message_id, "via": integ["name"]}
 
 
@@ -772,7 +805,7 @@ def send_new_email(client_id: int, user: dict, subject: str, text: str, to: str 
     integ = get(integration_id)
     if attachment:
         attachment = {**attachment, "mime": attachments.guess_mime(attachment["filename"], attachment.get("mime"))}
-    ext = _attempt(integ, lambda: send_email(integ, to, text, subject, None, attachment, reply=False))
+    ext = attempt(integ, lambda: send_email(integ, to, text, subject, None, attachment, reply=False))
     result = conversations.import_conversation({
         "owner_user_id": integ["owner_user_id"], "channel": "email", "handle": to, "client_id": client_id,
         "subject": subject, "messages": [{
@@ -783,10 +816,31 @@ def send_new_email(client_id: int, user: dict, subject: str, text: str, to: str 
     return {"conversation_id": result["conversation_id"], "via": integ["name"]}
 
 
-def send_reply(conversation_id: int, user: dict, text: str, attachment: dict | None = None) -> dict:
+def _quoted(conversation_id: int, message_id: int | None) -> dict | None:
+    """El mensaje que se cita al responder (tiene que ser de la misma conversación)."""
+    if message_id is None:
+        return None
+    with get_conn() as conn:
+        quoted = messages_repo.with_conversation(conn, message_id)
+    if not quoted or quoted["conversation_id"] != conversation_id:
+        raise InvalidInput("Solo se puede citar un mensaje de esta conversación.")
+    return quoted
+
+
+def _telegram_message_id(external_id: str | None) -> int | None:
+    """Número de mensaje de Telegram a partir de «tg:<chat>:<número>»."""
+    parts = (external_id or "").split(":")
+    return int(parts[2]) if len(parts) == 3 and parts[0] == "tg" and parts[2].isdigit() else None
+
+
+def send_reply(conversation_id: int, user: dict, text: str, attachment: dict | None = None,
+               reply_to_message_id: int | None = None) -> dict:
     """Responde al cliente por el canal de la conversación. Con `attachment` ({filename, mime, data}) envía el archivo
-    (el texto va como pie) y lo guarda en la ficha del cliente, junto al mensaje."""
+    (el texto va como pie) y lo guarda en la ficha del cliente, junto al mensaje. Con `reply_to_message_id` cita ese
+    mensaje (en WhatsApp y Telegram el cliente ve la cita; en el correo queda solo en la app)."""
     integ, conv, idents = reply_target(conversation_id, user)
+    quoted = _quoted(conversation_id, reply_to_message_id)
+    quoted_ext = (quoted or {}).get("external_id") or ""
     if attachment:
         attachment = {**attachment, "mime": attachments.guess_mime(attachment["filename"], attachment.get("mime"))}
 
@@ -797,13 +851,16 @@ def send_reply(conversation_id: int, user: dict, text: str, attachment: dict | N
             return send_email(integ, idents[0], text, conv["subject"], in_reply_to, attachment)
         if conv["channel"] == "telegram":
             handle = next((h for h in idents if h.startswith("user")), idents[0])
-            return send_telegram_file(integ, handle, attachment, text) if attachment else send_telegram(integ, handle, text)
+            reply_to = _telegram_message_id(quoted_ext)
+            return (send_telegram_file(integ, handle, attachment, text, reply_to) if attachment
+                    else send_telegram(integ, handle, text, reply_to))
+        reply_to = quoted_ext[3:] if quoted_ext.startswith("wa:") else None
         if attachment:
-            return send_whatsapp_file(integ, idents[0], attachment, text)
-        return send_whatsapp(integ, idents[0], text)
+            return send_whatsapp_file(integ, idents[0], attachment, text, reply_to)
+        return send_whatsapp(integ, idents[0], text, reply_to)
 
     stored = text or (f"📎 {attachment['filename']}" if attachment else "")
-    result = deliver(integ, conversation_id, user, stored, send)
+    result = deliver(integ, conversation_id, user, stored, send, reply_to_id=quoted["id"] if quoted else None)
     if attachment:
         with get_conn() as conn:
             attachments.save(conn, conv["client_id"], attachment["filename"], attachment["data"], attachment["mime"],

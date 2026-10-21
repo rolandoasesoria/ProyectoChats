@@ -6,6 +6,12 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Chat al estilo de WhatsApp (fase 1)**: checks de entrega en lo enviado por WhatsApp (enviado, entregado, leído
+  en azul o «No entregado» con el motivo); al abrir el chat, el cliente ve que lo has leído; responder citando un
+  mensaje (WhatsApp y Telegram) y ver las citas del cliente; reacciones con emoji (enviarlas y ver las del cliente
+  o las puestas desde el móvil); fotos, vídeos y audios dentro de la burbuja, con visor de fotos; formato de
+  WhatsApp y enlaces que se pueden pulsar; selector de emojis en la caja de escribir. Mientras suena un audio, la
+  conversación no se vuelve a pintar.
 - **Mi perfil** (menú de usuario): cada uno cambia su foto de perfil, su nombre, su email, el tema y la
   contraseña. La foto se recorta en cuadrado al subirla y se ve arriba a la derecha, como responsable en
   Detalles, en la lista para asignar y en Administración > Usuarios.

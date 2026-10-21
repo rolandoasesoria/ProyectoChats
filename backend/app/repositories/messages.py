@@ -1,4 +1,5 @@
-"""Mensajes: últimos ids, novedades, línea de tiempo, búsqueda de texto completo y alta desde las integraciones."""
+"""Mensajes: últimos ids, novedades, línea de tiempo, búsqueda de texto completo, alta desde las integraciones,
+estado de entrega y reacciones."""
 from ..db import TS_CONFIG, Conn, rows
 from .conversations import scope_clause
 
@@ -47,10 +48,15 @@ def timeline(conn: Conn, client_id: int, user_id: int, scope: str, channel: str 
         f"""
         SELECT * FROM (
             SELECT m.id, m.direction, m.sender, m.body, m.sent_at, m.by_ai,
+                   m.status, m.status_error, m.delivered_at, m.read_at,
+                   coalesce(m.external_id LIKE 'wa:%', false) AS reactable,
+                   m.reply_to_id, r.sender AS reply_sender, r.direction AS reply_direction,
+                   substr(r.body, 1, 200) AS reply_body,
                    c.id AS conversation_id, c.channel, c.owner_user_id AS owner_id, u.name AS owner
               FROM messages m
               JOIN conversations c ON c.id = m.conversation_id
               JOIN users u ON u.id = c.owner_user_id
+              LEFT JOIN messages r ON r.id = m.reply_to_id
              WHERE c.client_id = ? {scope_sql} {channel_sql}
              ORDER BY m.sent_at DESC, m.id DESC
              LIMIT ?
@@ -145,8 +151,71 @@ def existing_external_ids(conn: Conn, conversation_id: int) -> set[str]:
 
 
 def insert(conn: Conn, conversation_id: int, direction: str, sender: str, body: str, sent_at: str,
-           external_id: str | None) -> int:
+           external_id: str | None, reply_to_id: int | None = None) -> int:
     return conn.execute(
-        """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id)
-           VALUES (?, ?, ?, ?, ?, ?) RETURNING id""",
-        (conversation_id, direction, sender, body, sent_at, external_id)).lastrowid
+        """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id, reply_to_id)
+           VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id""",
+        (conversation_id, direction, sender, body, sent_at, external_id, reply_to_id)).lastrowid
+
+
+def id_by_external(conn: Conn, conversation_id: int, external_id: str) -> int | None:
+    """Id del mensaje de la conversación con ese identificador externo (el que cita una respuesta)."""
+    row = conn.execute("SELECT id FROM messages WHERE conversation_id = ? AND external_id = ? ORDER BY id LIMIT 1",
+                       (conversation_id, external_id)).fetchone()
+    return row["id"] if row else None
+
+
+def by_external(conn: Conn, external_id: str) -> dict | None:
+    """El mensaje con ese identificador externo, con su estado de entrega (para los avisos de WhatsApp)."""
+    row = conn.execute(
+        """SELECT id, status, delivered_at, read_at FROM messages WHERE external_id = ?
+            ORDER BY id DESC LIMIT 1""", (external_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def update_status(conn: Conn, message_id: int, status: str, error: str | None, delivered_at: str | None,
+                  read_at: str | None) -> None:
+    conn.execute("UPDATE messages SET status = ?, status_error = ?, delivered_at = ?, read_at = ? WHERE id = ?",
+                 (status, error, delivered_at, read_at, message_id))
+
+
+def with_conversation(conn: Conn, message_id: int) -> dict | None:
+    """El mensaje con su conversación (canal, cliente y dueño): para citarlo o reaccionar a él."""
+    row = conn.execute(
+        """SELECT m.id, m.direction, m.external_id, m.conversation_id, c.channel, c.client_id, c.owner_user_id
+             FROM messages m JOIN conversations c ON c.id = m.conversation_id WHERE m.id = ?""",
+        (message_id,)).fetchone()
+    return dict(row) if row else None
+
+
+def latest_incoming_external(conn: Conn, conversation_id: int, prefix: str) -> dict | None:
+    """El último mensaje del cliente cuyo identificador externo empieza por `prefix` (p. ej. «wa:»)."""
+    row = conn.execute(
+        """SELECT id, external_id FROM messages
+            WHERE conversation_id = ? AND direction = 'in' AND external_id LIKE ?
+            ORDER BY sent_at DESC, id DESC LIMIT 1""",
+        (conversation_id, prefix + "%")).fetchone()
+    return dict(row) if row else None
+
+
+def reactions_for(conn: Conn, message_ids: list[int]) -> list[dict]:
+    if not message_ids:
+        return []
+    marks = ",".join("?" * len(message_ids))
+    return rows(conn.execute(
+        f"""SELECT r.message_id, r.side, r.emoji, u.name AS user FROM message_reactions r
+              LEFT JOIN users u ON u.id = r.user_id
+             WHERE r.message_id IN ({marks}) ORDER BY r.side""", message_ids))
+
+
+def set_reaction(conn: Conn, message_id: int, side: str, emoji: str, user_id: int | None) -> None:
+    """La reacción de un lado (cliente o equipo) al mensaje; sustituye a la que hubiera."""
+    conn.execute(
+        """INSERT INTO message_reactions (message_id, side, emoji, user_id) VALUES (?, ?, ?, ?)
+           ON CONFLICT (message_id, side) DO UPDATE
+              SET emoji = excluded.emoji, user_id = excluded.user_id, reacted_at = localtimestamp(0)""",
+        (message_id, side, emoji, user_id))
+
+
+def delete_reaction(conn: Conn, message_id: int, side: str) -> None:
+    conn.execute("DELETE FROM message_reactions WHERE message_id = ? AND side = ?", (message_id, side))

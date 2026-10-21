@@ -5,7 +5,7 @@ import binascii
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, conversations, integrations, presence, whatsapp_templates
+from .. import audit, conversations, integrations, message_actions, presence, whatsapp_templates
 from ..errors import Conflict, InvalidInput
 from .deps import CurrentUser, client_or_404
 
@@ -47,6 +47,7 @@ class SendRequest(BaseModel):
     file: SendFile | None = None         # adjunto opcional (el texto va como pie)
     after_message_id: int | None = None  # último mensaje que se veía al empezar a escribir
     force: bool = False                  # enviar aunque haya llegado algo nuevo
+    reply_to_message_id: int | None = None  # mensaje que se cita (de la misma conversación)
 
 
 @router.post("/api/conversations/{conversation_id}/send")
@@ -59,9 +60,21 @@ def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
     attachment = _attachment(req.file)
     if not req.text.strip() and not attachment:
         raise InvalidInput("Escribe un mensaje o adjunta un archivo.")
-    result = integrations.send_reply(conversation_id, user, req.text.strip(), attachment)
-    audit.log(user["id"], "message_sent", conversations.conversation_client_id(conversation_id), detail=f"por {result['via']}")
+    result = integrations.send_reply(conversation_id, user, req.text.strip(), attachment, req.reply_to_message_id)
+    client_id = conversations.conversation_client_id(conversation_id)
+    audit.log(user["id"], "message_sent", client_id, detail=f"por {result['via']}")
+    message_actions.mark_read_later(client_id, user)  # quien responde ya ha leído lo que había
     return result
+
+
+class Reaction(BaseModel):
+    emoji: str = Field("", max_length=16)  # «» quita la reacción
+
+
+@router.post("/api/messages/{message_id}/reaction")
+def react_to_message(message_id: int, req: Reaction, user: CurrentUser):
+    """Reacción del equipo a un mensaje de WhatsApp (sale por la cuenta por la que entró la conversación)."""
+    return {"reactions": message_actions.react(message_id, user, req.emoji)}
 
 
 @router.get("/api/conversations/{conversation_id}/templates")

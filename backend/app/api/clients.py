@@ -4,7 +4,7 @@ from typing import Annotated, Literal
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, auth, clients, contacts, insights, search
+from .. import audit, auth, clients, contacts, insights, message_actions, search
 from ..errors import Forbidden, NotFound
 from .deps import CurrentUser, client_or_404
 
@@ -115,9 +115,12 @@ def merge(client_id: int, req: MergeRequest, user: CurrentUser):
 
 @router.post("/api/clients/{client_id}/visit")
 def visit_client(client_id: int, user: CurrentUser):
-    """El usuario abre la ficha: devuelve cuántos mensajes han llegado desde su visita anterior."""
+    """El usuario abre la ficha: devuelve cuántos mensajes han llegado desde su visita anterior. Lo que le escribió el
+    cliente por WhatsApp queda leído (él ve los checks azules), en segundo plano."""
     client_or_404(client_id)
-    return search.record_visit(user["id"], client_id)
+    result = search.record_visit(user["id"], client_id)
+    message_actions.mark_read_later(client_id, user)
+    return result
 
 
 class WhatsNewRequest(BaseModel):
