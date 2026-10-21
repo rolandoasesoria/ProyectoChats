@@ -765,12 +765,6 @@ body.resizing iframe { pointer-events: none; }
 }
 .mascot:hover { transform: translateY(-2px); }
 .mascot svg { width: 100%; height: 100%; display: block; }
-.mascot-body { fill: #ffb547; }
-.mascot-eye { fill: #2b2140; }
-.mascot-shine { fill: #fff; }
-.mascot-smile { fill: none; stroke: #2b2140; stroke-width: 2.4; stroke-linecap: round; }
-.mascot-cheek { fill: #ff7a7a; opacity: .55; }
-.mascot-spark { fill: var(--accent); }
 
 .help-panel {
   width: 340px; max-width: calc(100vw - 32px); height: 440px; max-height: calc(100vh - 120px);
@@ -2048,8 +2042,6 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 .help-log .msg.bot { background: var(--color-fill); border-bottom-left-radius: 6px; }
 .help-log .msg.user { border-bottom-right-radius: 6px; }
 .help-panel .chat-form { padding: var(--space-3); gap: var(--space-2); border-top: 1px solid var(--color-separator); }
-.mascot { transition: transform var(--duration-normal) var(--ease-spring); }
-.mascot:hover { transform: translateY(-2px) scale(1.04); }
 
 /* Gráficos del panel: la burbuja de datos */
 .viz-tooltip { border-radius: var(--radius-md); border-color: var(--color-border); box-shadow: var(--shadow-popover); }
@@ -2062,3 +2054,63 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 }
 .login-card .brand { font-family: var(--font-display); letter-spacing: var(--letter-spacing-tight); }
 .login-card button.primary { width: 100%; min-height: var(--control-height-lg); margin-top: var(--space-1); }
+
+/* =====================================================================================================================
+   Chispa, la mascota de ayuda · el bocadillo de la marca con ojos. Flota y parpadea; sigue el puntero con la mirada
+   (chispa.js le pasa --look-x y --look-y); al pasar el ratón se eleva y su destello centellea; con el panel abierto
+   mira hacia él; mientras responde, los ojos se vuelven tres puntos «escribiendo…».
+   ===================================================================================================================== */
+.mascot {
+  width: 60px; height: 60px; padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; cursor: pointer;
+  filter: drop-shadow(0 8px 12px light-dark(rgba(79, 78, 150, .35), rgba(0, 0, 0, .6)));
+  transition: transform var(--duration-normal) var(--ease-spring), filter var(--duration-normal) var(--ease-standard);
+  animation: chispa-aparece .7s var(--ease-spring) backwards;
+}
+.mascot:hover {
+  transform: translateY(-3px) scale(1.06);
+  filter: drop-shadow(0 12px 16px light-dark(rgba(79, 78, 150, .42), rgba(0, 0, 0, .7)));
+}
+.mascot:active { transform: scale(.94); transition-duration: var(--duration-fast); }
+.mascot:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 4px; border-radius: var(--radius-lg); }
+.mascot svg, .help-avatar { overflow: visible; }
+
+.chispa-tono-1 { stop-color: light-dark(#8f8dcb, #d4d3ef); }
+.chispa-tono-2 { stop-color: light-dark(#5d5cad, #b6b5e1); }
+.chispa-tono-3 { stop-color: light-dark(#46458b, #908ecc); }
+.mascot-body { fill: url(#chispa-cuerpo); }
+.mascot-eye {
+  fill: light-dark(#ffffff, var(--indigo-900)); transform-box: fill-box; transform-origin: center;
+  animation: chispa-parpadea 5.5s infinite;
+}
+.mascot-spark { fill: light-dark(var(--lavanda-5), var(--lavanda-1)); transform-box: fill-box; transform-origin: center; }
+.mascot-figure { transform-box: view-box; transform-origin: 32px 56px; animation: chispa-flota 4.2s var(--ease-in-out) infinite; }
+.mascot-eyes {
+  transform: translate(calc(var(--look-x, 0) * 2.4px), calc(var(--look-y, 0) * 2px));
+  transition: transform .18s ease-out, opacity var(--duration-fast) var(--ease-standard);
+}
+.mascot-dots { fill: light-dark(#ffffff, var(--indigo-900)); opacity: 0; transition: opacity var(--duration-fast) var(--ease-standard); }
+.mascot-dots circle { transform-box: fill-box; transform-origin: center; }
+
+.mascot:hover .mascot-spark { animation: chispa-destello .9s var(--ease-out); }
+.help.open .mascot-eyes { transform: translate(1.6px, -2.4px); }          /* mira hacia el panel */
+.help.open .mascot-spark { animation: chispa-brilla 2.4s var(--ease-in-out) infinite; }
+.mascot.thinking .mascot-eyes { opacity: 0; }
+.mascot.thinking .mascot-dots { opacity: 1; }
+.mascot.thinking .mascot-dots circle { animation: chispa-escribe 1s var(--ease-in-out) infinite; }
+.mascot.thinking .mascot-dots circle:nth-child(2) { animation-delay: .15s; }
+.mascot.thinking .mascot-dots circle:nth-child(3) { animation-delay: .3s; }
+
+@keyframes chispa-aparece { from { opacity: 0; transform: translateY(10px) scale(.7); } }
+@keyframes chispa-flota { 0%, 100% { transform: translateY(0) rotate(0); } 50% { transform: translateY(-2.5px) rotate(-1.5deg); } }
+@keyframes chispa-parpadea { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(.12); } }
+@keyframes chispa-destello { 0% { transform: none; } 45% { transform: scale(1.5) rotate(45deg); } 100% { transform: rotate(90deg); } }
+@keyframes chispa-brilla { 0%, 100% { transform: none; opacity: 1; } 50% { transform: scale(1.25) rotate(20deg); opacity: .7; } }
+@keyframes chispa-escribe { 0%, 60%, 100% { transform: translateY(0); opacity: .55; } 30% { transform: translateY(-3px); opacity: 1; } }
+
+/* Su avatar en la cabecera del panel (parpadea con ella) y sus respuestas, con un tinte de acento */
+.help-avatar { width: 26px; height: 26px; flex-shrink: 0; }
+.help-log .msg.bot { background: var(--color-accent-softer); border: 1px solid color-mix(in srgb, var(--color-accent) 12%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .mascot, .mascot *, .help-avatar * { animation: none !important; transition: none !important; }
+}

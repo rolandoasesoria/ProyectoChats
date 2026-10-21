@@ -622,6 +622,7 @@
   <div class="help" id="help">
     <section class="help-panel" id="help-panel" hidden aria-label="Ayuda de Chispa">
       <div class="help-head">
+        <svg class="help-avatar" viewBox="0 0 64 64" aria-hidden="true"><path class="mascot-body" d="M20 10H44a13 13 0 0 1 13 13v12a13 13 0 0 1-13 13H22L9 57l3.5-12A13 13 0 0 1 7 35V23a13 13 0 0 1 13-13z"/><circle class="mascot-eye" cx="25" cy="29" r="3.4"/><circle class="mascot-eye" cx="39" cy="29" r="3.4"/></svg>
         <strong>Chispa</strong><span class="muted">· ayuda sobre la app</span>
         <button class="help-close" id="help-close" aria-label="Cerrar">×</button>
       </div>
@@ -633,17 +634,21 @@
         <button type="submit" id="help-send">Enviar</button>
       </form>
     </section>
+    <!-- Chispa: el bocadillo de la marca con ojos. Flota, parpadea, te sigue con la mirada y «piensa» mientras
+         responde (ver chispa.js y styles.css) -->
     <button class="mascot" id="mascot" aria-label="Abrir ayuda" title="¿Dudas? Pregúntale a Chispa">
       <svg viewBox="0 0 64 64" aria-hidden="true">
-        <path class="mascot-body" d="M32 6c14 0 25 9.5 25 22s-11 22-25 22c-3 0-6-.4-8.6-1.3L12 54l2.8-10.2C10 39.8 7 34.2 7 28 7 15.5 18 6 32 6z"/>
-        <ellipse class="mascot-eye" cx="24" cy="27" rx="3.2" ry="4.2"/>
-        <ellipse class="mascot-eye" cx="40" cy="27" rx="3.2" ry="4.2"/>
-        <circle class="mascot-shine" cx="25.2" cy="25.4" r="1.1"/>
-        <circle class="mascot-shine" cx="41.2" cy="25.4" r="1.1"/>
-        <path class="mascot-smile" d="M26 35.5c3.5 3.2 8.5 3.2 12 0"/>
-        <circle class="mascot-cheek" cx="18.5" cy="33" r="2.6"/>
-        <circle class="mascot-cheek" cx="45.5" cy="33" r="2.6"/>
-        <path class="mascot-spark" d="M52 4l1.6 4.4L58 10l-4.4 1.6L52 16l-1.6-4.4L46 10l4.4-1.6z"/>
+        <defs>
+          <linearGradient id="chispa-cuerpo" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" class="chispa-tono-1"/><stop offset=".6" class="chispa-tono-2"/><stop offset="1" class="chispa-tono-3"/>
+          </linearGradient>
+        </defs>
+        <g class="mascot-figure">
+          <path class="mascot-body" d="M20 10H44a13 13 0 0 1 13 13v12a13 13 0 0 1-13 13H22L9 57l3.5-12A13 13 0 0 1 7 35V23a13 13 0 0 1 13-13z"/>
+          <g class="mascot-eyes"><circle class="mascot-eye" cx="25" cy="29" r="3.4"/><circle class="mascot-eye" cx="39" cy="29" r="3.4"/></g>
+          <g class="mascot-dots"><circle cx="23" cy="29" r="2.6"/><circle cx="32" cy="29" r="2.6"/><circle cx="41" cy="29" r="2.6"/></g>
+          <path class="mascot-spark" d="M55 1c.5 4 2 5.5 6 6-4 .5-5.5 2-6 6-.5-4-2-5.5-6-6 4-.5 5.5-2 6-6z"/>
+        </g>
       </svg>
     </button>
   </div>
@@ -1072,6 +1077,7 @@
   <script src="ai.js"></script>
   <script src="sidebar.js"></script>
   <script src="topbar.js"></script>
+  <script src="chispa.js"></script>
   <script src="company.js"></script>
   <script src="breadcrumb.js"></script>
   <script src="app.js"></script>
