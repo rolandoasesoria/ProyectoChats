@@ -192,6 +192,7 @@ async function openChat(clientId) {
   const changed = chatState.clientId !== clientId;
   if (changed) {
     setChatFile(null); // el archivo elegido era para otro contacto
+    clearReply();
     resetComposerExtras();
     closeResults();
     $("#presence-bar").hidden = true;
@@ -225,6 +226,7 @@ async function openChat(clientId) {
 async function loadChatConversation(keepScroll = false) {
   const { clientId, channel } = chatState;
   if (!clientId || channel === null) {
+    $("#chat-timeline").dataset.sig = "";
     $("#chat-timeline").innerHTML = `<li class="muted">${state.scope === "mine" && chatState.data?.conversations.length
       ? "Tú no has hablado con este cliente. Desmarca «Solo mis conversaciones» para ver las del equipo." : "Sin mensajes."}</li>`;
     if (chatState.data) await prepareComposer();
@@ -235,6 +237,14 @@ async function loadChatConversation(keepScroll = false) {
   const messages = await api(`/api/clients/${clientId}/timeline?${params}`);
   if (chatState.clientId !== clientId || chatState.channel !== channel) return;
   const list = $("#chat-timeline");
+  // Al refrescar sola, la conversación no se vuelve a pintar si no ha cambiado nada, ni mientras suena un audio o un
+  // vídeo o está abierto el menú de reacciones (se cortarían).
+  const sig = JSON.stringify(messages.map((m) => [m.id, m.status, m.reactions, m.reply_to_id, m.body.length]));
+  const busy = [...list.querySelectorAll("audio, video")].some((x) => !x.paused)
+    || !$("#react-tray").hidden || !$("#emoji-picker").hidden;
+  if (keepScroll && (sig === list.dataset.sig || busy)) return prepareComposer();
+  list.dataset.sig = sig;
+  chatState.messagesById = new Map(messages.map((m) => [m.id, m]));
   const atBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 40;
   list.innerHTML = messages.length ? timelineHtml(messages) : `<li class="muted">Sin mensajes por este canal.</li>`;
   if (!keepScroll || atBottom) list.scrollTop = list.scrollHeight;
@@ -372,7 +382,10 @@ async function sendChatMessage(text) {
   btn.disabled = true;
   let payload;
   try {
-    payload = { text, file: file ? { filename: file.name, mime: file.type || null, data: await fileToBase64(file) } : null };
+    // La cita solo vale en la conversación por la que se responde (si se cambió de canal, se envía sin ella)
+    const quote = chatState.replyTo?.conversationId === convId ? chatState.replyTo.id : null;
+    payload = { text, file: file ? { filename: file.name, mime: file.type || null, data: await fileToBase64(file) } : null,
+                reply_to_message_id: quote };
   } catch (err) {
     btn.disabled = false;
     $("#chat-text").value = text;
@@ -393,6 +406,7 @@ async function sendChatMessage(text) {
       await send(true);
     }
     setChatFile(null);
+    clearReply();
     resetComposerExtras({ keepFollowUp: true });
     const note = await scheduleFollowUp(convId);
     showComposerNote(note);
@@ -752,6 +766,7 @@ function bindChatsEvents() {
     if (!tab) return;
     chatState.channel = tab.dataset.channel;
     setActiveChannelTab($("#chat-tabs"), chatState.channel);
+    clearReply();
     loadChatConversation();
   });
   $("#only-mine").addEventListener("change", () => {

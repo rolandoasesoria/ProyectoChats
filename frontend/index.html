@@ -245,6 +245,11 @@
             <p class="muted small" id="draft-applied" role="status" hidden></p>
             <input id="chat-subject" class="chat-subject" maxlength="300" placeholder="Asunto del correo" hidden>
             <div class="chat-file-chip" id="chat-file-chip" hidden></div>
+            <!-- «Respondiendo a…»: el mensaje que se cita (ver chat-actions.js) -->
+            <div class="reply-bar" id="chat-reply" hidden>
+              <div class="reply-bar-body"><strong id="chat-reply-sender"></strong><span id="chat-reply-text"></span></div>
+              <button type="button" class="icon-btn" id="chat-reply-cancel" aria-label="Quitar la cita" title="Quitar la cita">×</button>
+            </div>
             <div class="mention-wrap">
               <textarea id="chat-text" rows="1" maxlength="4000" placeholder="Escribe un mensaje… (/ para respuestas guardadas · Mayús+Intro: nueva línea)"></textarea>
               <ul id="reply-suggest" class="mention-list reply-options" role="listbox" hidden></ul>
@@ -254,6 +259,9 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7-7l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>
                 <input type="file" id="chat-file" hidden>
               </label>
+              <button type="button" class="icon-btn" id="chat-emoji" aria-label="Emojis" aria-haspopup="true" title="Emojis">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/></svg>
+              </button>
               <span class="draft-ai-wrap">
                 <button type="button" class="ghost small-btn" id="chat-ai-draft" aria-haspopup="true" title="La IA propone una respuesta con el contexto del cliente">✨ Redactar con IA</button>
                 <div class="menu draft-ai-menu" id="draft-ai-menu" hidden>
@@ -1055,6 +1063,21 @@
   </dialog>
   <div class="viz-tooltip" id="viz-tooltip" role="tooltip" hidden></div>
 
+  <!-- Chat: reacciones, emojis y visor de fotos (ver chat-actions.js) -->
+  <div class="react-tray" id="react-tray" role="menu" aria-label="Reaccionar" hidden>
+    <button type="button" class="react-more" data-emoji-more aria-label="Más emojis" title="Más emojis">+</button>
+    <button type="button" class="react-remove" data-emoji="" data-emoji-remove>Quitar</button>
+  </div>
+  <div class="emoji-picker" id="emoji-picker" role="dialog" aria-label="Emojis" hidden><div class="emoji-grid" id="emoji-grid"></div></div>
+  <dialog class="media-viewer" id="media-viewer" aria-label="Foto">
+    <img id="media-viewer-img" alt="">
+    <div class="media-viewer-bar">
+      <span id="media-viewer-name"></span>
+      <a class="ghost small-btn" id="media-viewer-download" href="#" download>Descargar</a>
+      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
+    </div>
+  </dialog>
+
   <script src="ui.js"></script>
   <script src="account.js"></script>
   <script src="dashboard.js"></script>
@@ -1078,6 +1101,7 @@
   <script src="sidebar.js"></script>
   <script src="topbar.js"></script>
   <script src="chispa.js"></script>
+  <script src="chat-actions.js"></script>
   <script src="company.js"></script>
   <script src="breadcrumb.js"></script>
   <script src="app.js"></script>
