@@ -31,11 +31,17 @@
   --topbar-text: #2e2c5a;
   --topbar-muted: #5d5878;
   --topbar-hover: rgba(79, 78, 150, .08);
-  --topbar-field: #ffffff;
-  --topbar-field-hover: #fbf8fd;
-  --topbar-field-border: var(--lavanda-2);
+  --topbar-field: rgba(255, 255, 255, .8);
+  --topbar-field-hover: #ffffff;
+  --topbar-field-border: rgba(79, 78, 150, .12);
   --topbar-kbd-border: var(--lavanda-3);
-  --topbar-shadow: 0 1px 0 rgba(79, 78, 150, .06), 0 2px 12px rgba(79, 78, 150, .08);
+  --topbar-shadow: 0 8px 24px rgba(79, 78, 150, .12), inset 0 1px 0 rgba(255, 255, 255, .9);
+  --topbar-glass: rgba(255, 255, 255, .62);
+  --topbar-glass-border: rgba(255, 255, 255, .85);
+  --topbar-group: rgba(79, 78, 150, .06);
+  --topbar-chip: linear-gradient(135deg, #f8ebf6, #e6ddf2);
+  --topbar-chip-border: var(--lavanda-3);
+  --topbar-chip-text: var(--indigo);
   --topbar-glow: drop-shadow(0 2px 6px rgba(79, 78, 150, .18));
   --topbar-focus: var(--indigo);
   /* Asistente: pervinca muy suave (de lavanda-4) para distinguirlo de la ficha y de la conversación */
@@ -92,7 +98,13 @@
     --topbar-field-hover: rgba(255, 255, 255, .12);
     --topbar-field-border: rgba(255, 255, 255, .14);
     --topbar-kbd-border: rgba(255, 255, 255, .22);
-    --topbar-shadow: 0 2px 14px rgba(31, 27, 70, .22);
+    --topbar-shadow: 0 8px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .06);
+    --topbar-glass: rgba(36, 34, 74, .55);
+    --topbar-glass-border: rgba(255, 255, 255, .09);
+    --topbar-group: rgba(255, 255, 255, .06);
+    --topbar-chip: rgba(255, 255, 255, .07);
+    --topbar-chip-border: rgba(255, 255, 255, .14);
+    --topbar-chip-text: var(--lavanda-3);
     --topbar-glow: drop-shadow(0 2px 8px rgba(178, 191, 222, .35));
     --topbar-focus: var(--lavanda-5);
     --assistant-bg: #1c1a2d;
@@ -138,7 +150,13 @@
   --topbar-field-hover: rgba(255, 255, 255, .12);
   --topbar-field-border: rgba(255, 255, 255, .14);
   --topbar-kbd-border: rgba(255, 255, 255, .22);
-  --topbar-shadow: 0 2px 14px rgba(31, 27, 70, .22);
+  --topbar-shadow: 0 8px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .06);
+  --topbar-glass: rgba(36, 34, 74, .55);
+  --topbar-glass-border: rgba(255, 255, 255, .09);
+  --topbar-group: rgba(255, 255, 255, .06);
+  --topbar-chip: rgba(255, 255, 255, .07);
+  --topbar-chip-border: rgba(255, 255, 255, .14);
+  --topbar-chip-text: var(--lavanda-3);
   --topbar-glow: drop-shadow(0 2px 8px rgba(178, 191, 222, .35));
   --topbar-focus: var(--lavanda-5);
   --assistant-bg: #1c1a2d;
@@ -228,7 +246,7 @@ select, input[type="search"], .form input {
 .small { font-size: 13px; }
 
 /* Mientras se comprueba la sesión no se muestra la app (evita un parpadeo antes de ir al login) */
-body.booting .layout, body.booting .topbar-actions, body.booting .help, body.booting .sidebar { visibility: hidden; }
+body.booting .layout, body.booting .topbar-actions, body.booting .greeting, body.booting .help, body.booting .sidebar { visibility: hidden; }
 
 /* Barra lateral: iconos de las secciones (arriba) y de la configuración (abajo) */
 .app-body { flex: 1; min-height: 0; display: flex; }
@@ -1754,3 +1772,51 @@ button.primary:disabled { box-shadow: none; }
 /* Ventanas, menús y avisos: el mismo brillo de las tarjetas */
 .dialog, .menu, .select-menu[popover], .toast { background: var(--g-card), var(--panel); }
 .dialog { box-shadow: 0 24px 64px var(--shadow), var(--sheen); }
+
+/* ---------- Barra superior flotante, con efecto cristal ----------
+   Separada de los bordes y translúcida: deja ver los degradados del fondo. A la izquierda el logo (alineado con los
+   iconos de la barra lateral) y el saludo; en el centro el buscador; a la derecha el resumen del día, los avisos y
+   el tema agrupados, y la persona. */
+.topbar {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 16px;
+  height: 52px; margin: 8px 10px 0 8px; padding: 0 8px 0 5px; border-radius: 16px;
+  background: var(--topbar-glass); border: 1px solid var(--topbar-glass-border); box-shadow: var(--topbar-shadow);
+  backdrop-filter: blur(16px) saturate(1.2); -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  position: relative; z-index: 30; /* sus menús quedan por encima del contenido */
+}
+.topbar-left { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.topbar .brand { margin-left: 0; font-size: 15px; gap: 11px; flex-shrink: 0; }
+.topbar .brand-logo { width: 32px; height: 32px; }
+.greeting {
+  display: flex; flex-direction: column; line-height: 1.25; min-width: 0; padding-left: 16px;
+  border-left: 1px solid var(--topbar-field-border); white-space: nowrap;
+}
+.greeting strong { font-size: 14px; font-weight: 600; color: var(--topbar-text); overflow: hidden; text-overflow: ellipsis; }
+.greeting span { font-size: 12px; color: var(--topbar-muted); }
+.topbar .palette-btn {
+  width: min(440px, 36vw); height: 34px; margin: 0; padding: 0 6px 0 14px; border-radius: 999px; font-size: 14px;
+}
+.topbar .palette-btn kbd { border-radius: 999px; border: 0; padding: 4px 9px; background: var(--topbar-group); }
+.topbar-actions { justify-self: end; gap: 10px; }
+.today { display: flex; align-items: center; gap: 6px; }
+.today-chip {
+  font: inherit; font-size: 12px; font-weight: 600; white-space: nowrap; color: var(--topbar-chip-text);
+  background: var(--topbar-chip); border: 1px solid var(--topbar-chip-border); border-radius: 999px; padding: 4px 10px;
+  cursor: pointer; transition: filter .12s ease;
+}
+.today-chip:hover { filter: brightness(1.04) saturate(1.1); }
+.today-chip.late { color: var(--danger-text); background: var(--danger-bg); border-color: transparent; }
+.today-chip.done { cursor: default; font-weight: 500; color: var(--topbar-muted); }
+.topbar-group { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 999px; background: var(--topbar-group); }
+.topbar-group .icon-btn { border-radius: 999px; }
+.topbar .user-btn { margin-left: 0; padding: 3px 10px 3px 3px; border-radius: 999px; background: var(--topbar-group); }
+.topbar .user-btn:hover { background: var(--topbar-hover); }
+.topbar .avatar {
+  width: 30px; height: 30px; border: 2px solid transparent; box-sizing: border-box; box-shadow: none;
+  background: linear-gradient(135deg, var(--lavanda-1), var(--lavanda-4)) padding-box,
+              linear-gradient(135deg, var(--lavanda-5), var(--indigo)) border-box;
+}
+.topbar .avatar.has-photo { background: var(--panel) padding-box, linear-gradient(135deg, var(--lavanda-5), var(--indigo)) border-box; }
+/* En pantallas estrechas, primero se recoge el saludo y luego el resumen del día */
+@media (max-width: 1240px) { .greeting { display: none; } }
+@media (max-width: 1020px) { .today { display: none; } }

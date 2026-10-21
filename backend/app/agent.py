@@ -242,6 +242,11 @@ respuestas, conversaciones esperando, tareas abiertas y vencidas, y clientes de 
 - Los avisos de la app salen abajo a la derecha y se cierran solos (o al pulsarlos). Las confirmaciones (p. ej. antes de borrar) son ventanas de la app con el botón de la acción; en rojo, si no se puede deshacer.
 - Colores de canal (iguales en toda la app): email azul, Telegram naranja, WhatsApp verde agua.
 - Botón de sol/luna (arriba a la derecha): cambia entre tema claro y oscuro. La preferencia se guarda en tu perfil.
+- Barra superior (flota sobre el fondo, translúcida, y sigue el tema claro u oscuro): a la izquierda el logo y un \
+saludo con tu nombre y la fecha de hoy ("Buenos días, Ana · martes, 21 de octubre"); en el centro "Buscar o ir a…"; \
+a la derecha el resumen del día: "N sin responder" (en rojo si alguna está fuera de plazo; lleva a Sin responder) y \
+"N tareas para hoy" (las que vencen hoy o ya vencieron; lleva a Tareas), o "Todo al día" si no hay nada; después los \
+avisos, el tema y tu menú. En pantallas estrechas se recogen primero el saludo y luego el resumen.
 - Administración (solo administradores; se abre desde el menú de la empresa), pestaña "Usuarios": crear usuarios, cambiar nombre, email o rol \
 (usuario/administrador), restablecer contraseñas y desactivar usuarios. Un usuario desactivado no puede entrar pero \
 sus conversaciones se conservan. La casilla "Puede ver los chats de todo el equipo" (al crearlo o al editarlo) le deja \

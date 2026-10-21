@@ -130,6 +130,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Barra superior nueva**: flota sobre el fondo con efecto cristal, saluda por el nombre con la fecha y muestra
+  el resumen del día («N sin responder», «N tareas para hoy» o «Todo al día»), que lleva a cada lista.
 - **La barra superior sigue el tema**: en claro es clara (de blanco a lavanda) con el logo y los textos en
   índigo; en oscuro, índigo profundo como hasta ahora.
 - **Logo nuevo**: dos paredes que forman una H con un bocadillo entre ellas y tres puntos «escribiendo…», con
