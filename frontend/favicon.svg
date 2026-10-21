@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="14 14 92 92" role="img" aria-labelledby="t">
+  <title id="t">Hilvana Chat</title>
+  <!-- Icono de la pestaña: la H sin fondo, ocupando todo el alto, con un hueco grueso alrededor del bocadillo y los
+       puntos más grandes para que se lean a 16 px. Cambia de tonos con el tema del navegador: índigo en las
+       pestañas claras y lavanda en las oscuras (los colores del logo para cada fondo). -->
+  <style>
+    .paredes-1 { stop-color: #6a69b5; } .paredes-2 { stop-color: #2e2c5a; }
+    .bocadillo-1 { stop-color: #f8ebf6; } .bocadillo-2 { stop-color: #b2bfde; }
+    @media (prefers-color-scheme: dark) {
+      .paredes-1 { stop-color: #dbd1ec; } .paredes-2 { stop-color: #b2bfde; }
+      .bocadillo-2 { stop-color: #cecfeb; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="paredes" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" class="paredes-1"/><stop offset="1" class="paredes-2"/>
+    </linearGradient>
+    <linearGradient id="bocadillo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" class="bocadillo-1"/><stop offset="1" class="bocadillo-2"/>
+    </linearGradient>
+    <mask id="hueco" maskUnits="userSpaceOnUse" x="0" y="0" width="120" height="120">
+      <rect width="120" height="120" fill="#fff"/>
+      <path d="M79 38H41a11 11 0 0 0-11 11v19l-5 15 16-7h38a11 11 0 0 0 11-11V49a11 11 0 0 0-11-11z"
+            fill="#000" stroke="#000" stroke-width="14" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g mask="url(#hueco)" fill="url(#paredes)">
+    <rect x="18" y="14" width="26" height="92" rx="11"/>
+    <rect x="76" y="14" width="26" height="92" rx="11"/>
+  </g>
+  <path d="M79 38H41a11 11 0 0 0-11 11v19l-5 15 16-7h38a11 11 0 0 0 11-11V49a11 11 0 0 0-11-11z" fill="url(#bocadillo)"/>
+  <rect x="42.5" y="52.5" width="9" height="9" rx="2.6" fill="#a3acd9"/>
+  <rect x="55.5" y="52.5" width="9" height="9" rx="2.6" fill="#7978bd"/>
+  <rect x="68.5" y="52.5" width="9" height="9" rx="2.6" fill="#4f4e96"/>
+</svg>
