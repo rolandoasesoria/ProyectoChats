@@ -21,6 +21,7 @@ $env:DISABLE_SYNC = "true"
 $env:DISABLE_AI = "true"   # aunque backend/.env tenga clave, las pruebas no llaman a la API de Claude
 $env:TELEGRAM_API = "http://127.0.0.1:9"   # puerto cerrado: probar una cuenta nunca sale a internet
 $env:GRAPH_API = "http://127.0.0.1:9"
+$env:DISABLE_LINK_PREVIEWS = "true"           # las vistas previas de enlaces tampoco salen a internet
 # App de Meta ficticia (coexistencia): nunca las credenciales reales de backend/.env
 $env:META_APP_ID = "1234"
 $env:META_APP_SECRET = "secreto-de-prueba"
@@ -52,7 +53,7 @@ $unitarias = @("check_js.py", "test_emails.py", "test_insights.py", "test_agent_
 # Con servidor de pruebas.
 $api = @("test_auth_api.py", "test_mi_perfil_api.py", "test_profile_api.py", "test_inbox_api.py", "test_notes_api.py",
          "test_clients_api.py", "test_privacy_api.py", "test_dashboard_api.py", "test_documents_api.py",
-         "test_search_api.py", "test_drafts.py", "test_integrations.py", "test_replies_api.py", "test_followups_api.py", "test_settings_api.py", "test_redaction_api.py", "test_presence_api.py", "test_status_api.py", "test_my_accounts_api.py", "test_coexistence.py", "test_templates.py", "test_chats_api.py", "test_contacts_api.py", "test_ai_reply.py", "test_send_files.py", "test_chat_whatsapp.py")
+         "test_search_api.py", "test_drafts.py", "test_integrations.py", "test_replies_api.py", "test_followups_api.py", "test_settings_api.py", "test_redaction_api.py", "test_presence_api.py", "test_status_api.py", "test_my_accounts_api.py", "test_coexistence.py", "test_templates.py", "test_chats_api.py", "test_contacts_api.py", "test_ai_reply.py", "test_send_files.py", "test_chat_whatsapp.py", "test_chat_whatsapp_2.py")
 $ui = @("test_ui.py", "test_ui_campos.py", "test_ui_chat.py")
 
 if (-not $Pruebas) { $Pruebas = $unitarias + $api + $(if ($Todas) { $ui } else { @() }) }
