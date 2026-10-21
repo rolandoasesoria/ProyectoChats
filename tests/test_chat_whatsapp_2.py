@@ -22,6 +22,10 @@ def fake_http(method, url, *, body=None, headers=None, raw=False, timeout=30, fo
     calls.append({"url": url, "body": body, "form": form})
     if "getUpdates" in url:
         return {"ok": True, "result": updates}
+    if "getFile" in url:
+        return {"ok": True, "result": {"file_path": "voice/file_1.oga"}}
+    if "/file/bot" in url:
+        return b"OggS-nota-de-voz"
     if url.endswith("/media"):
         return {"id": "media-9"}
     if url.endswith("/messages"):
@@ -121,10 +125,20 @@ updates[:] = [{"update_id": 1, "message": {"message_id": 5, "date": 1790001000, 
                                                      "title": "Mercado", "address": "Valencia"}}},
               {"update_id": 2, "message": {"message_id": 6, "date": 1790001010, "chat": {"id": 555, "type": "private"},
                                            "from": {"first_name": "Pablo"},
-                                           "contact": {"phone_number": "+34611000999", "first_name": "Eva", "last_name": "Sanz"}}}]
+                                           "contact": {"phone_number": "+34611000999", "first_name": "Eva", "last_name": "Sanz"}}},
+              {"update_id": 3, "message": {"message_id": 7, "date": 1790001020, "chat": {"id": 555, "type": "private"},
+                                           "from": {"first_name": "Pablo"},
+                                           "voice": {"file_id": "VOZ1", "duration": 65, "mime_type": "audio/ogg"}}}]
 integrations.sync_telegram(tg)
 check("Telegram: lugar y contacto recibidos",
       row("tg:555:5")["payload"]["name"] == "Mercado" and row("tg:555:6")["body"] == "👤 Contacto: Eva Sanz")
+voice_row = row("tg:555:7")
+with get_conn() as conn:
+    voice_files = [dict(a) for a in conn.execute("SELECT filename, mime FROM attachments WHERE message_id = ?",
+                                                 (voice_row["id"],)).fetchall()]
+check("Telegram: la nota de voz del cliente llega con su audio y duración",
+      voice_row["body"] == "🎤 Nota de voz (1:05)" and voice_row["payload"] == {"type": "voice", "seconds": 65}
+      and voice_files == [{"filename": "nota-de-voz-7.ogg", "mime": "audio/ogg"}], (voice_row, voice_files))
 tg_conv = row("tg:555:5")["conversation_id"]
 calls.clear()
 integrations.send_location(tg_conv, CARLOS, 40.0, -3.0, "Oficina", "Calle Mayor 2")

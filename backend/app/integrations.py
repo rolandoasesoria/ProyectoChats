@@ -510,8 +510,23 @@ def maps_url(latitude: float, longitude: float) -> str:
     return f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
 
 
+def voice_text(seconds: int | None) -> str:
+    """«🎤 Nota de voz (1:05)»: el texto de una nota de voz (sin la duración si no se sabe)."""
+    if not seconds:
+        return "🎤 Nota de voz"
+    return f"🎤 Nota de voz ({seconds // 60}:{seconds % 60:02d})"
+
+
+# Audios y vídeos que manda el cliente por Telegram: campo del mensaje, nombre del archivo y tipo si no lo indica.
+TELEGRAM_MEDIA = (("voice", "nota-de-voz-{id}.ogg", "audio/ogg"), ("audio", "audio-{id}.mp3", "audio/mpeg"),
+                  ("video", "video-{id}.mp4", "video/mp4"), ("video_note", "video-{id}.mp4", "video/mp4"))
+
+
 def _telegram_extra(m: dict) -> tuple[str, dict | None]:
-    """Ubicación (o lugar) y contacto que comparte el cliente por Telegram: texto y datos."""
+    """Nota de voz, ubicación (o lugar) y contacto que comparte el cliente por Telegram: texto y datos."""
+    if m.get("voice"):
+        seconds = m["voice"].get("duration")
+        return voice_text(seconds), {"type": "voice", "seconds": seconds}
     if m.get("venue") or m.get("location"):
         venue = m.get("venue") or {}
         loc = venue.get("location") or m.get("location") or {}
@@ -547,6 +562,12 @@ def sync_telegram(integ: dict) -> int:
             d = m["document"]
             f = _telegram_file(token, d["file_id"], d.get("file_name") or "documento", d.get("mime_type"))
             files += [f] if f else []
+        for field, filename, mime in TELEGRAM_MEDIA:
+            if m.get(field):
+                d = m[field]
+                f = _telegram_file(token, d["file_id"], d.get("file_name") or filename.format(id=m["message_id"]),
+                                   d.get("mime_type") or mime)
+                files += [f] if f else []
         extra_body, payload = _telegram_extra(m)
         body = m.get("text") or m.get("caption") or extra_body or (
             "📎 " + ", ".join(f["filename"] for f in files) if files else "")
@@ -994,7 +1015,7 @@ def send_voice(conversation_id: int, user: dict, data: bytes, mime: str | None, 
     audio, mime = voice.for_sending(data, mime)
     attachment = {"filename": f"nota-de-voz-{datetime.now():%Y%m%d-%H%M%S}.{'ogg' if mime == 'audio/ogg' else 'm4a'}",
                   "mime": mime, "data": audio}
-    text = f"🎤 Nota de voz ({seconds // 60}:{seconds % 60:02d})"
+    text = voice_text(seconds)
 
     def send() -> str:
         if conv["channel"] == "whatsapp":
