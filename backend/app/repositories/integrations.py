@@ -109,8 +109,10 @@ def last_incoming_external_id(conn: Conn, conversation_id: int) -> str | None:
 
 
 def insert_sent_message(conn: Conn, conversation_id: int, sender: str, body: str, sent_at: str,
-                        external_id: str, by_ai: bool = False) -> int:
+                        external_id: str, by_ai: bool = False, reply_to_id: int | None = None,
+                        status: str | None = None) -> int:
     return conn.execute(
-        """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id, by_ai)
-           VALUES (?, 'out', ?, ?, ?, ?, ?) RETURNING id""",
-        (conversation_id, sender, body, sent_at, external_id, int(by_ai))).lastrowid
+        """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id, by_ai, reply_to_id,
+                                 status)
+           VALUES (?, 'out', ?, ?, ?, ?, ?, ?, ?) RETURNING id""",
+        (conversation_id, sender, body, sent_at, external_id, int(by_ai), reply_to_id, status)).lastrowid

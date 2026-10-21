@@ -127,3 +127,16 @@ def insert(conn: Conn, client_id: int, owner_user_id: int, channel: str, subject
         "INSERT INTO conversations (client_id, owner_user_id, channel, subject) VALUES (?, ?, ?, ?) RETURNING id",
         (client_id, owner_user_id, channel, subject),
     ).lastrowid
+
+
+def owned_in_channel(conn: Conn, client_id: int, owner_user_id: int, channel: str) -> list[dict]:
+    """Conversaciones del cliente por ese canal que entraron por la cuenta de `owner_user_id`."""
+    return rows(conn.execute(
+        """SELECT id, read_receipt_upto FROM conversations WHERE client_id = ? AND owner_user_id = ? AND channel = ?""",
+        (client_id, owner_user_id, channel)))
+
+
+def set_read_receipt(conn: Conn, conversation_id: int, message_id: int) -> None:
+    """Ya se avisó a WhatsApp de que está leído hasta `message_id` incluido."""
+    conn.execute("UPDATE conversations SET read_receipt_upto = greatest(read_receipt_upto, ?) WHERE id = ?",
+                 (message_id, conversation_id))
