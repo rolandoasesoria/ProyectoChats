@@ -5,7 +5,7 @@ import binascii
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-from .. import audit, conversations, integrations, message_actions, presence, whatsapp_templates
+from .. import audit, conversations, integrations, link_preview, message_actions, presence, whatsapp_templates
 from ..errors import Conflict, InvalidInput
 from .deps import CurrentUser, client_or_404
 
@@ -65,6 +65,66 @@ def send_message(conversation_id: int, req: SendRequest, user: CurrentUser):
     audit.log(user["id"], "message_sent", client_id, detail=f"por {result['via']}")
     message_actions.mark_read_later(client_id, user)  # quien responde ya ha leído lo que había
     return result
+
+
+def _sent(conversation_id: int, user: dict, result: dict, what: str) -> dict:
+    """Tras enviar: queda en el registro y lo del cliente, leído."""
+    client_id = conversations.conversation_client_id(conversation_id)
+    audit.log(user["id"], "message_sent", client_id, detail=f"{what} por {result['via']}")
+    message_actions.mark_read_later(client_id, user)
+    return result
+
+
+class LocationRequest(BaseModel):
+    latitude: float = Field(ge=-90, le=90)
+    longitude: float = Field(ge=-180, le=180)
+    name: str = Field("", max_length=200)
+    address: str = Field("", max_length=300)
+
+
+@router.post("/api/conversations/{conversation_id}/send-location")
+def send_location(conversation_id: int, req: LocationRequest, user: CurrentUser):
+    result = integrations.send_location(conversation_id, user, req.latitude, req.longitude, req.name, req.address)
+    return _sent(conversation_id, user, result, "ubicación")
+
+
+class ContactRequest(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    phone: str = Field(min_length=3, max_length=40)
+    email: str = Field("", max_length=320)
+
+
+@router.post("/api/conversations/{conversation_id}/send-contact")
+def send_contact(conversation_id: int, req: ContactRequest, user: CurrentUser):
+    result = integrations.send_contact(conversation_id, user, req.name, req.phone, req.email)
+    return _sent(conversation_id, user, result, "contacto")
+
+
+MAX_VOICE_SECONDS = 15 * 60
+
+
+class VoiceRequest(BaseModel):
+    data: str  # la grabación en base64
+    mime: str = Field("", max_length=100)
+    seconds: int = Field(ge=1, le=MAX_VOICE_SECONDS)
+
+
+@router.post("/api/conversations/{conversation_id}/send-voice")
+def send_voice(conversation_id: int, req: VoiceRequest, user: CurrentUser):
+    try:
+        data = base64.b64decode(req.data, validate=True)
+    except (binascii.Error, ValueError):
+        raise InvalidInput("No se pudo leer la grabación.")
+    if len(data) > MAX_SEND_FILE:
+        raise InvalidInput("La nota de voz es demasiado larga.")
+    result = integrations.send_voice(conversation_id, user, data, req.mime, req.seconds)
+    return _sent(conversation_id, user, result, "nota de voz")
+
+
+@router.get("/api/link-preview")
+def get_link_preview(url: str, _: CurrentUser):
+    """Vista previa de un enlace (título, descripción, sitio e imagen), o null si no la hay."""
+    return {"preview": link_preview.preview(url)}
 
 
 class Reaction(BaseModel):

@@ -6,6 +6,14 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Chat al estilo de WhatsApp (fase 2)**: notas de voz (grabarlas con el micrófono, con tiempo y nivel del sonido;
+  llegan como nota de voz en WhatsApp y Telegram; las grabaciones WebM del navegador se pasan a Ogg/Opus sin
+  recodificar) y un reproductor propio con velocidad 1×/1,5×/2×; enviar y recibir **ubicaciones** (la actual, unas
+  coordenadas o un enlace de Google Maps; tarjeta que abre el mapa) y **contactos** (buscados en Contactos; tarjeta
+  con sus datos); **vista previa de los enlaces** de WhatsApp y Telegram (título, descripción e imagen; el servidor
+  solo pide páginas públicas, con límites de tiempo y tamaño, y las guarda); **pegar o arrastrar** archivos al chat
+  (las fotos, con miniatura); **«Info del mensaje»** (leído, entregado, enviado, por quién y por qué cuenta). Por
+  Telegram ahora también llegan las notas de voz, audios y vídeos del cliente. Migración `0007_chat_whatsapp_2.sql`.
 - **Chat al estilo de WhatsApp (fase 1)**: checks de entrega en lo enviado por WhatsApp (enviado, entregado, leído
   en azul o «No entregado» con el motivo); al abrir el chat, el cliente ve que lo has leído; responder citando un
   mensaje (WhatsApp y Telegram) y ver las citas del cliente; reacciones con emoji (enviarlas y ver las del cliente
@@ -124,6 +132,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   suave y respuestas en burbujas blancas, para distinguir cada zona. Email pasa a naranja y Telegram a azul.
 
 ### Seguridad
+- `Permissions-Policy` deja usar el micrófono y la ubicación solo a la propia app (notas de voz y compartir la
+  ubicación); la cámara sigue bloqueada. Las vistas previas de enlaces nunca piden direcciones internas, otros
+  puertos ni protocolos, y revisan cada redirección.
 - La bandeja «Sin responder» de todo el equipo también exige el permiso para ver los chats del equipo.
 - `GET /api/chats?scope=team` comprueba el permiso en el servidor (antes solo lo escondía la pantalla).
 - Conexión a la base de datos cifrada con TLS 1.3 y certificado verificado (`DB_SSLMODE=verify-full`). PostgreSQL

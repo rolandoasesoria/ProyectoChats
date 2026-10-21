@@ -23,7 +23,11 @@ class Browser:
         SHOTS.mkdir(exist_ok=True)
         self.proc = subprocess.Popen([
             EDGE, "--headless=new", f"--remote-debugging-port={port}", f"--user-data-dir={profile}",
-            f"--window-size={width},{height}", "--no-first-run", "--disable-extensions", "about:blank"])
+            f"--window-size={width},{height}", "--no-first-run", "--disable-extensions",
+            "--autoplay-policy=no-user-gesture-required",  # el audio arranca sin clic (grabar notas de voz en pruebas)
+            # Micrófono simulado (un pitido) y sin preguntar el permiso: para grabar notas de voz desde la interfaz
+            "--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream",
+            "about:blank"])
         for _ in range(50):
             try:
                 targets = json.load(urllib.request.urlopen(f"http://127.0.0.1:{port}/json"))

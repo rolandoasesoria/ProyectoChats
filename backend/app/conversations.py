@@ -67,7 +67,7 @@ def import_conversation(payload: dict) -> dict:
             quoted = m.get("reply_to_external")
             reply_to_id = messages_repo.id_by_external(conn, conv_id, quoted) if quoted else None
             message_id = messages_repo.insert(conn, conv_id, m["direction"], m["sender"], m["body"], m["sent_at"],
-                                              ext, reply_to_id)
+                                              ext, reply_to_id, m.get("payload"))
             new += 1
             for f in m.get("attachments") or []:
                 attachments.save(conn, client_id, f["filename"], f["data"], f.get("mime"), message_id,

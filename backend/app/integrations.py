@@ -30,7 +30,7 @@ from email.message import EmailMessage
 from email.policy import default as default_policy
 from email.utils import formataddr, make_msgid
 
-from . import attachments, clients, conversations, emails, insights, notes, secrets_store, settings
+from . import attachments, clients, conversations, emails, insights, notes, secrets_store, settings, voice
 from .config import config
 from .db import get_conn
 from .errors import ExternalServiceError, InvalidInput, NotFound
@@ -327,11 +327,12 @@ def existing_handle(channel: str, handle: str) -> str:
 
 def ingest(integ: dict, *, handle: str, client_name: str, direction: str, sender: str, body: str,
            sent_at: str, external_id: str | None, subject: str | None = None,
-           attachments: list | None = None, reply_to_external: str | None = None) -> dict:
+           attachments: list | None = None, reply_to_external: str | None = None,
+           payload: dict | None = None) -> dict:
     return store(integ, handle, client_name, [{"direction": direction, "sender": sender, "body": body,
                                                 "sent_at": sent_at, "external_id": external_id,
                                                 "attachments": attachments or [],
-                                                "reply_to_external": reply_to_external}], subject)
+                                                "reply_to_external": reply_to_external, "payload": payload}], subject)
 
 
 def store(integ: dict, handle: str, client_name: str, messages: list[dict], subject: str | None = None,
@@ -497,6 +498,50 @@ def _telegram_file(token: str, file_id: str, filename: str, mime: str | None = N
     return {"filename": filename, "mime": mime, "data": data}
 
 
+def location_text(payload: dict) -> str:
+    """«📍 Ubicación: nombre · dirección» (o las coordenadas)."""
+    label = " · ".join(filter(None, [payload.get("name"), payload.get("address")]))
+    if not label:
+        label = f"{payload.get('latitude')}, {payload.get('longitude')}"
+    return f"📍 Ubicación: {label}"
+
+
+def maps_url(latitude: float, longitude: float) -> str:
+    return f"https://www.google.com/maps/search/?api=1&query={latitude},{longitude}"
+
+
+def voice_text(seconds: int | None) -> str:
+    """«🎤 Nota de voz (1:05)»: el texto de una nota de voz (sin la duración si no se sabe)."""
+    if not seconds:
+        return "🎤 Nota de voz"
+    return f"🎤 Nota de voz ({seconds // 60}:{seconds % 60:02d})"
+
+
+# Audios y vídeos que manda el cliente por Telegram: campo del mensaje, nombre del archivo y tipo si no lo indica.
+TELEGRAM_MEDIA = (("voice", "nota-de-voz-{id}.ogg", "audio/ogg"), ("audio", "audio-{id}.mp3", "audio/mpeg"),
+                  ("video", "video-{id}.mp4", "video/mp4"), ("video_note", "video-{id}.mp4", "video/mp4"))
+
+
+def _telegram_extra(m: dict) -> tuple[str, dict | None]:
+    """Nota de voz, ubicación (o lugar) y contacto que comparte el cliente por Telegram: texto y datos."""
+    if m.get("voice"):
+        seconds = m["voice"].get("duration")
+        return voice_text(seconds), {"type": "voice", "seconds": seconds}
+    if m.get("venue") or m.get("location"):
+        venue = m.get("venue") or {}
+        loc = venue.get("location") or m.get("location") or {}
+        payload = {"type": "location", "latitude": loc.get("latitude"), "longitude": loc.get("longitude"),
+                   "name": venue.get("title") or "", "address": venue.get("address") or ""}
+        return location_text(payload), payload
+    if m.get("contact"):
+        c = m["contact"]
+        name = " ".join(filter(None, [c.get("first_name"), c.get("last_name")])) or c.get("phone_number") or "Contacto"
+        payload = {"type": "contacts", "contacts": [{"name": name, "phones": [c.get("phone_number")] if c.get("phone_number") else [],
+                                                     "emails": [], "org": ""}]}
+        return f"👤 Contacto: {name}", payload
+    return "", None
+
+
 def sync_telegram(integ: dict) -> int:
     token, state = integ["config"]["bot_token"], integ["state"]
     offset = int(state.get("offset", 0))
@@ -517,14 +562,22 @@ def sync_telegram(integ: dict) -> int:
             d = m["document"]
             f = _telegram_file(token, d["file_id"], d.get("file_name") or "documento", d.get("mime_type"))
             files += [f] if f else []
-        body = m.get("text") or m.get("caption") or ("📎 " + ", ".join(f["filename"] for f in files) if files else "")
+        for field, filename, mime in TELEGRAM_MEDIA:
+            if m.get(field):
+                d = m[field]
+                f = _telegram_file(token, d["file_id"], d.get("file_name") or filename.format(id=m["message_id"]),
+                                   d.get("mime_type") or mime)
+                files += [f] if f else []
+        extra_body, payload = _telegram_extra(m)
+        body = m.get("text") or m.get("caption") or extra_body or (
+            "📎 " + ", ".join(f["filename"] for f in files) if files else "")
         if not body:
             continue
         sent = datetime.fromtimestamp(m["date"], tz=timezone.utc).astimezone().strftime("%Y-%m-%dT%H:%M:%S")
         quoted = (m.get("reply_to_message") or {}).get("message_id")
         res = ingest(integ, handle=f"user{m['chat']['id']}", client_name=name, direction="in", sender=name,
                      body=body, sent_at=sent, external_id=f"tg:{m['chat']['id']}:{m['message_id']}", attachments=files,
-                     reply_to_external=f"tg:{m['chat']['id']}:{quoted}" if quoted else None)
+                     reply_to_external=f"tg:{m['chat']['id']}:{quoted}" if quoted else None, payload=payload)
         imported += res["messages"]
     _save_state(integ["id"], state)
     return imported
@@ -614,9 +667,22 @@ def send_whatsapp(integ: dict, handle: str, text: str, reply_to: str | None = No
         raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
     cfg = integ["config"]
     body = {"messaging_product": "whatsapp", "to": to, "type": "text", "text": {"body": text}}
+    if re.search(r"https?://", text):
+        body["text"]["preview_url"] = True  # el cliente ve la vista previa del enlace
     if reply_to:
         body["context"] = {"message_id": reply_to}
     resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"], body=body)
+    return f"wa:{resp['messages'][0]['id']}"
+
+
+def _whatsapp_message(integ: dict, handle: str, kind: str, content) -> str:
+    """Envía un mensaje de WhatsApp de tipo `kind` (location, contacts…) con su contenido."""
+    to = digits(handle)
+    if len(to) < 8:
+        raise IntegrationError("El teléfono de WhatsApp del cliente no es válido.")
+    cfg = integ["config"]
+    resp = graph_request("POST", f"/{cfg['phone_number_id']}/messages", cfg["access_token"],
+                         body={"messaging_product": "whatsapp", "to": to, "type": kind, kind: content})
     return f"wa:{resp['messages'][0]['id']}"
 
 
@@ -773,13 +839,13 @@ def attempt(integ: dict, send):
 
 
 def deliver(integ: dict, conversation_id: int, user: dict, text: str, send, by_ai: bool = False,
-            reply_to_id: int | None = None) -> dict:
+            reply_to_id: int | None = None, payload: dict | None = None) -> dict:
     """Envía con `send()` y guarda `text` en la conversación como enviado por quien lo escribió (o por la IA, con
     `by_ai`), citando `reply_to_id` si lo hay. Lo de WhatsApp queda «enviado» hasta que Meta avise de la entrega."""
     ext = attempt(integ, send)
     with get_conn() as conn:
         message_id = repo.insert_sent_message(conn, conversation_id, user["name"], text, _now_local(), ext, by_ai,
-                                              reply_to_id, "sent" if ext.startswith("wa:") else None)
+                                              reply_to_id, "sent" if ext.startswith("wa:") else None, payload)
     return {"message_id": message_id, "via": integ["name"]}
 
 
@@ -865,6 +931,104 @@ def send_reply(conversation_id: int, user: dict, text: str, attachment: dict | N
         with get_conn() as conn:
             attachments.save(conn, conv["client_id"], attachment["filename"], attachment["data"], attachment["mime"],
                              result["message_id"], user["id"])
+    return result
+
+
+def _telegram_handle(idents: list[str]) -> str:
+    handle = next((h for h in idents if h.startswith("user")), idents[0])
+    if not handle.startswith("user") or not handle[4:].isdigit():
+        raise IntegrationError("Este cliente no ha escrito al bot: Telegram solo deja responder a quien escribió antes al bot.")
+    return handle
+
+
+def _telegram_call(integ: dict, method: str, body: dict | None = None, form: dict | None = None) -> str:
+    resp = http_request("POST", f"{TELEGRAM_API}/bot{integ['config']['bot_token']}/{method}", body=body, form=form,
+                        timeout=60)
+    chat = (body or form)["chat_id"]
+    return f"tg:{chat}:{resp['result']['message_id']}"
+
+
+def _email_in_thread(integ: dict, conv: dict, idents: list[str], text: str, attachment: dict | None = None) -> str:
+    with get_conn() as conn:
+        in_reply_to = repo.last_incoming_external_id(conn, conv["id"])
+    return send_email(integ, idents[0], text, conv["subject"], in_reply_to, attachment)
+
+
+def send_location(conversation_id: int, user: dict, latitude: float, longitude: float, name: str = "",
+                  address: str = "") -> dict:
+    """Comparte una ubicación: en WhatsApp y Telegram como ubicación (el cliente la abre en su mapa); en el correo,
+    como texto con el enlace al mapa."""
+    integ, conv, idents = reply_target(conversation_id, user)
+    payload = {"type": "location", "latitude": latitude, "longitude": longitude, "name": name.strip(),
+               "address": address.strip()}
+    text = location_text(payload)
+
+    def send() -> str:
+        if conv["channel"] == "whatsapp":
+            loc = {"latitude": latitude, "longitude": longitude}
+            loc.update({k: payload[k] for k in ("name", "address") if payload[k]})
+            return _whatsapp_message(integ, idents[0], "location", loc)
+        if conv["channel"] == "telegram":
+            chat = int(_telegram_handle(idents)[4:])
+            if payload["name"] and payload["address"]:
+                return _telegram_call(integ, "sendVenue", {"chat_id": chat, "latitude": latitude, "longitude": longitude,
+                                                           "title": payload["name"], "address": payload["address"]})
+            return _telegram_call(integ, "sendLocation", {"chat_id": chat, "latitude": latitude, "longitude": longitude})
+        return _email_in_thread(integ, conv, idents, f"{text}\n{maps_url(latitude, longitude)}")
+
+    return deliver(integ, conversation_id, user, text, send, payload=payload)
+
+
+def send_contact(conversation_id: int, user: dict, name: str, phone: str, email: str = "") -> dict:
+    """Comparte una tarjeta de contacto (nombre, teléfono y, si se quiere, email)."""
+    name, phone, email = " ".join(name.split()), phone.strip(), email.strip()
+    if not name or len(digits(phone)) < 6:
+        raise InvalidInput("Pon el nombre y un teléfono válido del contacto.")
+    integ, conv, idents = reply_target(conversation_id, user)
+    payload = {"type": "contacts", "contacts": [{"name": name, "phones": [phone], "emails": [email] if email else [],
+                                                 "org": ""}]}
+    text = f"👤 Contacto: {name}"
+    first, _, last = name.partition(" ")
+
+    def send() -> str:
+        if conv["channel"] == "whatsapp":
+            card = {"name": {"formatted_name": name, "first_name": first, **({"last_name": last} if last else {})},
+                    "phones": [{"phone": phone, "type": "CELL"}]}
+            if email:
+                card["emails"] = [{"email": email, "type": "WORK"}]
+            return _whatsapp_message(integ, idents[0], "contacts", [card])
+        if conv["channel"] == "telegram":
+            body = {"chat_id": int(_telegram_handle(idents)[4:]), "phone_number": phone, "first_name": first}
+            if last:
+                body["last_name"] = last
+            return _telegram_call(integ, "sendContact", body)
+        return _email_in_thread(integ, conv, idents,
+                                "\n".join(filter(None, [text, f"Teléfono: {phone}", f"Email: {email}" if email else ""])))
+
+    return deliver(integ, conversation_id, user, text, send, payload=payload)
+
+
+def send_voice(conversation_id: int, user: dict, data: bytes, mime: str | None, seconds: int) -> dict:
+    """Envía una nota de voz grabada en la app (WhatsApp y Telegram la muestran como nota de voz; en el correo va
+    adjunta). Queda en la ficha del cliente, junto al mensaje."""
+    integ, conv, idents = reply_target(conversation_id, user)
+    audio, mime = voice.for_sending(data, mime)
+    attachment = {"filename": f"nota-de-voz-{datetime.now():%Y%m%d-%H%M%S}.{'ogg' if mime == 'audio/ogg' else 'm4a'}",
+                  "mime": mime, "data": audio}
+    text = voice_text(seconds)
+
+    def send() -> str:
+        if conv["channel"] == "whatsapp":
+            return send_whatsapp_file(integ, idents[0], attachment, "")
+        if conv["channel"] == "telegram":
+            method, field = ("sendVoice", "voice") if mime == "audio/ogg" else ("sendAudio", "audio")
+            return _telegram_call(integ, method, form={"chat_id": _telegram_handle(idents)[4:], "duration": str(seconds),
+                                                       field: (attachment["filename"], mime, audio)})
+        return _email_in_thread(integ, conv, idents, text, attachment)
+
+    result = deliver(integ, conversation_id, user, text, send, payload={"type": "voice", "seconds": seconds})
+    with get_conn() as conn:
+        attachments.save(conn, conv["client_id"], attachment["filename"], audio, mime, result["message_id"], user["id"])
     return result
 
 

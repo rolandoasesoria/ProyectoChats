@@ -48,24 +48,53 @@ def _download_whatsapp_media(integ: dict, media_id: str, filename: str, mime: st
         return None
 
 
-def _wa_content(integ: dict, m: dict, download: bool = True) -> tuple[str, list]:
-    """Texto y adjuntos de un mensaje de WhatsApp (recibido, enviado desde el móvil o del historial)."""
+def _contact_cards(contacts: list) -> tuple[str, dict]:
+    """Tarjetas de contacto compartidas: texto y datos (nombre, teléfonos, emails y empresa)."""
+    cards = []
+    for c in contacts or []:
+        phones = [p.get("phone") or f"+{p.get('wa_id')}" for p in c.get("phones", []) if p.get("phone") or p.get("wa_id")]
+        name = (c.get("name") or {}).get("formatted_name") or (phones[0] if phones else "Contacto")
+        cards.append({"name": name, "phones": phones, "emails": [e["email"] for e in c.get("emails", []) if e.get("email")],
+                      "org": (c.get("org") or {}).get("company") or ""})
+    return "👤 Contacto: " + ", ".join(c["name"] for c in cards), {"type": "contacts", "contacts": cards}
+
+
+def _wa_content(integ: dict, m: dict, download: bool = True) -> tuple[str, list, dict | None]:
+    """Texto, adjuntos y datos (ubicación, contactos) de un mensaje de WhatsApp (recibido, enviado desde el móvil o
+    del historial)."""
     kind = m.get("type")
     if kind == "text":
-        return m.get("text", {}).get("body", ""), []
+        return m.get("text", {}).get("body", ""), [], None
+    if kind == "location":
+        loc = m.get("location") or {}
+        payload = {"type": "location", "latitude": loc.get("latitude"), "longitude": loc.get("longitude"),
+                   "name": loc.get("name") or "", "address": loc.get("address") or ""}
+        return integrations.location_text(payload), [], payload
+    if kind == "contacts":
+        body, payload = _contact_cards(m.get("contacts"))
+        return body, [], payload
+    if kind == "button":  # pulsó un botón de una plantilla
+        return (m.get("button") or {}).get("text") or "[botón]", [], None
+    if kind == "interactive":  # eligió una opción de un mensaje con botones o lista
+        reply = (m.get("interactive") or {}).get("button_reply") or (m.get("interactive") or {}).get("list_reply") or {}
+        return reply.get("title") or "[respuesta]", [], None
     if kind not in ("image", "document", "audio", "video", "sticker"):
-        return f"[{kind}]", []
+        return f"[{kind}]", [], None
     media = m.get(kind) or {}
     ext = {"image": "jpg", "audio": "ogg", "video": "mp4", "sticker": "webp"}.get(kind, "bin")
     fname = media.get("filename") or f"{kind}_{str(m.get('id', ''))[-8:]}.{ext}"
     body = media.get("caption") or f"📎 {fname}"
     if not download:  # historial: los archivos antiguos no se descargan (serían cientos)
-        return body + "\n(archivo del historial, no importado)", []
+        return body + "\n(archivo del historial, no importado)", [], None
+    payload = {"type": "voice"} if kind == "audio" and media.get("voice") else None
+    if payload or kind == "audio":
+        body = media.get("caption") or ("🎤 Nota de voz" if media.get("voice") or "ogg" in (media.get("mime_type") or "")
+                                        else "🎵 Audio")
     f = _download_whatsapp_media(integ, media["id"], fname, media.get("mime_type")) if media.get("id") else None
     if f:
-        return body, [f]
+        return body, [f], payload
     return body + (f"\n⚠ No se pudo descargar «{fname}». Revisa la cuenta de WhatsApp en «Mis cuentas» o pide al "
-                   "cliente que lo reenvíe."), []
+                   "cliente que lo reenvíe."), [], payload
 
 
 def _wa_time(m: dict) -> str:
@@ -145,10 +174,10 @@ def _wa_incoming(integ: dict, value: dict) -> int:
             continue
         wa_id = m.get("from", "")
         name = names.get(wa_id) or f"+{wa_id}"
-        body, files = _wa_content(integ, m)
+        body, files, payload = _wa_content(integ, m)
         imported += integrations.ingest(integ, handle=f"+{wa_id}", client_name=name, direction="in", sender=name, body=body,
                            sent_at=_wa_time(m), external_id=f"wa:{m['id']}", attachments=files,
-                           reply_to_external=_wa_quoted(m))["messages"]
+                           reply_to_external=_wa_quoted(m), payload=payload)["messages"]
     return imported
 
 
@@ -161,10 +190,10 @@ def _wa_echoes(integ: dict, value: dict) -> int:
             _wa_reaction(m, "team")
             continue
         to = m.get("to", "")
-        body, files = _wa_content(integ, m)
+        body, files, payload = _wa_content(integ, m)
         imported += integrations.ingest(integ, handle=f"+{to}", client_name=f"+{to}", direction="out", sender=sender, body=body,
                            sent_at=_wa_time(m), external_id=f"wa:{m['id']}", attachments=files,
-                           reply_to_external=_wa_quoted(m))["messages"]
+                           reply_to_external=_wa_quoted(m), payload=payload)["messages"]
     return imported
 
 
@@ -184,10 +213,10 @@ def _wa_history(integ: dict, value: dict) -> int:
                 if m.get("type") == "reaction":
                     continue  # las reacciones antiguas no se importan
                 outgoing = integrations.digits(m.get("from", "")) == business if business else integrations.digits(m.get("from", "")) != customer
-                body, _ = _wa_content(integ, m, download=False)
+                body, _, payload = _wa_content(integ, m, download=False)
                 messages.append({"direction": "out" if outgoing else "in", "sender": sender if outgoing else f"+{customer}",
                                  "body": body, "sent_at": _wa_time(m), "external_id": f"wa:{m['id']}",
-                                 "attachments": [], "reply_to_external": _wa_quoted(m)})
+                                 "attachments": [], "reply_to_external": _wa_quoted(m), "payload": payload})
             if customer and messages:
                 imported += integrations.store(integ, f"+{customer}", f"+{customer}", messages, analyze=False)["messages"]
         progress = chunk.get("metadata", {}).get("progress")

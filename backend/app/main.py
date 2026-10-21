@@ -100,7 +100,8 @@ SECURITY_HEADERS = {
     "X-Content-Type-Options": "nosniff",
     "X-Frame-Options": "DENY",
     "Referrer-Policy": "same-origin",
-    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    # Micrófono (notas de voz) y ubicación (compartirla en un chat) solo para la propia app.
+    "Permissions-Policy": "camera=(), microphone=(self), geolocation=(self)",
 }
 UNSAFE_METHODS = {"POST", "PUT", "PATCH", "DELETE"}
 FILE_ROUTE = re.compile(r"^/api/attachments/\d+/file$")

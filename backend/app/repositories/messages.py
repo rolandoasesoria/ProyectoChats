@@ -1,5 +1,7 @@
 """Mensajes: últimos ids, novedades, línea de tiempo, búsqueda de texto completo, alta desde las integraciones,
 estado de entrega y reacciones."""
+import json
+
 from ..db import TS_CONFIG, Conn, rows
 from .conversations import scope_clause
 
@@ -49,7 +51,7 @@ def timeline(conn: Conn, client_id: int, user_id: int, scope: str, channel: str 
         SELECT * FROM (
             SELECT m.id, m.direction, m.sender, m.body, m.sent_at, m.by_ai,
                    m.status, m.status_error, m.delivered_at, m.read_at,
-                   coalesce(m.external_id LIKE 'wa:%', false) AS reactable,
+                   coalesce(m.external_id LIKE 'wa:%', false) AS reactable, m.payload,
                    m.reply_to_id, r.sender AS reply_sender, r.direction AS reply_direction,
                    substr(r.body, 1, 200) AS reply_body,
                    c.id AS conversation_id, c.channel, c.owner_user_id AS owner_id, u.name AS owner
@@ -151,11 +153,12 @@ def existing_external_ids(conn: Conn, conversation_id: int) -> set[str]:
 
 
 def insert(conn: Conn, conversation_id: int, direction: str, sender: str, body: str, sent_at: str,
-           external_id: str | None, reply_to_id: int | None = None) -> int:
+           external_id: str | None, reply_to_id: int | None = None, payload: dict | None = None) -> int:
     return conn.execute(
-        """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id, reply_to_id)
-           VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id""",
-        (conversation_id, direction, sender, body, sent_at, external_id, reply_to_id)).lastrowid
+        """INSERT INTO messages (conversation_id, direction, sender, body, sent_at, external_id, reply_to_id, payload)
+           VALUES (?, ?, ?, ?, ?, ?, ?, CAST(? AS jsonb)) RETURNING id""",
+        (conversation_id, direction, sender, body, sent_at, external_id, reply_to_id,
+         json.dumps(payload) if payload else None)).lastrowid
 
 
 def id_by_external(conn: Conn, conversation_id: int, external_id: str) -> int | None:
