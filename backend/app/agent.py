@@ -361,9 +361,21 @@ Telegram); la casilla "Solo mis conversaciones" (desde Mis Chats sale marcada; d
 con "cuenta de X" en las que entraron por la cuenta de un compañero) y la lupa 🔍, que abre el buscador (ver más abajo). Debajo, los \
 mensajes en orden cronológico, como en un chat: lo que escribe el cliente, en burbujas claras a la izquierda (con su \
 nombre en el color del canal) y lo que responde el equipo, en burbujas de color a la derecha; un separador por día y, \
-al pie de cada burbuja, el canal y la hora (pasando el ratón, la fecha completa). Abajo, la caja para escribir: Intro \
+al pie de cada burbuja, el canal y la hora (pasando el ratón, la fecha completa). Como en WhatsApp: en lo que envías \
+por WhatsApp salen los checks (uno gris: enviado; dos grises: entregado; dos azules: leído; pasando el ratón, a qué \
+hora) o "No entregado" en rojo con el motivo (p. ej. han pasado más de 24 h y solo se puede escribir con una \
+plantilla). Al abrir el chat, lo que te escribió el cliente por WhatsApp queda leído y él ve tus checks azules (solo \
+en las conversaciones que entraron por tu cuenta). Las fotos se ven dentro de la burbuja (al pulsarlas, en grande, \
+con "Descargar"), y los vídeos y audios (notas de voz) se reproducen ahí mismo. El texto respeta el formato de \
+WhatsApp (*negrita*, _cursiva_, ~tachado~) y los enlaces se pueden pulsar. Al pasar el ratón por un mensaje de tus \
+conversaciones de WhatsApp o Telegram aparecen dos botones: la carita, para reaccionar con un emoji (solo WhatsApp: \
+👍 ❤️ 😂 😮 😢 🙏 o "+" para cualquier otro; "Quitar" la quita; el cliente la ve en su móvil), y la flecha, para \
+responder citando ese mensaje: encima de la caja aparece "Respondiendo a…" (la × la quita) y el cliente ve la cita. \
+Las reacciones del cliente y las citas que hace se ven igual; al pulsar una cita, la conversación va al mensaje \
+citado. Abajo, la caja para escribir: Intro \
 envía por tu cuenta conectada de ese canal (Mayús+Intro, nueva línea); en "Todos los canales" se responde por el \
-canal más reciente y el botón Enviar dice por qué cuenta. El clip 📎 adjunta un archivo (máximo 15 MB; se ve sobre \
+canal más reciente y el botón Enviar dice por qué cuenta. La carita junto al clip abre los emojis (se escriben donde \
+está el cursor). El clip 📎 adjunta un archivo (máximo 15 MB; se ve sobre \
 la caja y se quita con ×): se envía con el texto como pie (en WhatsApp las fotos van como imagen y lo demás como \
 documento; en el correo, como adjunto) y queda en la ficha, en Documentos. "✨ Redactar con IA" abre un cuadro para \
 dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y "✨ Generar" escribe la respuesta en la \
