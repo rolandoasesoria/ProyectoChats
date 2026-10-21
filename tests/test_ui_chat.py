@@ -127,6 +127,30 @@ try:
     b.shot("13d-visor")
     b.js("document.querySelector('#media-viewer [data-close]').click()")
 
+    # ---------------------------------------------------------------- Cada chat, su borrador
+    b.click(f"#chat-timeline li[data-id='{ins[0]}'] [data-quote-reply]")
+    b.fill("#chat-text", "Mañana te llamo para")
+    b.click('#chats-list li[data-client="2"]')
+    b.wait("chatState.clientId === 2 && chatState.data?.id === 2")
+    check("al cambiar de contacto, la caja queda vacía (lo escrito era para el anterior)",
+          b.js("document.querySelector('#chat-text').value") == "" and b.js("document.querySelector('#chat-reply').hidden")
+          and not b.js("chatState.composing"))
+    b.wait("document.querySelector('#chats-list li[data-client=\"1\"] .chat-draft')")
+    check("la lista muestra «Borrador: …» en el chat que se deja",
+          b.js("document.querySelector('#chats-list li[data-client=\"1\"] .chat-preview').textContent") == "Borrador: Mañana te llamo para")
+    b.shot("13e-borrador")
+    b.click('#chats-list li[data-client="1"]')
+    b.wait("chatState.clientId === 1 && document.querySelector('#chat-text').value !== ''")
+    check("al volver, se recupera lo escrito y la cita",
+          b.js("document.querySelector('#chat-text').value") == "Mañana te llamo para"
+          and not b.js("document.querySelector('#chat-reply').hidden")
+          and b.js("document.querySelector('#chat-reply-sender').textContent") == "Laura")
+    check("y en el chat abierto no sale «Borrador»", not b.js("document.querySelector('#chats-list li[data-client=\"1\"] .chat-draft')"))
+    b.js("chatState.channel = 'whatsapp'; setActiveChannelTab(document.querySelector('#chat-tabs'), 'whatsapp'); loadChatConversation()")
+    b.wait("document.querySelector('#chat-timeline .bubble-media img')")
+    b.fill("#chat-text", "")
+    b.click("#chat-reply-cancel")
+
     # ---------------------------------------------------------------- Refresco sin volver a pintar
     b.js("window.__keep = document.querySelector('#chat-timeline li[data-id]')")
     b.js("loadChatConversation(true)")
