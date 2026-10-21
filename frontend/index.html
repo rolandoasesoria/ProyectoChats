@@ -10,12 +10,23 @@
 </head>
 <body class="booting">
   <header class="topbar">
-    <div class="brand"><img class="brand-logo logo-on-light" src="logo-claro.svg" alt=""><img class="brand-logo logo-on-dark" src="logo-oscuro.svg" alt="">Hilvana Chat</div>
+    <div class="topbar-left">
+      <div class="brand"><img class="brand-logo logo-on-light" src="logo-claro.svg" alt=""><img class="brand-logo logo-on-dark" src="logo-oscuro.svg" alt="">Hilvana Chat</div>
+      <!-- Saludo y fecha (ver topbar.js) -->
+      <div class="greeting"><strong id="greeting-hello"></strong><span id="greeting-date"></span></div>
+    </div>
     <button id="palette-btn" class="palette-btn" title="Buscar clientes y acciones (Ctrl+K)">
       <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
       <span>Buscar o ir a…</span><kbd>Ctrl K</kbd>
     </button>
     <div class="topbar-actions">
+      <!-- Resumen del día: lleva a «Sin responder» y a Tareas (ver topbar.js) -->
+      <div class="today" aria-label="Hoy">
+        <button type="button" class="today-chip" id="today-inbox" hidden></button>
+        <button type="button" class="today-chip" id="today-tasks" hidden title="Tus tareas para hoy o ya vencidas"></button>
+        <span class="today-chip done" id="today-done" hidden>Todo al día</span>
+      </div>
+      <div class="topbar-group">
       <div class="bell-wrap">
         <button id="bell" class="icon-btn" aria-label="Avisos" aria-haspopup="true" aria-expanded="false" title="Avisos">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg>
@@ -33,6 +44,7 @@
         <svg class="icon-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
         <svg class="icon-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.5"/><path d="M12 1.5v3M12 19.5v3M1.5 12h3M19.5 12h3M4.6 4.6l2.1 2.1M17.3 17.3l2.1 2.1M4.6 19.4l2.1-2.1M17.3 6.7l2.1-2.1"/></svg>
       </button>
+      </div>
       <div class="user-menu">
         <button id="user-menu-btn" class="user-btn" aria-haspopup="true" aria-expanded="false">
           <span class="avatar" id="user-avatar"></span>
@@ -1058,6 +1070,7 @@
   <script src="templates.js"></script>
   <script src="ai.js"></script>
   <script src="sidebar.js"></script>
+  <script src="topbar.js"></script>
   <script src="company.js"></script>
   <script src="breadcrumb.js"></script>
   <script src="app.js"></script>
