@@ -14,6 +14,7 @@ def _iso(dt: datetime) -> str:
 
 
 _RE_PREFIX = re.compile(r"^\s*((re|rv|fw|fwd|reenv)\s*:\s*)+", re.IGNORECASE)
+NUMERIC_ENTITY = re.compile(r"&#(\d{2,7}|x[0-9a-fA-F]{2,6});")
 
 
 def _body(msg) -> str:
@@ -21,6 +22,9 @@ def _body(msg) -> str:
     if part is None:
         return ""
     content = part.get_content()
+    if part.get_content_type() == "text/plain" and NUMERIC_ENTITY.search(content):
+        # Hay programas de envío (sobre todo de publicidad) que meten «Dise&#241;ado» en el texto plano.
+        content = html.unescape(content)
     if part.get_content_type() == "text/html":
         content = re.sub(r"<(script|style)[^>]*>.*?</\1>", " ", content, flags=re.S | re.I)
         content = re.sub(r"<br\s*/?>|</p>|</div>", "\n", content, flags=re.I)
