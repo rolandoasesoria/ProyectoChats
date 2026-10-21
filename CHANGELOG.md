@@ -130,6 +130,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Sistema de diseño con tokens** (tokens.css): botones, campos, tarjetas, ventanas, menús y navegación con
+  esquinas al estilo iOS, sombras muy finas, rejilla de 4 px y transiciones suaves; tema claro y oscuro en un solo bloque.
 - **Barra superior nueva**: flota sobre el fondo con efecto cristal, saluda por el nombre con la fecha y muestra
   el resumen del día («N sin responder», «N tareas para hoy» o «Todo al día»), que lleva a cada lista.
 - **La barra superior sigue el tema**: en claro es clara (de blanco a lavanda) con el logo y los textos en

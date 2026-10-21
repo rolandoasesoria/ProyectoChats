@@ -8,185 +8,8 @@
   src: url("fonts/InterVariable.woff2") format("woff2");
 }
 
-:root {
-  /* Paleta de identidad (de claro a más intenso): rosa lavanda, malva, lila, lavanda y azul pervinca.
-     Son tonos pastel: se usan para fondos, selecciones, bordes y burbujas. Para texto y botones se usa el
-     índigo, de la misma familia, con contraste suficiente (7,3:1 sobre blanco). */
-  --lavanda-1: #f8ebf6;
-  --lavanda-2: #e7d7ea;
-  --lavanda-3: #dbd1ec;
-  --lavanda-4: #cecfeb;
-  --lavanda-5: #b2bfde;
-  --indigo: #4f4e96;
-  --brand-gradient: linear-gradient(90deg, var(--lavanda-1), var(--lavanda-2), var(--lavanda-3), var(--lavanda-4), var(--lavanda-5));
-
-  --bg: #f5f0f8;                 /* campos, fichas y botones neutros */
-  --hover: var(--lavanda-1);
-  --panel: #ffffff;
-  --sub: var(--lavanda-1);       /* columna de clientes */
-  --sub-hover: var(--lavanda-2);
-  /* Barra superior: sigue el tema. En claro, de blanco a lavanda con textos e iconos en índigo; en oscuro, índigo
-     profundo con texto lavanda (ver los temas oscuros) */
-  --topbar-bg: #f6f2fa;
-  --topbar-text: #2e2c5a;
-  --topbar-muted: #5d5878;
-  --topbar-hover: rgba(79, 78, 150, .08);
-  --topbar-field: rgba(255, 255, 255, .8);
-  --topbar-field-hover: #ffffff;
-  --topbar-field-border: rgba(79, 78, 150, .12);
-  --topbar-kbd-border: var(--lavanda-3);
-  --topbar-shadow: 0 8px 24px rgba(79, 78, 150, .12), inset 0 1px 0 rgba(255, 255, 255, .9);
-  --topbar-glass: rgba(255, 255, 255, .62);
-  --topbar-glass-border: rgba(255, 255, 255, .85);
-  --topbar-group: rgba(79, 78, 150, .06);
-  --topbar-chip: linear-gradient(135deg, #f8ebf6, #e6ddf2);
-  --topbar-chip-border: var(--lavanda-3);
-  --topbar-chip-text: var(--indigo);
-  --topbar-glow: drop-shadow(0 2px 6px rgba(79, 78, 150, .18));
-  --topbar-focus: var(--indigo);
-  /* Asistente: pervinca muy suave (de lavanda-4) para distinguirlo de la ficha y de la conversación */
-  --assistant-bg: #f0f1fa;
-  --assistant-bubble: #ffffff;
-  --text: #1f1b2e;
-  --muted: #686279;
-  --border: var(--lavanda-2);
-  --accent: var(--indigo);
-  --accent-soft: var(--lavanda-3);
-  --on-accent: #ffffff;
-  --in-bubble: var(--lavanda-1);
-  --out-bubble: var(--indigo);
-  /* Conversación con el cliente (pestaña Mensajes) */
-  --chat-bg: var(--lavanda-1);
-  --bubble-in: #ffffff;
-  --bubble-out: var(--lavanda-4);
-  /* Canales = paleta categórica validada (orden fijo: email, telegram, whatsapp). Mismo color en
-     etiquetas, historial y gráficos: el color sigue al canal. */
-  --email: #eb6834;
-  --telegram: #2a78d6;
-  --whatsapp: #1baf7a;
-  --phone: #4a3aa7;
-  --chart-grid: #ebe4ee;
-  --chart-axis: #cfc6d6;
-  --chart-muted: #898781;
-  --other: #9ca3af;
-  --danger-bg: #fee2e2;
-  --danger-text: #991b1b;
-  --warn: #b45309;
-  --shadow: rgba(31, 27, 46, .12);
-  /* Profundidad: el fondo de la ventana, la tarjeta grande que contiene las secciones y su sombra suave */
-  --canvas: #ece7f3;
-  --card-shadow: 0 1px 2px rgba(31, 27, 46, .05), 0 6px 18px rgba(31, 27, 46, .07);
-  --backdrop: rgba(31, 27, 46, .45);
-  --radius: 8px;
-  color-scheme: light;
-}
-
-/* Tema oscuro: se aplica si el usuario lo elige (data-theme="dark")
-   o si no ha elegido tema claro y el sistema está en modo oscuro. */
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #1c1928;
-    --hover: #221f30;
-    --panel: #15131d;
-    --sub: #191624;
-    --sub-hover: #221f30;
-    --topbar-bg: #29264a;
-    --topbar-text: #f5f1fa;
-    --topbar-muted: #c8c2de;
-    --topbar-hover: rgba(255, 255, 255, .1);
-    --topbar-field: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
-    --topbar-field-hover: rgba(255, 255, 255, .12);
-    --topbar-field-border: rgba(255, 255, 255, .14);
-    --topbar-kbd-border: rgba(255, 255, 255, .22);
-    --topbar-shadow: 0 8px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .06);
-    --topbar-glass: rgba(36, 34, 74, .55);
-    --topbar-glass-border: rgba(255, 255, 255, .09);
-    --topbar-group: rgba(255, 255, 255, .06);
-    --topbar-chip: rgba(255, 255, 255, .07);
-    --topbar-chip-border: rgba(255, 255, 255, .14);
-    --topbar-chip-text: var(--lavanda-3);
-    --topbar-glow: drop-shadow(0 2px 8px rgba(178, 191, 222, .35));
-    --topbar-focus: var(--lavanda-5);
-    --assistant-bg: #1c1a2d;
-    --assistant-bubble: #24213a;
-    --text: #ece6f2;
-    --muted: #a39dbb;
-    --border: #2c2840;
-    --accent: var(--lavanda-5);
-    --accent-soft: #2a2742;
-    --on-accent: #15131d;
-    --in-bubble: #1f1c2b;
-    --out-bubble: var(--indigo);
-    --chat-bg: #110f18;
-    --bubble-in: #1f1c2b;
-    --bubble-out: #33315a;
-    --danger-bg: #3b1d1f;
-    --danger-text: #fca5a5;
-    --warn: #fbbf24;
-    --shadow: rgba(0, 0, 0, .5);
-    --canvas: #0c0a12;
-      --card-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
-    --backdrop: rgba(5, 4, 10, .6);
-    --email: #d95926;
-    --telegram: #3987e5;
-    --whatsapp: #199e70;
-    --phone: #9085e9;
-    --chart-grid: #2c2a36;
-    --chart-axis: #3a3747;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #1c1928;
-  --hover: #221f30;
-  --panel: #15131d;
-  --sub: #191624;
-  --sub-hover: #221f30;
-  --topbar-bg: #29264a;
-  --topbar-text: #f5f1fa;
-  --topbar-muted: #c8c2de;
-  --topbar-hover: rgba(255, 255, 255, .1);
-  --topbar-field: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, .06));
-  --topbar-field-hover: rgba(255, 255, 255, .12);
-  --topbar-field-border: rgba(255, 255, 255, .14);
-  --topbar-kbd-border: rgba(255, 255, 255, .22);
-  --topbar-shadow: 0 8px 24px rgba(0, 0, 0, .4), inset 0 1px 0 rgba(255, 255, 255, .06);
-  --topbar-glass: rgba(36, 34, 74, .55);
-  --topbar-glass-border: rgba(255, 255, 255, .09);
-  --topbar-group: rgba(255, 255, 255, .06);
-  --topbar-chip: rgba(255, 255, 255, .07);
-  --topbar-chip-border: rgba(255, 255, 255, .14);
-  --topbar-chip-text: var(--lavanda-3);
-  --topbar-glow: drop-shadow(0 2px 8px rgba(178, 191, 222, .35));
-  --topbar-focus: var(--lavanda-5);
-  --assistant-bg: #1c1a2d;
-  --assistant-bubble: #24213a;
-  --text: #ece6f2;
-  --muted: #a39dbb;
-  --border: #2c2840;
-  --accent: var(--lavanda-5);
-  --accent-soft: #2a2742;
-  --on-accent: #15131d;
-  --in-bubble: #1f1c2b;
-  --out-bubble: var(--indigo);
-  --chat-bg: #110f18;
-  --bubble-in: #1f1c2b;
-  --bubble-out: #33315a;
-  --danger-bg: #3b1d1f;
-  --danger-text: #fca5a5;
-  --warn: #fbbf24;
-  --shadow: rgba(0, 0, 0, .5);
-  --canvas: #0c0a12;
-  --card-shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px rgba(0, 0, 0, .35);
-  --backdrop: rgba(5, 4, 10, .6);
-  --email: #d95926;
-  --telegram: #3987e5;
-  --whatsapp: #199e70;
-  --phone: #9085e9;
-  --chart-grid: #2c2a36;
-  --chart-axis: #3a3747;
-  color-scheme: dark;
-}
+/* Los colores, tipos, radios, sombras y demás variables de diseño están en tokens.css (se carga antes que este
+   archivo), con el tema claro y el oscuro en un solo bloque. */
 
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
@@ -1658,61 +1481,7 @@ select.chat-act { padding: 3px 24px 3px 8px !important; border: 0; background-co
    Solo los tonos de la paleta (rosa lavanda, malva, lila, lavanda, pervinca e índigo), en transiciones suaves:
    el fondo de la ventana con dos halos de color, la barra superior del índigo al lila, las tarjetas con un brillo
    arriba y los botones, selecciones, burbujas y avatares con volumen. */
-:root {
-  --g-canvas:
-    radial-gradient(1100px 560px at 8% -12%, rgba(219, 209, 236, .85), transparent 62%),
-    radial-gradient(900px 620px at 108% 112%, rgba(178, 191, 222, .55), transparent 60%),
-    radial-gradient(700px 420px at 70% 0%, rgba(248, 235, 246, .9), transparent 65%),
-    linear-gradient(180deg, #efe9f5, #e8e4f2);
-  --g-topbar: linear-gradient(100deg, #ffffff 0%, #faf6fb 45%, #efeaf8 100%);
-  --g-card: linear-gradient(180deg, rgba(248, 235, 246, .55), rgba(248, 235, 246, 0) 150px);
-  --g-side: linear-gradient(180deg, #f6f3fb 0%, #eff0fa 55%, #eceefa 100%);
-  --g-accent: linear-gradient(135deg, #6463ae 0%, #4f4e96 55%, #46458b 100%);
-  --g-accent-soft: linear-gradient(135deg, #e6ddf2 0%, #d9d6f0 60%, #d2d6ef 100%);
-  --g-raised: linear-gradient(180deg, #ffffff, #f8f5fc);
-  --g-bubble-out: linear-gradient(135deg, #dcd3ee 0%, #cfd0ec 55%, #c3cbe8 100%);
-  --g-indigo: linear-gradient(135deg, #6463ae 0%, #4f4e96 60%, #45448a 100%);
-  --g-line: linear-gradient(90deg, var(--lavanda-5), var(--indigo));
-  --g-head: linear-gradient(180deg, #fbf6fb, var(--sub));
-  --sheen: inset 0 1px 0 rgba(255, 255, 255, .75);
-  --glow: 0 6px 16px -6px rgba(79, 78, 150, .45);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --g-canvas:
-      radial-gradient(1000px 560px at 6% -14%, rgba(79, 78, 150, .45), transparent 62%),
-      radial-gradient(900px 640px at 110% 115%, rgba(122, 96, 168, .28), transparent 60%),
-      linear-gradient(180deg, #0e0c16, #0b0911);
-    --g-topbar: linear-gradient(100deg, #24224a 0%, #2c2957 50%, #3a3062 100%);
-    --g-card: linear-gradient(180deg, rgba(178, 191, 222, .075), rgba(178, 191, 222, 0) 170px);
-    --g-side: linear-gradient(180deg, #24213e 0%, #1c1a30 55%, #181627 100%);
-    --g-accent: linear-gradient(135deg, #d6d8f0 0%, #c1cae6 50%, #b0bbdf 100%);
-    --g-accent-soft: linear-gradient(135deg, #322d52 0%, #2a2848 60%, #262645 100%);
-    --g-raised: linear-gradient(180deg, #2a2640, #221f35);
-    --g-bubble-out: linear-gradient(135deg, #46427c 0%, #383567 55%, #2d2b58 100%);
-    --g-line: linear-gradient(90deg, var(--lavanda-3), var(--lavanda-5));
-    --g-head: linear-gradient(180deg, #1e1b2c, var(--sub));
-    --sheen: inset 0 1px 0 rgba(255, 255, 255, .07);
-    --glow: 0 6px 16px -8px rgba(0, 0, 0, .7);
-  }
-}
-:root[data-theme="dark"] {
-  --g-canvas:
-    radial-gradient(1000px 560px at 6% -14%, rgba(79, 78, 150, .45), transparent 62%),
-    radial-gradient(900px 640px at 110% 115%, rgba(122, 96, 168, .28), transparent 60%),
-    linear-gradient(180deg, #0e0c16, #0b0911);
-  --g-topbar: linear-gradient(100deg, #24224a 0%, #2c2957 50%, #3a3062 100%);
-  --g-card: linear-gradient(180deg, rgba(178, 191, 222, .075), rgba(178, 191, 222, 0) 170px);
-  --g-side: linear-gradient(180deg, #24213e 0%, #1c1a30 55%, #181627 100%);
-  --g-accent: linear-gradient(135deg, #d6d8f0 0%, #c1cae6 50%, #b0bbdf 100%);
-  --g-accent-soft: linear-gradient(135deg, #322d52 0%, #2a2848 60%, #262645 100%);
-  --g-raised: linear-gradient(180deg, #2a2640, #221f35);
-  --g-bubble-out: linear-gradient(135deg, #46427c 0%, #383567 55%, #2d2b58 100%);
-  --g-line: linear-gradient(90deg, var(--lavanda-3), var(--lavanda-5));
-  --g-head: linear-gradient(180deg, #1e1b2c, var(--sub));
-  --sheen: inset 0 1px 0 rgba(255, 255, 255, .07);
-  --glow: 0 6px 16px -8px rgba(0, 0, 0, .7);
-}
+/* Los degradados (--g-…) también están en tokens.css. */
 
 /* Fondo de la ventana y barra superior */
 body:not(.login-page) { background: var(--g-canvas); background-attachment: fixed; }
@@ -1820,3 +1589,212 @@ button.primary:disabled { box-shadow: none; }
 /* En pantallas estrechas, primero se recoge el saludo y luego el resumen del día */
 @media (max-width: 1240px) { .greeting { display: none; } }
 @media (max-width: 1020px) { .today { display: none; } }
+
+/* =====================================================================================================================
+   Sistema de componentes · botones, campos, tarjetas y navegación con los tokens de tokens.css
+   (radios estilo iOS, sombras finísimas, rejilla de 4 px y transiciones suaves). Va al final para mandar sobre las
+   reglas anteriores; los ajustes de cada pantalla siguen arriba.
+   ===================================================================================================================== */
+
+body {
+  font-family: var(--font-sans); font-size: var(--font-size-base); line-height: var(--line-height-normal);
+  color: var(--color-text);
+}
+::selection { background: color-mix(in srgb, var(--color-accent) 22%, transparent); }
+:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+
+/* ---------- Botones ----------
+   Principal (degradado índigo), secundario (superficie con borde fino), de texto (enlace) y de icono. Altura 34 px
+   (28 px los compactos), esquinas de 10 px y un leve «hundimiento» al pulsar. */
+button.primary, .ghost {
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--space-1-5);
+  min-height: var(--control-height-md); padding: 0 var(--space-4); border-radius: var(--radius-md);
+  font: inherit; font-size: var(--font-size-base); font-weight: var(--font-weight-semibold); letter-spacing: -0.005em;
+  line-height: 1.2; white-space: nowrap; cursor: pointer; text-decoration: none;
+  transition: background-color var(--duration-fast) var(--ease-standard), border-color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard), filter var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
+}
+button.primary {
+  border: 0; color: var(--color-text-on-accent); background: var(--gradient-accent); box-shadow: var(--shadow-button);
+}
+button.primary:hover:not(:disabled) { background: var(--gradient-accent); filter: brightness(1.07) saturate(1.05); }
+button.primary:active:not(:disabled), .ghost:active:not(:disabled) { transform: scale(.98); }
+button.primary:disabled { opacity: .5; cursor: default; box-shadow: none; filter: saturate(.7); }
+button.primary.danger-btn { background: linear-gradient(135deg, #cf4a5e, var(--red-600)); color: #fff; }
+button.primary.danger-btn:hover:not(:disabled) { background: linear-gradient(135deg, #cf4a5e, var(--red-600)); }
+
+.ghost {
+  color: var(--color-text); font-weight: var(--font-weight-medium); background: var(--color-surface);
+  border: 1px solid var(--color-border-strong); box-shadow: var(--shadow-xs), var(--shadow-highlight);
+}
+.ghost:hover:not(:disabled) { background: var(--color-fill); }
+.ghost:disabled { opacity: .5; cursor: default; }
+.ghost.danger, button.danger { color: var(--color-danger); border-color: color-mix(in srgb, var(--color-danger) 30%, var(--color-border-strong)); }
+.ghost.danger:hover:not(:disabled), button.danger:hover:not(:disabled) { background: var(--color-danger-bg); }
+
+/* Compactos (barras de herramientas, filas, tarjetas) */
+.small-btn, button.primary.small-btn, .ghost.small-btn {
+  min-height: var(--control-height-sm); padding: 0 var(--space-2-5); border-radius: var(--radius-sm);
+  font-size: var(--font-size-md);
+}
+
+/* De texto */
+button.link {
+  border-radius: var(--radius-xs); color: var(--color-text-link); font-weight: var(--font-weight-medium);
+  text-underline-offset: 3px; text-decoration-thickness: 1px;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard);
+}
+button.link:hover { background: var(--color-hover); text-decoration: none; }
+button.link.danger { color: var(--color-danger); }
+
+/* De icono */
+.icon-btn {
+  width: var(--control-height-md); height: var(--control-height-md); border-radius: var(--radius-sm);
+  color: var(--color-text-secondary);
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
+}
+.icon-btn:hover { background: var(--color-hover); color: var(--color-text); }
+.icon-btn:active { transform: scale(.94); }
+
+/* ---------- Campos de texto y desplegables ----------
+   Fondo de superficie, borde fino, esquinas de 10 px y, al escribir, borde de acento con un halo suave. */
+select,
+textarea,
+input:is([type="text"], [type="search"], [type="email"], [type="password"], [type="number"], [type="tel"], [type="url"],
+         [type="date"], [type="time"], [type="datetime-local"], :not([type])) {
+  min-height: var(--control-height-md); padding: 0 var(--space-3); border-radius: var(--radius-md);
+  font: inherit; font-size: var(--font-size-base); color: var(--color-text);
+  background-color: var(--color-surface); border: 1px solid var(--color-border-strong); box-shadow: var(--shadow-xs);
+  transition: border-color var(--duration-fast) var(--ease-standard), box-shadow var(--duration-fast) var(--ease-standard),
+              background-color var(--duration-fast) var(--ease-standard);
+}
+textarea { padding: var(--space-2) var(--space-3); line-height: var(--line-height-normal); }
+::placeholder { color: var(--color-text-tertiary); opacity: 1; }
+select:hover:not(:disabled):not(:focus),
+textarea:hover:not(:disabled):not(:focus),
+input:is([type="text"], [type="search"], [type="email"], [type="password"], [type="number"], [type="tel"], [type="url"], :not([type])):hover:not(:disabled):not(:focus) {
+  border-color: color-mix(in srgb, var(--color-accent) 32%, var(--color-border-strong));
+}
+select:focus-visible, textarea:focus, select[aria-expanded="true"],
+input:is([type="text"], [type="search"], [type="email"], [type="password"], [type="number"], [type="tel"], [type="url"],
+         [type="date"], [type="time"], [type="datetime-local"], :not([type])):focus {
+  outline: none; border-color: var(--color-accent); box-shadow: var(--shadow-focus);
+}
+select:disabled, textarea:disabled, input:disabled { opacity: .55; background-color: var(--color-fill); cursor: default; }
+.form label { gap: var(--space-1-5); font-size: var(--font-size-md); font-weight: var(--font-weight-medium); color: var(--color-text); }
+.form input, .form select { padding: 0 var(--space-3); }
+.small-select { min-height: var(--control-height-sm); padding-block: 0; font-size: var(--font-size-md); border-radius: var(--radius-sm); }
+.form-error { border-radius: var(--radius-md); }
+
+/* Casillas e interruptores */
+input[type="checkbox"] {
+  width: 18px; height: 18px; border-radius: var(--radius-xs); border-color: var(--color-border-strong);
+  background: var(--color-surface); box-shadow: var(--shadow-xs);
+}
+input[type="checkbox"]::before { width: 11px; height: 11px; }
+input[type="checkbox"]:checked { background: var(--gradient-accent); border-color: transparent; }
+input[type="checkbox"]:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.task input[type="checkbox"] { border-radius: var(--radius-full); }
+.switch input[type="checkbox"] { width: 40px; height: 24px; border-radius: var(--radius-pill); background: var(--color-border-strong); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .08); }
+.switch input[type="checkbox"]:checked { background: var(--gradient-accent); }
+.switch input[type="checkbox"]::before { width: 18px; height: 18px; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+
+/* ---------- Tarjetas y superficies ----------
+   Zonas de cada sección: 18 px; tarjetas internas: 14 px; borde finísimo y sombra de una línea con brillo arriba. */
+.clients, .detail, .chat, .chats-pane, .chat-main, .chat-details, .tpl-pane, .tpl-main, .zone-card {
+  border-radius: var(--radius-xl); border-color: var(--color-border); box-shadow: var(--shadow-card);
+}
+.cd-card, .stat-tile {
+  border-radius: var(--radius-lg); border: 1px solid var(--color-border); background-color: var(--color-surface);
+  box-shadow: var(--shadow-xs), var(--shadow-highlight);
+}
+.cd-card { padding: var(--space-2-5) var(--space-3) var(--space-3); }
+.cd-card h4, .chat-details h4 {
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: var(--letter-spacing-wide);
+  color: var(--color-text-tertiary);
+}
+.stat-tile { padding: var(--space-3) var(--space-4); }
+.stat-value { font-family: var(--font-display); font-size: var(--font-size-3xl); letter-spacing: var(--letter-spacing-tight); }
+
+/* Elementos de lista (chats, bandeja) */
+.chats-list li[data-client] {
+  border-radius: var(--radius-md);
+  transition: background-color var(--duration-fast) var(--ease-standard);
+}
+
+/* Ventanas, menús, desplegables, avisos y burbujas de ayuda */
+.dialog {
+  border-radius: var(--radius-2xl); padding: var(--space-6); border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-dialog);
+}
+.dialog::backdrop { background: var(--color-backdrop); backdrop-filter: blur(3px); }
+.dialog h2 { font-family: var(--font-display); font-size: var(--font-size-xl); font-weight: var(--font-weight-semibold); letter-spacing: var(--letter-spacing-snug); }
+.dialog-actions { gap: var(--space-2); margin-top: var(--space-1); }
+.menu, .select-menu[popover] {
+  border-radius: var(--radius-lg); padding: var(--space-1); border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-popover);
+}
+.menu button { border-radius: var(--radius-sm); padding: var(--space-2) var(--space-2-5); }
+.menu button:hover { background: var(--color-hover); }
+.toast { border-radius: var(--radius-lg); box-shadow: var(--shadow-lg), var(--shadow-hairline); }
+.app-tip[popover] { border-radius: var(--radius-sm); box-shadow: var(--shadow-md); }
+
+/* ---------- Navegación ---------- */
+
+/* Barra superior: el cristal de tokens.css, con la altura y el radio del sistema */
+.topbar {
+  height: var(--topbar-height); border-radius: var(--radius-xl); background: var(--material-regular);
+  border: 1px solid var(--material-border); backdrop-filter: var(--material-filter); -webkit-backdrop-filter: var(--material-filter);
+  z-index: var(--z-topbar);
+}
+.topbar .palette-btn { height: var(--control-height-md); border-radius: var(--radius-pill); }
+.topbar-group .icon-btn { width: 32px; height: 32px; border-radius: var(--radius-pill); }
+
+/* Barra lateral: botones de 40 px con esquinas de 12 px; el activo con relleno suave y una marca de acento */
+.nav-btn {
+  border-radius: 12px;
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard),
+              transform var(--duration-fast) var(--ease-standard);
+}
+.nav-btn:hover { background: var(--color-hover); color: var(--color-text); }
+.nav-btn:active { transform: scale(.95); }
+.nav-btn.active { background: var(--gradient-accent-soft); color: var(--color-accent); box-shadow: var(--shadow-xs), var(--shadow-highlight); }
+.nav-btn.active::before { width: 3px; border-radius: var(--radius-pill); background: var(--gradient-line); }
+
+/* Pestañas: subrayado redondeado de acento que crece al activarse */
+.tabs { border-bottom-color: var(--color-separator); gap: var(--space-1); }
+.tabs button {
+  position: relative; border-bottom-color: transparent; border-image: none; color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium); transition: color var(--duration-fast) var(--ease-standard);
+}
+.tabs button::after {
+  content: ""; position: absolute; left: var(--space-2); right: var(--space-2); bottom: -1px; height: 2px;
+  border-radius: var(--radius-pill); background: var(--gradient-line); opacity: 0; transform: scaleX(.4);
+  transition: opacity var(--duration-normal) var(--ease-out), transform var(--duration-normal) var(--ease-out);
+}
+.tabs button:hover { color: var(--color-text); }
+.tabs button.active { color: var(--color-text); font-weight: var(--font-weight-semibold); border-bottom-color: transparent; border-image: none; }
+.tabs button.active::after { opacity: 1; transform: none; }
+
+/* Control segmentado (Todos · No leídos · Sin responder; Detalles · Asistente): al estilo iOS */
+.segmented {
+  gap: var(--space-0-5); padding: var(--space-0-5); border-radius: var(--radius-md);
+  background: var(--color-fill); box-shadow: inset 0 0 0 1px var(--color-separator);
+}
+.segmented button {
+  border-radius: var(--radius-sm); padding: var(--space-1) var(--space-3); color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  transition: background-color var(--duration-fast) var(--ease-standard), color var(--duration-fast) var(--ease-standard),
+              box-shadow var(--duration-fast) var(--ease-standard);
+}
+.segmented button:hover { color: var(--color-text); }
+.segmented button.active {
+  background: var(--color-surface-raised); color: var(--color-text); font-weight: var(--font-weight-semibold);
+  box-shadow: var(--shadow-sm), var(--shadow-hairline);
+}
+
+/* Ruta de navegación */
+.crumb { border-radius: var(--radius-sm); }
+.crumb.current { background: var(--color-surface); box-shadow: var(--shadow-xs), var(--shadow-hairline); }
