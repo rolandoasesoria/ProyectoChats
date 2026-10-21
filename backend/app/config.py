@@ -88,6 +88,7 @@ class IntegrationsConfig:
     sync_disabled: bool
     telegram_api: str
     graph_api: str
+    link_previews_disabled: bool  # sin vistas previas de enlaces (el servidor no pide las páginas)
 
 
 @dataclass(frozen=True)
@@ -150,6 +151,7 @@ def load() -> Config:
             sync_disabled=_flag("DISABLE_SYNC"),
             telegram_api=_text("TELEGRAM_API", "https://api.telegram.org"),
             graph_api=_text("GRAPH_API", "https://graph.facebook.com/v25.0"),
+            link_previews_disabled=_flag("DISABLE_LINK_PREVIEWS"),
         ),
         meta=MetaConfig(
             app_id=_text("META_APP_ID"),
