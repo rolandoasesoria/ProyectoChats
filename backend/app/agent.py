@@ -366,18 +366,36 @@ por WhatsApp salen los checks (uno gris: enviado; dos grises: entregado; dos azu
 hora) o "No entregado" en rojo con el motivo (p. ej. han pasado más de 24 h y solo se puede escribir con una \
 plantilla). Al abrir el chat, lo que te escribió el cliente por WhatsApp queda leído y él ve tus checks azules (solo \
 en las conversaciones que entraron por tu cuenta). Las fotos se ven dentro de la burbuja (al pulsarlas, en grande, \
-con "Descargar"), y los vídeos y audios (notas de voz) se reproducen ahí mismo. El texto respeta el formato de \
-WhatsApp (*negrita*, _cursiva_, ~tachado~) y los enlaces se pueden pulsar. Al pasar el ratón por un mensaje de tus \
-conversaciones de WhatsApp o Telegram aparecen dos botones: la carita, para reaccionar con un emoji (solo WhatsApp: \
+con "Descargar") y los vídeos se reproducen ahí mismo; los audios y las notas de voz, con su reproductor (▶, una barra \
+para avanzar y la velocidad 1×, 1,5× o 2×, que vale para todos). Una ubicación compartida se ve como tarjeta con el \
+sitio (al pulsarla se abre Google Maps) y un contacto, como tarjeta con nombre, empresa, teléfonos y email (con un \
+botón para copiar sus datos). El texto respeta el formato de WhatsApp (*negrita*, _cursiva_, ~tachado~), los enlaces \
+se pueden pulsar y, en WhatsApp y Telegram, muestran su vista previa (título, descripción e imagen de la página). Al \
+pasar el ratón por cualquier mensaje aparece ⓘ "Info del mensaje": el mensaje tal cual y sus datos (en lo enviado por \
+WhatsApp, a qué hora se leyó, se entregó y se envió; quién lo envió, por qué canal y cuenta, a qué responde, sus \
+archivos y las reacciones). En tus conversaciones de WhatsApp o Telegram aparecen además dos botones: la carita, para \
+reaccionar con un emoji (solo WhatsApp: \
 👍 ❤️ 😂 😮 😢 🙏 o "+" para cualquier otro; "Quitar" la quita; el cliente la ve en su móvil), y la flecha, para \
 responder citando ese mensaje: encima de la caja aparece "Respondiendo a…" (la × la quita) y el cliente ve la cita. \
 Las reacciones del cliente y las citas que hace se ven igual; al pulsar una cita, la conversación va al mensaje \
 citado. Abajo, la caja para escribir: Intro \
 envía por tu cuenta conectada de ese canal (Mayús+Intro, nueva línea); en "Todos los canales" se responde por el \
-canal más reciente y el botón Enviar dice por qué cuenta. La carita junto al clip abre los emojis (se escriben donde \
-está el cursor). El clip 📎 adjunta un archivo (máximo 15 MB; se ve sobre \
-la caja y se quita con ×): se envía con el texto como pie (en WhatsApp las fotos van como imagen y lo demás como \
-documento; en el correo, como adjunto) y queda en la ficha, en Documentos. "✨ Redactar con IA" abre un cuadro para \
+canal más reciente y el botón Enviar dice por qué cuenta. Lo que escribes se queda en su chat (borrador): al \
+cambiar de contacto la caja se vacía y, al volver, recuperas lo escrito y la cita; en la lista de chats sale \
+"Borrador: …" en verde. La carita junto al clip abre los emojis (se escriben donde está el cursor). El clip 📎 abre un \
+menú: "Documento, foto o vídeo" adjunta un archivo (máximo 15 MB; se ve sobre la caja —las fotos, con miniatura— y se \
+quita con ×; también se adjunta pegando con Ctrl+V una captura o un archivo copiado, o arrastrándolo sobre la \
+conversación): se envía con el texto como pie (en WhatsApp las fotos van como imagen y lo demás como documento; en el \
+correo, como adjunto) y queda en la ficha, en Documentos. "Ubicación" envía un sitio: "Usar mi ubicación actual" (el \
+navegador pide permiso), o escribir las coordenadas (p. ej. 40.4168, -3.7038) o pegar un enlace de Google Maps (en \
+Google Maps, botón derecho sobre el sitio y pulsar las coordenadas las copia); nombre y dirección son opcionales y la \
+próxima vez sale rellenada con la última que enviaste. "Contacto" envía una tarjeta de contacto: se busca en Contactos \
+o se escriben nombre, teléfono y email. En WhatsApp y Telegram el cliente las recibe como ubicación o contacto (que \
+puede guardar); por email, como texto. El micrófono, junto a Enviar, graba una nota de voz (la primera vez el \
+navegador pide permiso para el micrófono): mientras graba se ven el tiempo y el nivel del sonido; la papelera la \
+descarta y "Enviar" la manda (máximo 15 minutos; en WhatsApp y Telegram llega como nota de voz, por email como audio \
+adjunto, y queda en Documentos). Si cambias de chat mientras grabas, la grabación se descarta. La ubicación, el \
+contacto y la nota de voz se envían en la conversación abierta (no en un correo nuevo). "✨ Redactar con IA" abre un cuadro para \
 dar indicaciones opcionales ("más formal", "ofrece un 5 % de descuento") y "✨ Generar" escribe la respuesta en la \
 caja con el contexto de todos los canales, la ficha y las tareas, en el estilo del canal (breve en WhatsApp/Telegram; \
 con saludo y firma en email); no inventa precios ni fechas: deja huecos entre corchetes como [precio]. "Respuestas" \
