@@ -160,6 +160,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- La **lista de contactos junto al contacto abierto** luce como la de chats: el último mensaje (en vez de la
+  empresa), filas de la misma altura y el estado del cliente rotulado en lugar de un punto de color sin explicar.
 - **«Mis tareas» rediseñada**: centrada y con un ancho cómodo de leer, un resumen arriba (vencidas, para hoy y
   pendientes), cada grupo en su tarjeta con cuántas tiene, el cliente con su avatar y la fecha a la derecha.
 - **Chispa renovada e interactiva**: ahora es el bocadillo de la marca con ojos, en degradado índigo. Flota y

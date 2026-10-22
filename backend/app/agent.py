@@ -232,7 +232,8 @@ destaca y "Ver en el chat" abre el chat del cliente en su pestaña Email con el 
 pestaña Email de un chat, "Ver como bandeja" abre Correo con solo los correos de ese cliente (la × quita el filtro). \
 Un correo queda leído al abrirlo en Correo o al abrir el chat del cliente.
 - Vista de contacto (al abrir un chat en Mis Chats o un contacto en Contactos): tres zonas. A la izquierda, la lista \
-de la que vienes; en el centro, el contacto; a la derecha, "Detalles" (se oculta con el botón ⓘ) o "Asistente IA" (el \
+de la que vienes (desde Contactos se ve como la de chats: último mensaje, no leídos, canales y el estado del cliente: \
+Activo, Potencial, Incidencia o Inactivo); en el centro, el contacto; a la derecha, "Detalles" (se oculta con el botón ⓘ) o "Asistente IA" (el \
 asistente sobre ese contacto, ver "Asistente"). "Detalles": arriba, centrados, su avatar (cada persona con su color), \
 nombre, empresa, estado y la prioridad que ve la IA, y botones rápidos para abrir su conversación de cada canal \
 (WhatsApp, Correo, Telegram) y "Editar"; debajo, tarjetas con "Contacto" (correo, teléfono…; al pasar el ratón, un \
