@@ -3,15 +3,29 @@
 
 const CONTACT_COLUMNS_KEY = "pc-contact-columns";
 const CONTACT_BASE_COLUMNS = [
-  { key: "company", label: "Empresa", value: (c) => escapeHtml(c.company || "") },
+  { key: "company", label: "Empresa", sort: "company", value: (c) => escapeHtml(c.company || "") },
   { key: "phone", label: "Teléfono", value: (c) => cellList(c.phones) },
   { key: "email", label: "Email", value: (c) => cellList(c.emails) },
   { key: "channels", label: "Canales", value: (c) => c.channels.map(badge).join(" ") },
   { key: "tags", label: "Etiquetas", value: (c) => cellList(c.tags, (t) => tagChips([t])) },
-  { key: "agent", label: "Agente", value: (c) => escapeHtml(team.find((u) => u.id === c.assignee_user_id)?.name || "") },
-  { key: "status", label: "Estado", value: (c) => `${statusDot(c.status)} ${escapeHtml(STATUS_LABELS[c.status] || "")}` },
-  { key: "activity", label: "Última actividad", value: (c) => c.last_message_at ? escapeHtml(chatTime(c.last_message_at)) : "" },
+  { key: "agent", label: "Agente", sort: "agent", value: (c) => escapeHtml(team.find((u) => u.id === c.assignee_user_id)?.name || "") },
+  { key: "status", label: "Estado", sort: "status", value: (c) => `${statusDot(c.status)} ${escapeHtml(STATUS_LABELS[c.status] || "")}` },
+  { key: "activity", label: "Última actividad", sort: "activity", value: (c) => c.last_message_at ? escapeHtml(chatTime(c.last_message_at)) : "" },
 ];
+// Cómo se ordena la tabla (y la lista junto al contacto abierto): por nombre si no se ha elegido otro orden. Cada
+// orden tiene su sentido natural y el botón de al lado lo invierte.
+const CONTACT_SORT_KEY = "pc-contact-sort";
+const AZ = { asc: "A → Z", desc: "Z → A" };
+const CONTACT_SORTS = {
+  name: { first: "asc", dirs: AZ },
+  company: { first: "asc", dirs: AZ },
+  agent: { first: "asc", dirs: AZ },
+  activity: { first: "desc", dirs: { desc: "Recientes primero", asc: "Antiguos primero" } },
+  created: { first: "desc", dirs: { desc: "Nuevos primero", asc: "Antiguos primero" } },
+  status: { first: "asc", dirs: { asc: "Incidencias primero", desc: "Inactivos primero" } },
+  unread: { first: "desc", dirs: { desc: "Más sin leer primero", asc: "Menos sin leer primero" } },
+};
+let contactSort = savedContactSort();
 const CONTACT_DEFAULT_COLUMNS = ["phone", "email", "channels", "tags", "agent", "activity"];
 const PROPERTY_KINDS = { text: "Texto", number: "Número", date: "Fecha", select: "Lista de opciones" };
 
@@ -49,8 +63,37 @@ function propertyText(prop, value) {
   return prop.kind === "date" ? new Date(`${value}T00:00:00`).toLocaleDateString("es-ES") : value;
 }
 
+function savedContactSort() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(CONTACT_SORT_KEY) || "null");
+    if (CONTACT_SORTS[saved?.key]?.dirs[saved.dir]) return saved;
+  } catch { /* sin preferencia guardada */ }
+  return { key: "name", dir: "asc" };
+}
+
+// Ordena por `key` (sin sentido: el natural de ese orden) y vuelve a cargar.
+function setContactSort(key, dir = null) {
+  contactSort = { key, dir: dir || CONTACT_SORTS[key].first };
+  try { localStorage.setItem(CONTACT_SORT_KEY, JSON.stringify(contactSort)); } catch { /* almacenamiento no disponible */ }
+  syncContactSort();
+  loadContacts();
+}
+
+function syncContactSort() {
+  $("#contacts-sort").value = contactSort.key;
+  $("#contacts-sort-dir").textContent = CONTACT_SORTS[contactSort.key].dirs[contactSort.dir];
+}
+
+function sortHeader(key, label) {
+  const on = contactSort.key === key;
+  const arrow = on ? (contactSort.dir === "asc" ? "↑" : "↓") : "↕";
+  return `<th${on ? ` aria-sort="${contactSort.dir === "asc" ? "ascending" : "descending"}"` : ""}><button type="button"
+    class="th-sort${on ? " on" : ""}" data-sort="${key}" title="Ordenar por ${escapeHtml(label.toLowerCase())}">${escapeHtml(label)}<span
+    class="sort-arrow" aria-hidden="true">${arrow}</span></button></th>`;
+}
+
 function contactsQuery() {
-  const params = new URLSearchParams({ q: $("#contacts-search").value });
+  const params = new URLSearchParams({ q: $("#contacts-search").value, sort: contactSort.key, order: contactSort.dir });
   for (const [key, sel] of [["status", "#contacts-status"], ["tag", "#contacts-tag"], ["assignee", "#contacts-agent"],
     ["channel", "#contacts-channel"]]) {
     if ($(sel).value) params.set(key, $(sel).value);
@@ -100,7 +143,8 @@ function renderContacts(contacts) {
   const keys = visibleColumnKeys();
   const columns = contactColumns().filter((col) => keys.includes(col.key));
   $("#contacts-count").textContent = `· ${contacts.length}`;
-  $("#contacts-head").innerHTML = `<tr><th>Nombre</th>${columns.map((col) => `<th>${escapeHtml(col.label)}</th>`).join("")}</tr>`;
+  $("#contacts-head").innerHTML = `<tr>${sortHeader("name", "Nombre")}${columns.map((col) =>
+    (col.sort ? sortHeader(col.sort, col.label) : `<th>${escapeHtml(col.label)}</th>`)).join("")}</tr>`;
   $("#contacts-body").innerHTML = contacts.length ? contacts.map((c) => `
     <tr data-client="${c.id}" tabindex="0">
       <td class="contact-name">
@@ -248,6 +292,16 @@ function bindContactsEvents() {
   });
   ["#contacts-status", "#contacts-tag", "#contacts-agent", "#contacts-channel", "#contacts-unread"].forEach((sel) =>
     $(sel).addEventListener("change", loadContacts));
+  syncContactSort();
+  $("#contacts-sort").addEventListener("change", (e) => setContactSort(e.target.value));
+  $("#contacts-sort-dir").addEventListener("click", () => setContactSort(contactSort.key, contactSort.dir === "asc" ? "desc" : "asc"));
+  // Pulsar el título de una columna ordena por ella; otra vez, al revés
+  $("#contacts-head").addEventListener("click", (e) => {
+    const b = e.target.closest("[data-sort]");
+    if (!b) return;
+    const key = b.dataset.sort;
+    setContactSort(key, contactSort.key === key ? (contactSort.dir === "asc" ? "desc" : "asc") : null);
+  });
   $("#contacts-body").addEventListener("click", (e) => {
     // El desplegable «+N» de una celda no abre la ficha (y solo queda abierto uno)
     const more = e.target.closest("details.cell-more");

@@ -549,6 +549,18 @@
       </select>
       <label class="check"><input type="checkbox" id="contacts-unread"> No leídos</label>
       <span class="spacer"></span>
+      <div class="sort-wrap">
+        <select id="contacts-sort" title="Ordenar los contactos">
+          <option value="name">Ordenar por nombre</option>
+          <option value="activity">Por última actividad</option>
+          <option value="unread">Sin leer primero</option>
+          <option value="company">Por empresa</option>
+          <option value="status">Por estado</option>
+          <option value="agent">Por agente</option>
+          <option value="created">Por fecha de alta</option>
+        </select>
+        <button type="button" class="ghost small-btn sort-dir" id="contacts-sort-dir" title="Cambiar el sentido del orden">A → Z</button>
+      </div>
       <div class="columns-wrap">
         <button type="button" class="ghost small-btn" id="contacts-columns-btn" aria-haspopup="true" aria-expanded="false">Columnas</button>
         <div class="menu columns-menu" id="contacts-columns" hidden></div>
