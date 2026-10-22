@@ -163,6 +163,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Respuestas guardadas pasa a ser una sección** (como Plantillas) en lugar de una ventana: la lista a la izquierda
+  con buscador y filtros (Todas, Mías, Macros) y, a la derecha, la respuesta elegida por partes (atajo, tipo, texto
+  con las variables resaltadas, cómo lo recibe el cliente y qué hace al usarla) o el editor, con botones para
+  insertar variables y vista previa al momento. Sin ninguna elegida, explica cómo se usan, las variables y las macros.
 - **Iconos nuevos en la barra lateral**: rellenos en dos tonos, al estilo de iOS, con una silueta propia para cada
   sección (dos bocadillos con los tres puntos del logo en Mis Chats, sobre, personas, cuadrado con check, destellos,
   avión de papel para Respuestas con IA, fichas con texto, marcador y barras). El de la sección abierta se pinta con

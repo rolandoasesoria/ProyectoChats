@@ -438,8 +438,14 @@ copiar. En la pestaña Email, "✉ Nuevo correo" muestra un campo "Asunto" y env
 adjunto si se quiere); "Responder en el hilo" vuelve a la respuesta normal; si el cliente tiene email pero no hay \
 hilos de correo, la pestaña Email sale igualmente. En WhatsApp, "Plantilla" envía una plantilla aprobada. Si no \
 tienes cuenta conectada de ese canal, lo indica y no deja enviar (sí "Copiar"); si la conversación entró por la cuenta de otra \
-persona, también (se responde desde esa cuenta). Las respuestas guardadas se crean y editan en la barra lateral > "Respuestas guardadas"; cada uno \
-edita las suyas y un administrador, todas.
+persona, también (se responde desde esa cuenta). Las respuestas guardadas se crean y editan en su sección de la \
+barra lateral, "Respuestas guardadas" (el marcador; también desde "Gestionar respuestas guardadas…" del selector del \
+chat): a la izquierda la lista, con buscador (título, atajo o texto) y los filtros "Todas", "Mías" y "Macros"; a la \
+derecha, sin ninguna elegida, cómo se usan, las variables y qué es una macro; al elegir una, su atajo, si es macro, \
+el texto con las variables resaltadas, "Así lo recibe el cliente" (con un cliente de ejemplo) y qué hace al usarla, \
+con "Editar" y "Borrar". "+ Nueva" abre el editor por partes: nombre (título y atajo), texto (con botones para \
+insertar las variables donde está el cursor y la vista previa al momento) y "Al usarla" (estado, etiqueta y marcar \
+como atendida). Cada uno edita las suyas y un administrador, todas.
   · "Ficha": resumen del estado del cliente y "Datos clave" (dirección, CIF, teléfonos, forma de pago, precios \
 acordados...). Al analizar, la IA también deduce la prioridad del cliente (alta, media o baja, con el motivo) y su tono ("molesto" si se queja): se ven como etiquetas bajo "Resumen" y junto al nombre en "Sin responder" ("Prioridad alta", "Molesto"), para atender antes lo urgente. "✨ Actualizar con IA" hace que la IA lea todas las conversaciones del cliente (de todo el equipo) \
 y actualice resumen, datos y tareas; también se hace sola, en segundo plano, cuando entran mensajes nuevos. \
