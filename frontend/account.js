@@ -316,9 +316,10 @@ async function loadUsersTable() {
       <td>${u.active ? "Activo" : "Desactivado"}</td>
       <td><div class="user-accounts">${userAccountsHtml(accounts.filter((a) => a.owner_user_id === u.id))}</div></td>
       <td class="row-actions">
-        <button class="link" data-edit="${u.id}">Editar</button>
+        <button class="link" data-edit="${u.id}" title="Editar sus datos, su rol y sus permisos">Editar</button>
         <button class="link" data-accounts="${u.id}" title="Ver, añadir o quitar sus cuentas conectadas">Cuentas</button>
-        ${u.id === currentUser.id ? "" : `<button class="link" data-toggle="${u.id}" data-active="${u.active}">${u.active ? "Desactivar" : "Activar"}</button>`}
+        ${u.id === currentUser.id ? "" : `<button class="link${u.active ? " danger" : ""}" data-toggle="${u.id}" data-active="${u.active}"
+          title="${u.active ? "Desactivar: no podrá entrar en la app (sus datos se conservan)" : "Activar: podrá volver a entrar"}">${u.active ? "Desactivar" : "Activar"}</button>`}
       </td>
     </tr>`).join("");
   $("#users-tbody").dataset.users = JSON.stringify(users);
