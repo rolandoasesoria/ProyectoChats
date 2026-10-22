@@ -14,7 +14,7 @@ def _check_columns(fields: dict) -> None:
 def list_all(conn: Conn) -> list[dict]:
     return rows(conn.execute(
         """SELECT r.id, r.title, r.shortcut, r.body, r.set_status, r.add_tag, r.mark_done = 1 AS mark_done,
-                  r.created_by, u.name AS author
+                  r.created_by, u.name AS author, r.created_at, r.updated_at
              FROM saved_replies r LEFT JOIN users u ON u.id = r.created_by
             ORDER BY lower(r.title)"""))
 
