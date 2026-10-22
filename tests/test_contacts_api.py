@@ -42,6 +42,8 @@ laura = next(c for c in table if c["id"] == 1)
 check("la tabla trae teléfonos, emails, canales y etiquetas",
       laura["phones"] and laura["emails"] and "whatsapp" in laura["channels"] and isinstance(laura["tags"], list), laura)
 check("y las propiedades", laura["properties"][str(origen["id"])] == "Referido", laura["properties"])
+check("y el último mensaje, como en la lista de chats (para la lista junto al contacto abierto)",
+      laura["last_body"] and laura["last_direction"] in ("in", "out") and laura["last_message_at"], laura)
 check("filtro por canal", all("telegram" in c["channels"] for c in ana.get("/api/contacts?channel=telegram")[1]))
 check("buscar", [c["id"] for c in ana.get("/api/contacts?q=laura")[1]] == [1])
 
