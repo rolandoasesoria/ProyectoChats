@@ -2693,3 +2693,6 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 .mail-attach svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .mail-reply-actions .chat-file-chip[hidden] { display: none; }
 #chat-mail-view { white-space: nowrap; }
+
+/* Lista de contactos junto al contacto abierto: igual que la de chats, con el estado del cliente rotulado */
+.status-pill.mini { padding: 0 7px; font-size: 11px; line-height: 18px; font-weight: var(--font-weight-semibold); }

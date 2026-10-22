@@ -138,15 +138,19 @@ function setChatsFilter(filter) {
 /* ---------- Lista de contactos (al abrir uno desde Contactos) ---------- */
 
 // Los mismos contactos que la tabla, con sus filtros, en formato compacto.
+// Igual que un chat de la lista (último mensaje, no leídos, canales y etiquetas) y, además, su estado como cliente.
 function contactMiniHtml(c) {
+  const preview = draftPreviewHtml(c.id) || (c.last_body != null
+    ? `${c.last_direction === "out" ? "↪ " : ""}${escapeHtml(c.last_body)}`
+    : `<span class="muted">${escapeHtml(c.company || "Sin mensajes todavía")}</span>`);
   return `
     <li data-client="${c.id}" class="${c.id === chatState.clientId ? "active" : ""}${c.unread ? " has-unread" : ""}">
       <span class="chat-avatar ${avatarClass(c.name)}">${escapeHtml(initialsOf(c.name))}</span>
       <div class="chat-item-body">
-        <div class="chat-item-top"><strong>${statusDot(c.status)}${escapeHtml(c.name)}</strong>
+        <div class="chat-item-top"><strong>${escapeHtml(c.name)}</strong>
           ${c.last_message_at ? `<span class="chat-item-time">${escapeHtml(chatTime(c.last_message_at))}</span>` : ""}</div>
-        <div class="chat-item-bottom"><span class="chat-preview">${escapeHtml(c.company || "")}</span>${unreadBadge(c.unread)}</div>
-        <div class="chat-item-meta">${c.channels.map(badge).join("")}${tagChips(c.tags, 2)}</div>
+        <div class="chat-item-bottom"><span class="chat-preview">${preview}</span>${unreadBadge(c.unread)}</div>
+        <div class="chat-item-meta"><span class="status-pill mini ${escapeHtml(c.status)}" title="Estado del cliente">${escapeHtml(STATUS_LABELS[c.status] || c.status)}</span>${c.channels.map(badge).join("")}${tagChips(c.tags, 2)}</div>
       </div>
     </li>`;
 }
