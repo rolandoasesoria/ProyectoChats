@@ -272,7 +272,7 @@ try:
     b.click("#contacts-columns-btn")
     b.js("const e = document.querySelector('#contacts-columns [data-column=\"company\"]'); e.checked = true;"
          "e.dispatchEvent(new Event('change', {bubbles: true}))")
-    b.wait("[...document.querySelectorAll('#contacts-head th')].some((th) => th.textContent === 'Empresa')")
+    b.wait("[...document.querySelectorAll('#contacts-head th')].some((th) => th.textContent.startsWith('Empresa'))")
     check("contactos: elegir columnas (Empresa)", True)
     b.js("document.body.click()")
     b.js("{ const s = document.querySelector('#contacts-channel'); s.value = 'telegram'; s.dispatchEvent(new Event('change')); }")
@@ -280,6 +280,18 @@ try:
     check("contactos: filtro por canal (Telegram)", True)
     b.js("{ const s = document.querySelector('#contacts-channel'); s.value = ''; s.dispatchEvent(new Event('change')); }")
     b.wait("document.querySelectorAll('#contacts-body tr[data-client]').length === 3")
+    names = "[...document.querySelectorAll('#contacts-body .contact-name > span:nth-child(2)')].map((s) => s.textContent).join('|')"
+    by_name = b.js(names)
+    check("contactos: ordenados por nombre por defecto", by_name == "Jorge Martín|Laura Gómez|Sofía Navarro", by_name)
+    b.click('#contacts-head [data-sort="name"]')
+    b.wait(f"{names} === 'Sofía Navarro|Laura Gómez|Jorge Martín'")
+    check("contactos: pulsar «Nombre» lo invierte (Z → A)", b.js("document.querySelector('#contacts-sort-dir').textContent") == "Z → A")
+    b.click('#contacts-head [data-sort="activity"]')
+    b.wait("document.querySelector('#contacts-sort').value === 'activity' && document.querySelector('#contacts-head [aria-sort=\"descending\"] [data-sort=\"activity\"]')")
+    check("contactos: pulsar «Última actividad» ordena por ella (lo reciente primero)",
+          b.js("document.querySelector('#contacts-sort-dir').textContent") == "Recientes primero")
+    b.js("{ const s = document.querySelector('#contacts-sort'); s.value = 'name'; s.dispatchEvent(new Event('change')); }")
+    b.wait(f"{names} === 'Jorge Martín|Laura Gómez|Sofía Navarro'")
     # Un contacto con cinco emails (como los que deja el spam de varias direcciones de una misma empresa)
     b.js("api('/api/contacts').then((cs) => { cs[0].emails = ['ventas@kinzeno.es', 'info@kinzeno.es', 'pagos@kinzeno.es',"
          " 'soporte@kinzeno.es', 'direccion.general.y.administracion@kinzeno.es']; renderContacts(cs); })")
@@ -302,7 +314,8 @@ try:
     b.shot("04b3-contacto")
     check("volver a la tabla: cabecera de la lista con cuántos contactos hay",
           b.js("document.querySelector('#contacts-back .back-text strong').textContent") == "Contactos"
-          and b.js("document.querySelector('#contacts-mini-count').textContent") == "3 contactos")
+          and b.js("document.querySelector('#contacts-mini-count').textContent") == "3 contactos",
+          b.js("document.querySelector('#contacts-mini-count').textContent"))
     b.click("#contacts-back")
     b.wait("!document.querySelector('#view-contacts').hidden")
     check("«← Volver a la tabla»", True)

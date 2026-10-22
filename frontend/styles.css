@@ -2696,3 +2696,16 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 
 /* Lista de contactos junto al contacto abierto: igual que la de chats, con el estado del cliente rotulado */
 .status-pill.mini { padding: 0 7px; font-size: 11px; line-height: 18px; font-weight: var(--font-weight-semibold); }
+
+/* Contactos: ordenar (selector con el sentido al lado y títulos de columna que se pueden pulsar) */
+.sort-wrap { display: inline-flex; align-items: center; gap: var(--space-1); }
+.sort-dir { white-space: nowrap; }
+.th-sort {
+  display: inline-flex; align-items: center; gap: 5px; padding: 0; border: 0; background: none; color: inherit; font: inherit;
+  letter-spacing: inherit; text-transform: inherit; cursor: pointer; transition: color var(--duration-fast) var(--ease-standard);
+}
+.th-sort:hover, .th-sort.on { color: var(--color-text); }
+.sort-arrow { font-size: 11px; opacity: .4; }
+.th-sort:hover .sort-arrow { opacity: .8; }
+.th-sort.on .sort-arrow { opacity: 1; color: var(--color-accent); }
+.contacts-toolbar .sort-wrap { margin-left: auto; } /* si la barra no cabe en una línea, el orden, Columnas y Nuevo contacto quedan a la derecha */

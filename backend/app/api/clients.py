@@ -32,9 +32,13 @@ def list_chats(user: CurrentUser, q: str = "", scope: Literal["mine", "team"] = 
 @router.get("/api/contacts")
 def list_contacts(user: CurrentUser, q: str = "", status: Literal["lead", "active", "issue", "inactive"] | None = None,
                   tag: str | None = None, assignee: int | None = None,
-                  channel: Literal["email", "whatsapp", "telegram", "phone"] | None = None, unread: bool = False):
-    """Sección Contactos: la tabla con datos de contacto, etiquetas, responsable, actividad y propiedades."""
-    return contacts.list_contacts(user["id"], q, status, tag or None, assignee, channel, unread)
+                  channel: Literal["email", "whatsapp", "telegram", "phone"] | None = None, unread: bool = False,
+                  sort: Literal["name", "company", "activity", "status", "agent", "created", "unread"] = "name",
+                  order: Literal["asc", "desc"] | None = None):
+    """Sección Contactos: la tabla con datos de contacto, etiquetas, responsable, actividad y propiedades, ordenada
+    por nombre (o como se pida)."""
+    return contacts.list_contacts(user["id"], q, status, tag or None, assignee, channel, unread, sort=sort,
+                                  direction=order)
 
 
 class NewClient(BaseModel):

@@ -33,12 +33,14 @@ def _markers(snippet: str | None, markers: tuple[str, str]) -> str:
 
 
 def find_clients(query: str = "", limit: int = 50, user_id: int | None = None, status: str | None = None,
-                 tag: str | None = None, assignee_id: int | None = None) -> list[dict]:
-    """Clientes que coinciden con la búsqueda y los filtros. Con `user_id`, `unread` = mensajes nuevos
-    desde su última visita a ese cliente (null si nunca lo ha abierto)."""
+                 tag: str | None = None, assignee_id: int | None = None, sort: str = "activity",
+                 direction: str = "desc") -> list[dict]:
+    """Clientes que coinciden con la búsqueda y los filtros, en el orden pedido (por defecto, la última actividad
+    primero). Con `user_id`, `unread` = mensajes nuevos desde su última visita a ese cliente (null si nunca lo ha
+    abierto)."""
     like = f"%{query.strip()}%"
     with get_conn() as conn:
-        result = clients_repo.search(conn, like, user_id, status, tag, assignee_id, limit)
+        result = clients_repo.search(conn, like, user_id, status, tag, assignee_id, limit, sort, direction)
     for c in result:
         c["tags"] = sorted(c["tags"].split("|"), key=str.lower) if c["tags"] else []
     return result

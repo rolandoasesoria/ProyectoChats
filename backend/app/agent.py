@@ -191,7 +191,11 @@ navegación): "Mis cuentas" (correo, WhatsApp y Telegram) para todos; y, solo ad
 - Sección "Contactos": tabla con todos los contactos (clientes). Filtros: buscador (nombre, empresa, teléfono, email, \
 etiqueta), estado, etiqueta, agente responsable, canal y "No leídos". "Columnas" elige qué columnas se ven (empresa, \
 teléfono, email, canales, etiquetas, agente, estado, última actividad y cada propiedad de contacto); se recuerda en \
-el navegador. "+ Nuevo contacto" crea uno a mano (p. ej. tras una llamada; queda con quien lo crea como \
+el navegador. Por defecto salen ordenados por nombre (A → Z); el selector de orden cambia a última actividad, sin \
+leer primero, empresa, estado (las incidencias primero), agente o fecha de alta, y el botón de al lado invierte el \
+sentido (Z → A, antiguos primero…). También se ordena pulsando el título de una columna (Nombre, Empresa, Agente, \
+Estado, Última actividad; otra vez, al revés). El orden se recuerda y vale también para la lista de la izquierda al \
+abrir un contacto. "+ Nuevo contacto" crea uno a mano (p. ej. tras una llamada; queda con quien lo crea como \
 responsable). Al pulsar un contacto se abre igual que un chat (ver "Vista de contacto"), con la lista de contactos a \
 la izquierda (los mismos de la tabla, con sus filtros, y su buscador). Arriba de esa lista, la cabecera "Contactos" \
 (con cuántos hay y si la tabla tiene filtros) vuelve a la tabla al pulsarla.
