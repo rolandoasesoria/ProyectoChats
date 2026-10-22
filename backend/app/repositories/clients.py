@@ -73,11 +73,28 @@ def delete(conn: Conn, client_id: int) -> None:
     conn.execute("DELETE FROM clients WHERE id = ?", (client_id,))
 
 
+# Órdenes de la búsqueda de clientes (la tabla de Contactos deja elegir): fragmentos fijos sobre las columnas del
+# resultado; el usuario solo elige la clave y el sentido. Los empates, por nombre.
+BY_NAME = "lower(unaccent(c.name))"
+CLIENT_SORTS = {
+    "name": f"{BY_NAME} {{dir}}, c.id",
+    "company": f"(coalesce(c.company, '') = ''), lower(unaccent(coalesce(c.company, ''))) {{dir}}, {BY_NAME}",
+    "activity": f"c.last_message_at {{dir}} NULLS LAST, {BY_NAME}",
+    # Primero lo que pide atención: incidencias, potenciales, activos e inactivos
+    "status": f"CASE c.status WHEN 'issue' THEN 0 WHEN 'lead' THEN 1 WHEN 'active' THEN 2 ELSE 3 END {{dir}}, {BY_NAME}",
+    "agent": f"(c.agent IS NULL), lower(c.agent) {{dir}}, {BY_NAME}",
+    "created": "c.created_at {dir}, c.id {dir}",
+    "unread": "coalesce(c.unread, 0) {dir}, c.last_message_at DESC NULLS LAST",
+}
+SORT_DIRECTIONS = {"asc": "ASC", "desc": "DESC"}
+
+
 def search(conn: Conn, like: str, user_id: int | None, status: str | None, tag: str | None,
-           assignee_id: int | None, limit: int) -> list[dict]:
+           assignee_id: int | None, limit: int, sort: str = "activity", direction: str = "desc") -> list[dict]:
     """Clientes cuyo nombre, empresa, identificador o etiqueta coincide con `like` (patrón ILIKE; "%%" = todos), con su
     último mensaje (como en la lista de chats). `unread` = mensajes nuevos desde la última visita de `user_id` (null si
-    nunca lo ha abierto)."""
+    nunca lo ha abierto). `sort`: una clave de CLIENT_SORTS y `direction`, «asc» o «desc»."""
+    order = CLIENT_SORTS[sort].format(dir=SORT_DIRECTIONS[direction])
     # Filtros opcionales: fragmentos fijos; sus valores van como parámetros.
     filters, args = "", []
     if status:
@@ -91,7 +108,8 @@ def search(conn: Conn, like: str, user_id: int | None, status: str | None, tag: 
         args.append(assignee_id)
     return rows(conn.execute(
         f"""
-        SELECT cl.id, cl.name, cl.company, cl.status, cl.assignee_user_id,
+        SELECT * FROM (
+        SELECT cl.id, cl.name, cl.company, cl.status, cl.assignee_user_id, ua.name AS agent, cl.created_at,
                (SELECT string_agg(t.tag, '|') FROM client_tags t WHERE t.client_id = cl.id) AS tags,
                (SELECT string_agg(DISTINCT ci.channel, ',') FROM client_identities ci
                  WHERE ci.client_id = cl.id) AS channels,
@@ -105,13 +123,15 @@ def search(conn: Conn, like: str, user_id: int | None, status: str | None, tag: 
                               WHERE c.client_id = cl.id
                               ORDER BY m.sent_at DESC, m.id DESC LIMIT 1) lm ON true
           LEFT JOIN client_visits v ON v.client_id = cl.id AND v.user_id = ?
+          LEFT JOIN users ua ON ua.id = cl.assignee_user_id
          WHERE (? = '%%'
                 OR unaccent(cl.name) ILIKE unaccent(?) OR unaccent(cl.company) ILIKE unaccent(?)
                 OR EXISTS (SELECT 1 FROM client_identities ci
                             WHERE ci.client_id = cl.id AND ci.handle ILIKE ?)
                 OR EXISTS (SELECT 1 FROM client_tags t
                             WHERE t.client_id = cl.id AND unaccent(t.tag) ILIKE unaccent(?))) {filters}
-         ORDER BY last_message_at DESC NULLS LAST, cl.name
+        ) c
+         ORDER BY {order}
          LIMIT ?
         """,
         (user_id, like, like, like, like, like, *args, limit),

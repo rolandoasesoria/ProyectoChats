@@ -7,12 +7,18 @@ from .repositories import clients as clients_repo
 from .repositories import properties as properties_repo
 
 PHONE_CHANNELS = ("whatsapp", "phone")
+DEFAULT_DIRECTIONS = {"name": "asc", "company": "asc", "agent": "asc", "status": "asc", "activity": "desc",
+                      "created": "desc", "unread": "desc"}
 
 
 def list_contacts(user_id: int, query: str = "", status: str | None = None, tag: str | None = None,
                   assignee_id: int | None = None, channel: str | None = None, unread_only: bool = False,
-                  limit: int = 500) -> list[dict]:
-    contacts = search.find_clients(query, limit=limit, user_id=user_id, status=status, tag=tag, assignee_id=assignee_id)
+                  limit: int = 500, sort: str = "name", direction: str | None = None) -> list[dict]:
+    """Por defecto, por nombre. Sin sentido indicado, el natural de cada orden (A-Z; lo más reciente o con más sin leer
+    primero)."""
+    direction = direction or DEFAULT_DIRECTIONS[sort]
+    contacts = search.find_clients(query, limit=limit, user_id=user_id, status=status, tag=tag, assignee_id=assignee_id,
+                                   sort=sort, direction=direction)
     for c in contacts:
         c["channels"] = sorted(c["channels"].split(",")) if c["channels"] else []
     if channel:

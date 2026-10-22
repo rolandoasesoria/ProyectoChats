@@ -1,5 +1,6 @@
 """Sección Contactos: propiedades de contacto (las define un administrador), sus valores y la tabla de contactos."""
 import sys
+import unicodedata
 
 from apitest import Session, check, results
 
@@ -42,6 +43,35 @@ laura = next(c for c in table if c["id"] == 1)
 check("la tabla trae teléfonos, emails, canales y etiquetas",
       laura["phones"] and laura["emails"] and "whatsapp" in laura["channels"] and isinstance(laura["tags"], list), laura)
 check("y las propiedades", laura["properties"][str(origen["id"])] == "Referido", laura["properties"])
+# Orden: por nombre por defecto (sin tener en cuenta mayúsculas ni tildes) y de otras formas
+ana.post("/api/clients", {"name": "álvaro Ruiz", "company": "Zeta SL"})
+ana.post("/api/clients", {"name": "Beatriz Soler"})
+
+
+def names(query=""):
+    return [c["name"] for c in ana.get(f"/api/contacts{query}")[1]]
+
+
+def plain(text):
+    return unicodedata.normalize("NFD", text.lower()).encode("ascii", "ignore").decode()
+
+
+by_name = names()
+check("por defecto, ordenados por nombre (sin mirar mayúsculas ni tildes)",
+      by_name == sorted(by_name, key=plain) and by_name[0] == "álvaro Ruiz", by_name)
+check("y de la Z a la A", names("?sort=name&order=desc") == by_name[::-1])
+activity = ana.get("/api/contacts?sort=activity")[1]
+dates = [c["last_message_at"] for c in activity if c["last_message_at"]]
+check("por última actividad: lo más reciente primero y los que no tienen mensajes al final",
+      dates == sorted(dates, reverse=True) and not activity[-1]["last_message_at"], [c["name"] for c in activity])
+companies = [c["company"] for c in ana.get("/api/contacts?sort=company")[1]]
+filled = [c for c in companies if c]
+check("por empresa (los que no tienen, al final)", filled == sorted(filled, key=plain) and companies[-1] in (None, ""), companies)
+check("por fecha de alta: los nuevos primero", names("?sort=created")[:2] == ["Beatriz Soler", "álvaro Ruiz"])
+statuses = [c["status"] for c in ana.get("/api/contacts?sort=status")[1]]
+rank = {"issue": 0, "lead": 1, "active": 2, "inactive": 3}
+check("por estado: incidencias, potenciales, activos e inactivos", statuses == sorted(statuses, key=rank.get), statuses)
+check("un orden que no existe = 422", ana.get("/api/contacts?sort=telefono")[0] == 422)
 check("y el último mensaje, como en la lista de chats (para la lista junto al contacto abierto)",
       laura["last_body"] and laura["last_direction"] in ("in", "out") and laura["last_message_at"], laura)
 check("filtro por canal", all("telegram" in c["channels"] for c in ana.get("/api/contacts?channel=telegram")[1]))
