@@ -190,14 +190,14 @@ function taskItem(t, { showClient = false } = {}) {
       <div class="task-body">
         <span class="task-title">${escapeHtml(t.title)}</span>
         <span class="task-meta">
-          ${showClient ? `<button class="link client-link" data-open-client="${t.client_id}">${escapeHtml(t.client)}</button>` : ""}
-          ${dueLabel(t.due_date)}
+          ${showClient ? `<span class="chat-avatar task-avatar ${avatarClass(t.client)}" aria-hidden="true">${escapeHtml(initialsOf(t.client))}</span>
+            <button class="link client-link" data-open-client="${t.client_id}">${escapeHtml(t.client)}</button>` : dueLabel(t.due_date)}
           ${showClient ? "" : `<span class="muted">${escapeHtml(t.assignee || "Sin responsable")}</span>`}
           ${t.origin === "ai" ? `<span class="ai-badge" title="Detectada por la IA en las conversaciones">IA</span>` : ""}
           ${showClient ? "" : sourceLink(t.source_message_id)}
         </span>
       </div>
-      ${showClient ? "" : `<button class="icon-link" data-edit-task title="Editar">✎</button>
+      ${showClient ? (t.due_date ? `<span class="task-due">${dueLabel(t.due_date)}</span>` : "") : `<button class="icon-link" data-edit-task title="Editar">✎</button>
       <button class="icon-link" data-delete-task title="Borrar">×</button>`}
     </li>`;
 }
@@ -223,14 +223,24 @@ async function loadMyTasks() {
   setMyTasksCount(tasks);
   const today = todayIso();
   const groups = [
-    ["Vencidas", tasks.filter((t) => t.due_date && t.due_date < today)],
-    ["Hoy", tasks.filter((t) => t.due_date === today)],
-    ["Próximas", tasks.filter((t) => t.due_date && t.due_date > today)],
-    ["Sin fecha", tasks.filter((t) => !t.due_date)],
-  ].filter(([, list]) => list.length);
-  $("#my-tasks").innerHTML = groups.length
-    ? groups.map(([title, list]) => `<li class="task-group">${title}</li>` + list.map((t) => taskItem(t, { showClient: true })).join("")).join("")
-    : `<li class="muted small empty-tasks">No tienes tareas pendientes.</li>`;
+    ["is-overdue", "Vencidas", tasks.filter((t) => t.due_date && t.due_date < today)],
+    ["is-today", "Hoy", tasks.filter((t) => t.due_date === today)],
+    ["is-soon", "Próximas", tasks.filter((t) => t.due_date && t.due_date > today)],
+    ["is-undated", "Sin fecha", tasks.filter((t) => !t.due_date)],
+  ].filter(([, , list]) => list.length);
+  // Cada grupo en su tarjeta, con cuántas tiene; arriba, el resumen (vencidas, para hoy y pendientes)
+  $("#my-tasks").innerHTML = groups.length ? groups.map(([key, title, list]) => `
+    <section class="task-section ${key}">
+      <h3 class="task-section-head"><span class="task-dot" aria-hidden="true"></span>${title}<span class="task-section-count">${list.length}</span></h3>
+      <ul class="task-list">${list.map((t) => taskItem(t, { showClient: true })).join("")}</ul>
+    </section>`).join("")
+    : `<p class="empty-tasks">No tienes tareas pendientes.</p>`;
+  const [overdue, dueToday] = ["is-overdue", "is-today"].map((k) => groups.find(([key]) => key === k)?.[2].length || 0);
+  $("#my-tasks-summary").innerHTML = tasks.length ? [
+    overdue ? `<span class="task-chip overdue">${overdue} ${overdue === 1 ? "vencida" : "vencidas"}</span>` : "",
+    dueToday ? `<span class="task-chip today">${dueToday} para hoy</span>` : "",
+    `<span class="task-chip">${tasks.length} ${tasks.length === 1 ? "pendiente" : "pendientes"}</span>`,
+  ].join("") : "";
 }
 
 function setMyTasksCount(tasks) {
