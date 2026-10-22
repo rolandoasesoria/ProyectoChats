@@ -75,8 +75,9 @@ def delete(conn: Conn, client_id: int) -> None:
 
 def search(conn: Conn, like: str, user_id: int | None, status: str | None, tag: str | None,
            assignee_id: int | None, limit: int) -> list[dict]:
-    """Clientes cuyo nombre, empresa, identificador o etiqueta coincide con `like` (patrón ILIKE; "%%" = todos).
-    `unread` = mensajes nuevos desde la última visita de `user_id` (null si nunca lo ha abierto)."""
+    """Clientes cuyo nombre, empresa, identificador o etiqueta coincide con `like` (patrón ILIKE; "%%" = todos), con su
+    último mensaje (como en la lista de chats). `unread` = mensajes nuevos desde la última visita de `user_id` (null si
+    nunca lo ha abierto)."""
     # Filtros opcionales: fragmentos fijos; sus valores van como parámetros.
     filters, args = "", []
     if status:
@@ -94,13 +95,15 @@ def search(conn: Conn, like: str, user_id: int | None, status: str | None, tag: 
                (SELECT string_agg(t.tag, '|') FROM client_tags t WHERE t.client_id = cl.id) AS tags,
                (SELECT string_agg(DISTINCT ci.channel, ',') FROM client_identities ci
                  WHERE ci.client_id = cl.id) AS channels,
-               (SELECT max(m.sent_at) FROM messages m
-                  JOIN conversations c ON c.id = m.conversation_id
-                 WHERE c.client_id = cl.id) AS last_message_at,
+               lm.sent_at AS last_message_at, substr(lm.body, 1, 160) AS last_body, lm.direction AS last_direction,
                CASE WHEN v.user_id IS NULL THEN NULL ELSE
                    (SELECT count(*) FROM messages m JOIN conversations c ON c.id = m.conversation_id
                      WHERE c.client_id = cl.id AND m.id > v.last_message_id) END AS unread
           FROM clients cl
+          LEFT JOIN LATERAL (SELECT m.body, m.direction, m.sent_at FROM messages m
+                               JOIN conversations c ON c.id = m.conversation_id
+                              WHERE c.client_id = cl.id
+                              ORDER BY m.sent_at DESC, m.id DESC LIMIT 1) lm ON true
           LEFT JOIN client_visits v ON v.client_id = cl.id AND v.user_id = ?
          WHERE (? = '%%'
                 OR unaccent(cl.name) ILIKE unaccent(?) OR unaccent(cl.company) ILIKE unaccent(?)
