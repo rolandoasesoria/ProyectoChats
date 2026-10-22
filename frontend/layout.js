@@ -16,6 +16,10 @@ const LAYOUTS = [
     container: "#view-templates", key: "pc-layout-templates", center: ".tpl-main", minCenter: 340,
     zones: { list: { pane: ".tpl-pane", side: "left", def: 300, min: 220, max: 560 } },
   },
+  {
+    container: "#view-replies", key: "pc-layout-replies", center: ".replies-main", minCenter: 380,
+    zones: { list: { pane: ".replies-pane", side: "left", def: 320, min: 240, max: 560 } },
+  },
 ];
 
 function loadLayoutWidths(layout) {

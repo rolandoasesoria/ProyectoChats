@@ -130,7 +130,7 @@
       <span class="nav-label"><strong>Plantillas de WhatsApp</strong></span>
       <span class="count nav-count" hidden></span>
     </button>
-    <button class="nav-btn" id="menu-replies" aria-label="Respuestas guardadas">
+    <button class="nav-btn" id="menu-replies" data-view="replies" aria-label="Respuestas guardadas">
       <svg class="nav-ic" viewBox="0 0 24 24" aria-hidden="true"><defs><mask id="nav-m-replies" maskUnits="userSpaceOnUse" x="-2" y="-2" width="28" height="28"><rect x="-2" y="-2" width="28" height="28" fill="#fff"/><path d="M8.6 7.6h6.8M8.6 11h4.4" fill="none" stroke="#000" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></mask></defs><path class="p" mask="url(#nav-m-replies)" d="M7 2.8h10a2 2 0 0 1 2 2v15.4c0 .8-.9 1.3-1.6.8L12 17.4 6.6 21c-.7.5-1.6 0-1.6-.8V4.8a2 2 0 0 1 2-2z"/></svg>
       <span class="nav-label"><strong>Respuestas guardadas</strong></span>
       <span class="count nav-count" hidden></span>
@@ -579,6 +579,101 @@
       </table>
     </div>
     </div>
+  </section>
+
+  <!-- Sección Respuestas guardadas: la lista (buscar y filtrar) · la respuesta elegida o el editor (ver replies.js) -->
+  <section class="replies-view" id="view-replies" hidden>
+    <aside class="replies-pane">
+      <div class="tpl-pane-head">
+        <input id="replies-search" type="search" placeholder="Buscar por título, atajo o texto" autocomplete="off">
+        <button type="button" class="primary small-btn" id="replies-new">＋ Nueva</button>
+      </div>
+      <div class="segmented replies-filter" id="replies-filter" role="group" aria-label="Qué respuestas mostrar">
+        <button type="button" data-filter="all" class="active">Todas</button>
+        <button type="button" data-filter="mine">Mías</button>
+        <button type="button" data-filter="macro">Macros</button>
+      </div>
+      <ul id="replies-list" class="replies-list"></ul>
+    </aside>
+    <div class="resizer" data-zone="list" role="separator" aria-orientation="vertical" tabindex="0"
+         aria-label="Ancho de la lista de respuestas" title="Arrastra para cambiar el ancho (doble clic: restablecer)"></div>
+    <section class="replies-main" id="replies-main">
+      <div class="replies-page">
+        <!-- Sin ninguna elegida: qué son y cómo se usan -->
+        <div class="replies-intro" id="replies-intro">
+          <div>
+            <h2>Respuestas guardadas</h2>
+            <p class="muted">Textos que el equipo usa a menudo, para no escribirlos cada vez. Elige una de la lista para verla o crea una nueva.</p>
+          </div>
+          <div class="intro-grid">
+            <section class="intro-card">
+              <h3>Cómo se usan</h3>
+              <p>En la caja de escribir de un chat, pulsa «Respuestas» o escribe <kbd>/</kbd> seguido del atajo (por ejemplo, <code>/facturacion</code>) y elige con Intro. El texto se inserta con los datos del cliente ya puestos.</p>
+            </section>
+            <section class="intro-card">
+              <h3>Variables</h3>
+              <dl class="var-list">
+            <div><dt><code>{nombre}</code></dt><dd>Nombre de pila del cliente</dd></div>
+            <div><dt><code>{cliente}</code></dt><dd>Nombre completo del cliente</dd></div>
+            <div><dt><code>{empresa}</code></dt><dd>Empresa del cliente</dd></div>
+            <div><dt><code>{yo}</code></dt><dd>Tu nombre (quien responde)</dd></div>
+            <div><dt><code>{dato:CIF}</code></dt><dd>Cualquier dato clave de la ficha, por su nombre</dd></div>
+              </dl>
+              <p class="muted small">Si falta algún dato, queda entre corchetes para completarlo a mano.</p>
+            </section>
+            <section class="intro-card">
+              <h3>Macros</h3>
+              <p>Si al usarla también cambia el estado del cliente, añade una etiqueta o marca la conversación como atendida, es una <strong>macro</strong>: todo eso se aplica a la vez.</p>
+            </section>
+          </div>
+        </div>
+        <!-- La respuesta elegida -->
+        <article class="reply-detail" id="reply-detail" hidden></article>
+        <!-- Crear o editar -->
+        <form id="reply-form" class="form reply-editor" novalidate hidden>
+          <h2 id="rf-title-h">Nueva respuesta</h2>
+          <section class="rf-section">
+            <h3>Nombre</h3>
+            <div class="form-grid">
+              <label>Título <input id="rf-title" maxlength="100" placeholder="Pedir datos de facturación"></label>
+              <label>Atajo <span class="muted">(opcional)</span>
+                <span class="shortcut-field"><span aria-hidden="true">/</span><input id="rf-shortcut" maxlength="31" placeholder="facturacion" autocomplete="off"></span>
+              </label>
+            </div>
+          </section>
+          <section class="rf-section">
+            <h3>Texto</h3>
+            <div class="var-chips" role="group" aria-label="Insertar una variable"><button type="button" class="var-chip" data-insert-var="{nombre}">{nombre}</button><button type="button" class="var-chip" data-insert-var="{cliente}">{cliente}</button><button type="button" class="var-chip" data-insert-var="{empresa}">{empresa}</button><button type="button" class="var-chip" data-insert-var="{yo}">{yo}</button><button type="button" class="var-chip" data-insert-var="{dato:}">{dato:…}</button></div>
+            <textarea id="rf-body" rows="7" maxlength="5000" placeholder="Hola {nombre}, para la factura necesitamos…"></textarea>
+            <div class="reply-preview">
+              <span class="preview-label">Así lo recibe el cliente <span class="muted">(con un cliente de ejemplo)</span></span>
+              <div class="reply-bubble" id="rf-preview"></div>
+            </div>
+          </section>
+          <section class="rf-section">
+            <h3>Al usarla <span class="muted">· opcional: si eliges algo, es una macro</span></h3>
+            <div class="form-grid">
+              <label>Cambiar el estado del cliente a
+                <select id="rf-status">
+                  <option value="">No cambiar</option>
+                  <option value="lead">Potencial</option>
+                  <option value="active">Activo</option>
+                  <option value="issue">Incidencia</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
+              </label>
+              <label>Añadir la etiqueta <input id="rf-tag" maxlength="40" placeholder="presupuesto enviado"></label>
+            </div>
+            <label class="check"><input type="checkbox" id="rf-done"> Marcar la conversación como atendida (sale de «Sin responder»)</label>
+          </section>
+          <p class="form-error" id="rf-error" role="alert" hidden></p>
+          <div class="dialog-actions">
+            <button type="button" class="ghost" id="rf-cancel">Cancelar</button>
+            <button type="submit" class="primary" id="rf-submit">Guardar respuesta</button>
+          </div>
+        </form>
+      </div>
+    </section>
   </section>
 
   <!-- Sección Plantillas: lista de plantillas de una cuenta de WhatsApp · plantilla elegida o editor -->
@@ -1116,45 +1211,6 @@
   </dialog>
 
   <!-- Respuestas guardadas y macros -->
-  <dialog id="replies-dialog" class="dialog wide">
-    <div class="dialog-head">
-      <h2>Respuestas guardadas</h2>
-      <button type="button" class="icon-btn" data-close aria-label="Cerrar">×</button>
-    </div>
-    <p class="muted small">Textos que el equipo usa a menudo. En el borrador se insertan con «Respuestas guardadas» o escribiendo
-      /atajo. Variables: <code>{nombre}</code>, <code>{cliente}</code>, <code>{empresa}</code>, <code>{yo}</code> y
-      <code>{dato:CIF}</code> (cualquier dato clave de la ficha). Si además cambia el estado, añade una etiqueta o marca la
-      conversación como atendida, es una <strong>macro</strong>: eso se aplica al usarla.</p>
-    <ul id="replies-list" class="replies-list"></ul>
-    <form id="reply-form" class="form user-form">
-      <h3 id="rf-title-h">Nueva respuesta</h3>
-      <div class="form-grid">
-        <label>Título <input id="rf-title" maxlength="100" required placeholder="Pedir datos de facturación"></label>
-        <label>Atajo <input id="rf-shortcut" maxlength="31" placeholder="facturacion (opcional)"></label>
-      </div>
-      <label>Texto
-        <textarea id="rf-body" rows="4" maxlength="5000" required placeholder="Hola {nombre}, …"></textarea>
-      </label>
-      <div class="form-grid">
-        <label>Al usarla, cambiar estado a
-          <select id="rf-status">
-            <option value="">No cambiar</option>
-            <option value="lead">Potencial</option>
-            <option value="active">Activo</option>
-            <option value="issue">Incidencia</option>
-            <option value="inactive">Inactivo</option>
-          </select>
-        </label>
-        <label>Añadir etiqueta <input id="rf-tag" maxlength="40" placeholder="presupuesto enviado"></label>
-      </div>
-      <label class="check"><input type="checkbox" id="rf-done"> Marcar la conversación como atendida</label>
-      <p class="form-error" id="rf-error" role="alert" hidden></p>
-      <div class="dialog-actions">
-        <button type="button" class="ghost" id="rf-cancel" hidden>Cancelar edición</button>
-        <button type="submit" class="primary" id="rf-submit">Guardar respuesta</button>
-      </div>
-    </form>
-  </dialog>
 
   <!-- Panel de actividad -->
   <dialog id="company-dialog" class="dialog">

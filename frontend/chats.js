@@ -25,7 +25,8 @@ let contactsMiniTimer = null;
 // Vistas. «client» es la vista de contacto abierta desde Contactos: usa la misma pantalla que Mis Chats, con la lista
 // de contactos a la izquierda, y en la barra lateral cuenta como Contactos.
 const VIEWS = { chats: "#view-chats", client: "#view-chats", mail: "#view-mail", contacts: "#view-contacts", tasks: "#view-tasks",
-                assistant: "#view-assistant", templates: "#view-templates", ai: "#view-ai", dashboard: "#view-dashboard" };
+                assistant: "#view-assistant", templates: "#view-templates", replies: "#view-replies", ai: "#view-ai",
+                dashboard: "#view-dashboard" };
 let viewName = null;
 
 function currentView() {
@@ -56,6 +57,7 @@ function showView(name) {
     loadContactsMini();
   }
   if (name === "contacts") loadContacts();
+  if (name === "replies") loadRepliesView();
   if (name === "mail") {
     $("#mail-scope").hidden = !canViewTeamChats();
     loadMail();
@@ -73,7 +75,7 @@ function showView(name) {
 function savedView() {
   try {
     const saved = localStorage.getItem(VIEW_KEY);
-    return ["mail", "contacts", "tasks", "assistant", "templates", "ai", "dashboard"].includes(saved) ? saved : "chats";
+    return ["mail", "contacts", "tasks", "assistant", "templates", "replies", "ai", "dashboard"].includes(saved) ? saved : "chats";
   } catch { return "chats"; }
 }
 

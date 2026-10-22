@@ -29,7 +29,7 @@ function paletteActions() {
     { label: "Consulta general al asistente", run: () => showView("assistant") },
     { label: "Nuevo cliente", run: () => openClientDialog("create") },
     { label: "Panel de actividad", run: () => openDashboard() },
-    { label: "Respuestas guardadas", run: () => openRepliesDialog() },
+    { label: "Respuestas guardadas", run: () => openRepliesView() },
     { label: "Mis cuentas (correo, Telegram, WhatsApp)", run: () => openAccountsDialog() },
     { label: "Cambiar tema claro / oscuro", run: () => toggleTheme() },
     ...(TOUR_ENABLED ? [{ label: "Ver el tutorial", run: () => startTour() }] : []),
