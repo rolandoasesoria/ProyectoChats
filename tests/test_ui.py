@@ -585,15 +585,39 @@ try:
     b.wait("document.querySelector('#draft-applied').textContent.includes('Te avisaré')")
     check("al copiar programa el aviso de seguimiento", True)
     b.fill("#chat-text", "")
+    # Respuestas guardadas: su sección (lista · la elegida o el editor)
     b.click("#menu-replies")
-    b.wait("document.querySelector('#replies-dialog').open && document.querySelectorAll('#replies-list .reply-row').length >= 4")
+    b.wait("currentView() === 'replies' && document.querySelectorAll('#replies-list .reply-item').length >= 4"
+           " && !document.querySelector('#replies-intro').hidden")
+    check("respuestas guardadas: sección con la lista y la explicación (variables y macros)",
+          b.js("document.querySelector('#menu-replies').classList.contains('active')")
+          and b.js("document.querySelectorAll('#replies-intro .var-list > div').length") == 5)
+    b.click("#replies-list .reply-item")
+    b.wait("!document.querySelector('#reply-detail').hidden")
+    check("al elegir una se ve entera: atajo, tipo, texto, vista previa y qué hace al usarla",
+          b.js("document.querySelectorAll('#reply-detail .reply-block').length") == 3
+          and b.js("!!document.querySelector('#reply-detail .reply-bubble')"))
+    check("la ruta: Respuestas guardadas › la respuesta",
+          crumbs()[-2:] == ["Respuestas guardadas", b.js("document.querySelector('#reply-detail h2').textContent")], crumbs())
+    b.click("#replies-new")
+    b.wait("!document.querySelector('#reply-form').hidden")
     b.fill("#rf-title", "Horario")
-    b.fill("#rf-body", "Abrimos de 9 a 14, {nombre}.")
+    b.fill("#rf-body", "Abrimos de 9 a 14, ")
+    b.js("document.querySelector('#rf-body').setSelectionRange(99, 99)")
+    b.click('.var-chips [data-insert-var="{nombre}"]')
+    check("los botones de variables las insertan y la vista previa usa un cliente de ejemplo",
+          b.js("document.querySelector('#rf-body').value") == "Abrimos de 9 a 14, {nombre}"
+          and "Laura" in b.js("document.querySelector('#rf-preview').textContent"))
     b.js("document.querySelector('#reply-form').requestSubmit()")
-    b.wait("[...document.querySelectorAll('#replies-list .reply-row strong')].some(s => s.textContent === 'Horario')")
-    check("crear respuesta guardada desde el diálogo", True)
+    b.wait("!document.querySelector('#reply-detail').hidden && document.querySelector('#reply-detail h2').textContent === 'Horario'")
+    check("crear una respuesta guardada la deja abierta", True)
+    b.js("document.querySelector('#replies-search').value = 'horario';"
+         " document.querySelector('#replies-search').dispatchEvent(new Event('input'))")
+    check("buscar en la lista", b.js("document.querySelectorAll('#replies-list .reply-item').length") == 1)
+    b.click('#replies-filter [data-filter="macro"]')
+    check("filtro «Macros» (y la búsqueda sigue)", b.js("document.querySelectorAll('#replies-list .reply-item').length") == 0)
+    b.click('#replies-filter [data-filter="all"]')
     b.shot("08d-gestionar-respuestas")
-    b.js("document.querySelector('#replies-dialog').close()")
 
     # Bandeja sin responder: el filtro «Sin responder» de Mis Chats, también desde el resumen del día de la barra
     b.click("#nav-contacts")
