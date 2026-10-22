@@ -41,6 +41,13 @@ function breadcrumbParts(view) {
                    { label: MAIL_FOLDERS[mailState.folder], action: mailState.open ? closeMail : null }];
     return mailState.open ? [...parts, { label: mailState.open.subject || "(sin asunto)" }] : parts;
   }
+  if (view === "replies") {
+    const reply = savedReplies.find((r) => r.id === repliesState.selected);
+    const open = repliesState.editing === "new" ? "Nueva respuesta" : reply?.title;
+    const icon = sectionIcon("replies");
+    return open ? [{ label: "Respuestas guardadas", icon, action: closeReplyDetail }, { label: open }]
+      : [{ label: "Respuestas guardadas", icon }];
+  }
   if (view === "templates") {
     const open = tplState.selected?.name || (!$("#tpl-form").hidden ? "Nueva plantilla" : null);
     const icon = sectionIcon("templates");
