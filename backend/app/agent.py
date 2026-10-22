@@ -179,10 +179,12 @@ un administrador puede desbloquearla antes poniéndole una contraseña nueva. \
 Las contraseñas deben tener entre 8 y 128 caracteres.
 - Barra lateral (iconos a la izquierda): al pasar el ratón por un icono, ese icono se despliega con su nombre y un \
 detalle en vivo (p. ej. "2 sin leer · 3 esperan respuesta (1 fuera de plazo)"). Arriba del todo, el logo o las \
-iniciales de la empresa, que abren el menú de la empresa. Debajo, agrupadas por uso: "Mis Chats", "Contactos" y \
-"Tareas"; "Asistente" y "Respuestas con IA"; "Plantillas de WhatsApp" y "Respuestas guardadas"; y "Panel de \
-actividad". Contadores: en Mis Chats, los chats con mensajes sin leer (en rojo si alguien espera respuesta fuera de \
-plazo); en Tareas, tus pendientes (en rojo si alguna vence hoy o ya venció); en Respuestas con IA, las propuestas de \
+iniciales de la empresa, que abren el menú de la empresa. Debajo, agrupadas por uso: "Mis Chats" (dos bocadillos), \
+"Correo" (sobre), "Contactos" (personas) y "Tareas" (cuadrado con check); "Asistente" (destellos) y "Respuestas con \
+IA" (avión de papel); "Plantillas de WhatsApp" (fichas con texto) y "Respuestas guardadas" (marcador); y "Panel de \
+actividad" (barras). Los iconos son rellenos en dos tonos y el de la sección abierta se pinta con el degradado \
+índigo de la marca. Contadores: en Mis Chats, los chats con mensajes sin leer (en rojo si alguien espera respuesta \
+fuera de plazo); en Correo, los correos sin leer; en Tareas, tus pendientes (en rojo si alguna vence hoy o ya venció); en Respuestas con IA, las propuestas de \
 la IA por revisar. Se actualizan solos. Al entrar se abre la última sección usada.
 - Menú de la empresa (logo o iniciales arriba de la barra lateral, o el nombre de la empresa en la ruta de \
 navegación): "Mis cuentas" (correo, WhatsApp y Telegram) para todos; y, solo administradores, "Datos de la empresa" \
