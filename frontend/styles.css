@@ -2833,3 +2833,15 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 .reply-preview { display: flex; flex-direction: column; gap: var(--space-1-5); }
 .preview-label { font-size: var(--font-size-xs); color: var(--color-text-secondary); font-weight: var(--font-weight-semibold); }
 @media (max-width: 860px) { .replies-page { padding: var(--space-5) var(--space-4) var(--space-8); } }
+
+/* Asistente IA del contacto: con el panel estrecho, «Nueva conversación» se queda en su icono (con su nombre al pasar
+   el ratón) y el texto de la cabecera ocupa el sitio que queda */
+.chats-assistant { container: asistente-contacto / inline-size; }
+.chats-assistant .chat-head > div { flex: 1; min-width: 0; }
+.chats-assistant .chat-head p { overflow-wrap: anywhere; }
+.new-chat-btn { display: inline-flex; align-items: center; gap: var(--space-1-5); }
+.new-chat-btn svg { width: 17px; height: 17px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+@container asistente-contacto (max-width: 400px) {
+  .new-chat-btn { width: var(--control-height-md, 34px); height: var(--control-height-md, 34px); padding: 0; justify-content: center; }
+  .new-chat-btn .btn-label { display: none; }
+}
