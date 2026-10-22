@@ -860,8 +860,18 @@ try:
     b.js("{ const r = document.querySelector('#uf-role'); r.value = 'user'; r.dispatchEvent(new Event('change')); }")
     check("y con rol usuario, desmarcado y se puede marcar",
           b.js("!document.querySelector('#uf-team-chats').checked && !document.querySelector('#uf-team-chats').disabled"))
+    # Sin rellenar lo obligatorio: el aviso es de la app (no la burbuja del navegador) y se va al corregirlo
+    b.js("document.querySelector('#user-form').requestSubmit(document.querySelector('#uf-submit'))")
+    b.pump(0.3)
+    check("campo obligatorio vacío: aviso con el estilo de la app junto al campo, y el campo en rojo",
+          b.js("document.querySelector('.field-tip')?.matches(':popover-open')")
+          and b.js("document.querySelector('.field-tip').textContent") == "Completa este campo."
+          and b.js("document.activeElement.id") == "uf-username"
+          and b.js("document.querySelector('#uf-username').classList.contains('field-invalid')"))
     # «Crear usuario» solo lo crea (aquí, con el permiso de ver los chats del equipo)
     b.fill("#uf-username", "javier")
+    check("al escribir se va el aviso y la marca", not b.js("document.querySelector('.field-tip').matches(':popover-open')")
+          and not b.js("document.querySelector('#uf-username').classList.contains('field-invalid')"))
     b.fill("#uf-name", "Javier Moreno")
     b.fill("#uf-password", "demo12345")
     b.click("#uf-team-chats")

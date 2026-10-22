@@ -163,6 +163,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Avisos de los campos con el estilo de la app**: «Completa este campo», un email no válido, un texto demasiado
+  corto… ya no salen en la burbuja del navegador sino en una como los tooltips, junto al campo, que además se marca en
+  rojo hasta que se corrige. Vale para todos los formularios.
 - **Respuestas guardadas pasa a ser una sección** (como Plantillas) en lugar de una ventana: la lista a la izquierda
   con buscador y filtros (Todas, Mías, Macros) y, a la derecha, la respuesta elegida por partes (atajo, tipo, texto
   con las variables resaltadas, cómo lo recibe el cliente y qué hace al usarla) o el editor, con botones para
