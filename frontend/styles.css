@@ -258,8 +258,6 @@ body.login-page {
 .due { color: var(--muted); }
 .due.today { color: var(--warn); font-weight: 600; }
 .due.overdue { color: var(--danger-text); font-weight: 600; }
-.task-group { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--muted); padding: 10px 0 2px; letter-spacing: .03em; }
-.task-group:first-child { padding-top: 0; }
 .task .task-form { flex: 1; }
 .task-form { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
 .task-form input, .task-form select { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 8px; font-size: 14px; min-width: 0; }
@@ -1827,11 +1825,47 @@ input[type="checkbox"]:focus-visible { outline: none; box-shadow: var(--shadow-f
 .task:last-child { border-bottom: 0; }
 .task:hover { background: var(--color-hover); }
 .task-list > li.muted { padding: var(--space-4); color: var(--color-text-tertiary); list-style: none; }
-.tasks-card { padding: var(--space-6) var(--space-8); }
-.tasks-card .task-list { margin-top: var(--space-4); }
+/* «Mis tareas»: centrada y no más ancha que lo cómodo de leer; un resumen arriba y cada grupo en su tarjeta */
+.tasks-card { padding: var(--space-6) var(--space-6) var(--space-10); }
+.tasks-page { width: 100%; max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-6); }
+.tasks-head { align-items: flex-end; justify-content: space-between; gap: var(--space-4); margin: 0; }
+.tasks-head p { margin: var(--space-1) 0 0; }
+.tasks-summary { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.task-chip {
+  padding: 4px 11px; border-radius: var(--radius-pill); background: var(--color-fill); color: var(--color-text-secondary);
+  font-size: var(--font-size-sm); font-weight: var(--font-weight-semibold); white-space: nowrap;
+}
+.task-chip.overdue { background: var(--color-danger-bg); color: var(--color-danger); }
+.task-chip.today { background: var(--color-warning-bg); color: var(--color-warning); }
+.task-sections { display: flex; flex-direction: column; gap: var(--space-6); }
+.task-section-head {
+  display: flex; align-items: center; gap: var(--space-2); margin: 0 0 var(--space-2); padding-left: var(--space-1);
+  font-size: var(--font-size-xs); font-weight: var(--font-weight-semibold); letter-spacing: var(--letter-spacing-wide);
+  text-transform: uppercase; color: var(--color-text-secondary);
+}
+.task-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--color-text-tertiary); }
+.task-section.is-overdue .task-dot { background: var(--color-danger); }
+.task-section.is-today .task-dot { background: var(--color-warning); }
+.task-section.is-soon .task-dot { background: var(--color-accent); }
+.task-section-count {
+  min-width: 20px; padding: 0 6px; border-radius: var(--radius-pill); background: var(--color-fill); text-align: center;
+  font-size: var(--font-size-2xs); line-height: 18px; letter-spacing: 0; color: var(--color-text-secondary);
+}
+.task-section .task { align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
+.task-section .task input[type="checkbox"] { margin-top: 0; }
+.task-section .task-title { font-size: var(--font-size-md); font-weight: var(--font-weight-medium); }
+.task-section .task-meta { gap: var(--space-1-5); }
+.task-avatar { width: 18px; height: 18px; font-size: 8px; font-weight: var(--font-weight-bold); }
+.task-due {
+  flex-shrink: 0; padding: 3px 10px; border-radius: var(--radius-pill); background: var(--color-fill);
+  font-size: var(--font-size-sm); white-space: nowrap;
+}
+.task-due .due { font-weight: var(--font-weight-semibold); }
+.task-section.is-overdue .task-due { background: var(--color-danger-bg); }
+.task-section.is-today .task-due { background: var(--color-warning-bg); }
 /* «No tienes tareas pendientes»: el estado vacío ocupa la tarjeta y queda centrado */
 .tasks-card:has(.empty-tasks) { display: flex; flex-direction: column; }
-.tasks-card .task-list:has(.empty-tasks) { background: none; border: 0; box-shadow: none; flex: 1; }
+.tasks-card:has(.empty-tasks) .tasks-page, .task-sections:has(.empty-tasks) { flex: 1; }
 
 /* Estados vacíos: un icono de trazo fino en el color de acento, centrado sobre el texto */
 .empty-tasks, .chat-empty, .empty-chat {

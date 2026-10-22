@@ -494,9 +494,16 @@
   <!-- Sección Tareas: las tuyas de todos los clientes -->
   <section class="tasks-view" id="view-tasks" hidden>
     <div class="zone-card tasks-card">
-      <div class="tasks-head"><h2>Mis tareas</h2>
-        <span class="muted small">De todos tus clientes. Pulsa el nombre del cliente para abrir su ficha.</span></div>
-      <ul id="my-tasks" class="task-list"></ul>
+      <div class="tasks-page">
+        <div class="tasks-head">
+          <div>
+            <h2>Mis tareas</h2>
+            <p class="muted small">De todos tus clientes. Pulsa el nombre del cliente para abrir su ficha.</p>
+          </div>
+          <div class="tasks-summary" id="my-tasks-summary"></div>
+        </div>
+        <div id="my-tasks" class="task-sections"></div>
+      </div>
     </div>
   </section>
 
