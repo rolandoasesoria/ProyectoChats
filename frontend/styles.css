@@ -2845,3 +2845,9 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
   .new-chat-btn { width: var(--control-height-md, 34px); height: var(--control-height-md, 34px); padding: 0; justify-content: center; }
   .new-chat-btn .btn-label { display: none; }
 }
+
+/* Administración → Usuarios: las acciones (Editar, Cuentas, Desactivar) siempre enteras a la vista; si la tabla no cabe,
+   se desplaza por debajo de ellas */
+.users-table:has(#users-tbody) thead th:last-child, #users-tbody td.row-actions { position: sticky; right: 0; z-index: 1; }
+#users-tbody td.row-actions { background: var(--color-surface); box-shadow: -10px 0 10px -10px rgba(31, 27, 46, .25); }
+.users-table tbody tr:hover td.row-actions { background: linear-gradient(var(--color-hover), var(--color-hover)), var(--color-surface); }
