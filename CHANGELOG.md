@@ -163,6 +163,10 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **Iconos nuevos en la barra lateral**: rellenos en dos tonos, al estilo de iOS, con una silueta propia para cada
+  sección (dos bocadillos con los tres puntos del logo en Mis Chats, sobre, personas, cuadrado con check, destellos,
+  avión de papel para Respuestas con IA, fichas con texto, marcador y barras). El de la sección abierta se pinta con
+  el degradado de la marca (índigo en claro, lavanda en oscuro). También en la ruta de navegación.
 - La **lista de contactos junto al contacto abierto** luce como la de chats: el último mensaje (en vez de la
   empresa), filas de la misma altura y el estado del cliente rotulado en lugar de un punto de color sin explicar.
 - **«Mis tareas» rediseñada**: centrada y con un ancho cómodo de leer, un resumen arriba (vencidas, para hoy y

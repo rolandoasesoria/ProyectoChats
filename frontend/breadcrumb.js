@@ -8,7 +8,11 @@ const CRUMB_SEP = `<svg class="crumb-sep" viewBox="0 0 24 24" aria-hidden="true"
 // El icono de la sección es el mismo de la barra lateral.
 function sectionIcon(view) {
   const svg = document.querySelector(`.sidebar [data-view="${view === "client" ? "contacts" : view}"] svg`);
-  return svg ? svg.outerHTML.replace("<svg", '<svg class="crumb-icon"') : "";
+  if (!svg) return "";
+  const copy = svg.cloneNode(true);
+  copy.classList.add("crumb-icon");
+  // Las máscaras del icono llevan id: la copia usa los suyos para no repetirlos en la página
+  return copy.outerHTML.replaceAll("nav-m-", "crumb-m-").replaceAll("nav-c-", "crumb-c-");
 }
 
 // Avatar en miniatura del contacto (las iniciales van como adorno: el texto del nivel es solo su nombre).

@@ -2709,3 +2709,20 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 .th-sort:hover .sort-arrow { opacity: .8; }
 .th-sort.on .sort-arrow { opacity: 1; color: var(--color-accent); }
 .contacts-toolbar .sort-wrap { margin-left: auto; } /* si la barra no cabe en una línea, el orden, Columnas y Nuevo contacto quedan a la derecha */
+
+/* ---------- Iconos de la barra lateral: rellenos en dos tonos, como los símbolos de iOS ----------
+   «p» es la parte principal y «q» la secundaria, más clara; el seleccionado se rellena con el degradado de la marca
+   (índigo en claro, lavanda en oscuro). También salen en la ruta de navegación (breadcrumb.js). */
+.svg-defs { position: absolute; width: 0; height: 0; overflow: hidden; }
+.nav-btn .nav-ic, .crumb-icon.nav-ic { fill: currentColor; stroke: none; }
+.nav-ic .q { opacity: .42; }
+.nav-ic .p-line { fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn.active .nav-ic .p, .nav-btn.active .nav-ic .q { fill: url(#nav-activo); }
+.nav-btn.active .nav-ic .q { opacity: .5; }
+.nav-btn.active .nav-ic .p-line { stroke: url(#nav-activo); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .nav-btn.active .nav-ic .p, :root:not([data-theme="light"]) .nav-btn.active .nav-ic .q { fill: url(#nav-activo-oscuro); }
+  :root:not([data-theme="light"]) .nav-btn.active .nav-ic .p-line { stroke: url(#nav-activo-oscuro); }
+}
+:root[data-theme="dark"] .nav-btn.active .nav-ic .p, :root[data-theme="dark"] .nav-btn.active .nav-ic .q { fill: url(#nav-activo-oscuro); }
+:root[data-theme="dark"] .nav-btn.active .nav-ic .p-line { stroke: url(#nav-activo-oscuro); }
