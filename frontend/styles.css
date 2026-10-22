@@ -2851,3 +2851,14 @@ button.status-badge:hover { background: color-mix(in srgb, var(--st) 17%, transp
 .users-table:has(#users-tbody) thead th:last-child, #users-tbody td.row-actions { position: sticky; right: 0; z-index: 1; }
 #users-tbody td.row-actions { background: var(--color-surface); box-shadow: -10px 0 10px -10px rgba(31, 27, 46, .25); }
 .users-table tbody tr:hover td.row-actions { background: linear-gradient(var(--color-hover), var(--color-hover)), var(--color-surface); }
+
+/* Avisos de los campos («Completa este campo», email no válido…): la burbuja de los tooltips con una marca roja, y
+   el campo con el borde en rojo hasta que se corrige (ui.js) */
+.app-tip.field-tip[popover] { display: flex; align-items: flex-start; gap: 7px; max-width: 320px; padding: 7px 11px 7px 8px; font-size: 12.5px; }
+.app-tip.field-tip[popover]::before {
+  content: "!"; flex-shrink: 0; width: 16px; height: 16px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--color-danger); color: #fff; font-size: 11px; font-weight: 800; line-height: 1;
+}
+input.field-invalid, select.field-invalid, textarea.field-invalid {
+  border-color: var(--color-danger) !important; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-danger) 16%, transparent) !important;
+}

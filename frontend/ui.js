@@ -3,7 +3,8 @@
 //   · desplegables (<select>): la lista que se abre es propia (el <select> sigue guardando el valor y avisando con
 //     «change», así que el resto del código no cambia);
 //   · avisos (alert): notificaciones flotantes que se cierran solas;
-//   · confirmaciones y preguntas: appConfirm() y appPrompt(), ventanas de la app que devuelven una promesa.
+//   · confirmaciones y preguntas: appConfirm() y appPrompt(), ventanas de la app que devuelven una promesa;
+//   · avisos de los campos (obligatorio, email…): en lugar de la burbuja del navegador, una como los tooltips.
 // Tooltips, listas y avisos van en la capa superior (popover) para verse también por encima de las ventanas.
 
 function popoverBox(className, role) {
@@ -343,7 +344,88 @@ function appDialog(message, { ok, cancel, danger = false, input = null }) {
   });
 }
 
+/* ---------- Avisos de los campos (obligatorio, email…) ---------- */
+
+// En lugar de la burbuja del navegador («Completa este campo»), una con el estilo de los tooltips de la app junto al
+// campo, que se va al corregirlo. En cada envío se avisa del primer campo que falla (y se marcan todos en rojo).
+let fieldTipEl = null;
+let fieldTipFor = null;
+let fieldTipShown = false;
+
+function validityText(el) {
+  const v = el.validity;
+  if (v.valueMissing) {
+    if (el.type === "checkbox") return "Marca esta casilla para seguir.";
+    if (el.tagName === "SELECT" || el.type === "radio") return "Elige una opción.";
+    if (el.type === "file") return "Elige un archivo.";
+    return "Completa este campo.";
+  }
+  if (v.typeMismatch && el.type === "email") return "Escribe un email válido, con @ (por ejemplo, nombre@empresa.com).";
+  if (v.typeMismatch && el.type === "url") return "Escribe una dirección web completa, con https://";
+  if (v.tooShort) return `Escribe al menos ${el.minLength} caracteres (ahora hay ${el.value.length}).`;
+  if (v.tooLong) return `Como máximo ${el.maxLength} caracteres.`;
+  if (v.rangeUnderflow) return `El mínimo es ${el.min}.`;
+  if (v.rangeOverflow) return `El máximo es ${el.max}.`;
+  if (v.badInput) return el.type === "number" ? "Escribe solo un número." : "El valor no es válido.";
+  if (v.patternMismatch) return el.dataset.tip || "El formato no es válido.";
+  return el.validationMessage;
+}
+
+function showFieldTip(el, text) {
+  fieldTipEl ||= popoverBox("app-tip field-tip", "alert");
+  fieldTipEl.textContent = text;
+  bringToFront(fieldTipEl);
+  const r = el.getBoundingClientRect();
+  const t = fieldTipEl.getBoundingClientRect();
+  const below = r.bottom + t.height + 8 <= innerHeight - 4;
+  fieldTipEl.classList.toggle("above", !below);
+  fieldTipEl.style.top = `${Math.round(below ? r.bottom + 8 : r.top - t.height - 8)}px`;
+  fieldTipEl.style.left = `${Math.round(Math.min(Math.max(r.left, 6), innerWidth - t.width - 6))}px`;
+  fieldTipFor = el;
+}
+
+function hideFieldTip() {
+  fieldTipFor = null;
+  if (fieldTipEl?.matches(":popover-open")) fieldTipEl.hidePopover();
+}
+
+function bindFieldValidation() {
+  document.addEventListener("invalid", (e) => {
+    e.preventDefault(); // sin la burbuja del navegador
+    const el = e.target;
+    el.classList.add("field-invalid");
+    el.setAttribute("aria-invalid", "true");
+    if (fieldTipShown) return;
+    fieldTipShown = true;
+    setTimeout(() => { fieldTipShown = false; }, 0);
+    hideTip();
+    el.focus();
+    showFieldTip(el, validityText(el));
+  }, true);
+  // Al corregirlo se quita la marca; al escribir o salir del campo, el aviso
+  const fixed = (e) => {
+    const el = e.target;
+    if (el === fieldTipFor) hideFieldTip();
+    if (el.classList?.contains("field-invalid") && el.validity?.valid) {
+      el.classList.remove("field-invalid");
+      el.removeAttribute("aria-invalid");
+    }
+  };
+  document.addEventListener("input", fixed, true);
+  document.addEventListener("change", fixed, true);
+  document.addEventListener("focusout", (e) => { if (e.target === fieldTipFor) hideFieldTip(); });
+  document.addEventListener("scroll", () => { if (fieldTipFor) hideFieldTip(); }, true);
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") hideFieldTip(); });
+  // Un formulario que se vacía (reset) o una ventana que se cierra no deja marcas ni avisos
+  document.addEventListener("reset", (e) => {
+    e.target.querySelectorAll?.(".field-invalid").forEach((x) => { x.classList.remove("field-invalid"); x.removeAttribute("aria-invalid"); });
+    hideFieldTip();
+  }, true);
+  document.addEventListener("close", hideFieldTip, true);
+}
+
 function bindUiEvents() {
   bindTooltips();
   bindSelectMenus();
+  bindFieldValidation();
 }
