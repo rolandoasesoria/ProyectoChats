@@ -160,6 +160,8 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
   quedan legibles solo por el usuario de Windows.
 
 ### Cambiado
+- **«Mis tareas» rediseñada**: centrada y con un ancho cómodo de leer, un resumen arriba (vencidas, para hoy y
+  pendientes), cada grupo en su tarjeta con cuántas tiene, el cliente con su avatar y la fecha a la derecha.
 - **Chispa renovada e interactiva**: ahora es el bocadillo de la marca con ojos, en degradado índigo. Flota y
   parpadea, te sigue con la mirada, se eleva al pasar el ratón, mira al panel cuando está abierto y, mientras
   prepara la respuesta, sus ojos se vuelven tres puntos «escribiendo…». Sin animaciones si el sistema pide menos movimiento.
