@@ -6,6 +6,9 @@ Cómo se mantiene: [`docs/CONTROL_DE_VERSIONES.md`](docs/CONTROL_DE_VERSIONES.md
 ## [Sin publicar]
 
 ### Añadido
+- **Ordenar los contactos**: por defecto, por nombre (A → Z, sin mirar mayúsculas ni tildes); también por última
+  actividad, sin leer primero, empresa, estado, agente o fecha de alta, en los dos sentidos. Con el selector de la
+  barra o pulsando el título de la columna; se recuerda y vale también para la lista junto al contacto abierto.
 - **Correo en bandejas** (sección «Correo» de la barra lateral, atajo «g e»): los correos de las conversaciones de
   email también se ven como en un programa de correo, además de como chat. Carpetas Recibidos (con los no leídos),
   Enviados y Destacados; lista con remitente, asunto, extracto y adjuntos; buscador, «Marcar todo leído» y páginas de
